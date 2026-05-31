@@ -392,6 +392,8 @@ export default function GeneratePage() {
       setProgress(Math.round((i / selectedScenes.length) * 100));
 
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
         const res = await fetch('/api/adforge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -410,7 +412,9 @@ export default function GeneratePage() {
             cta: cta.trim() || '立即购买',
             brandDNA,
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
