@@ -2,7 +2,7 @@
 
 > AI ad creative studio for DTC sellers — paste a product URL, get 8 platform-ready ads in under a minute.
 
-🌐 **Live:** [100x.pics](https://100x.pics) · [100pics.today](https://100pics.today)
+🌐 **Live:** [100pics.today](https://100pics.today)
 
 `#2026AIAgent清客松`
 
