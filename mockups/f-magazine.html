@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup F - Magazine Editorial</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #faf9f6; color: #1a1a1a; }
+.hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; }
+.left { display: flex; flex-direction: column; justify-content: flex-end; padding: 60px 60px 80px; border-right: 1px solid #e5e5e5; }
+.right { background: #1a1a1a; color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 60px; position: relative; overflow: hidden; }
+.right::before { content: '100x'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Playfair Display', serif; font-size: 300px; font-weight: 900; opacity: 0.03; letter-spacing: -10px; white-space: nowrap; }
+
+.edition { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #999; margin-bottom: 24px; }
+h1 { font-family: 'Playfair Display', serif; font-size: 72px; font-weight: 900; line-height: 0.95; letter-spacing: -2px; margin-bottom: 20px; }
+.highlight { color: #c45d3e; }
+.subtitle { font-size: 18px; color: #666; line-height: 1.6; margin-bottom: 12px; max-width: 400px; }
+.slogan { font-size: 16px; font-weight: 700; color: #c45d3e; letter-spacing: 1px; margin-bottom: 36px; }
+.cta { display: inline-block; padding: 14px 36px; background: #c45d3e; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; letter-spacing: 1px; }
+
+.right-content { position: relative; z-index: 1; }
+.right-content h2 { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; margin-bottom: 32px; }
+.steps { display: flex; flex-direction: column; gap: 20px; }
+.step { display: flex; align-items: flex-start; gap: 16px; }
+.step-num { font-size: 32px; font-weight: 900; color: #c45d3e; line-height: 1; min-width: 40px; }
+.step-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.step-text p { font-size: 13px; color: rgba(255,255,255,0.4); }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="left">
+    <div class="edition">Vol.01 — DTC广告素材</div>
+    <h1>你的品牌<br>广告素材<br><span class="highlight">我们包了</span></h1>
+    <p class="subtitle">品牌色 + 一句话卖点 → 30秒自动生成8张多平台广告素材。不是贴Logo，是理解你的品牌。</p>
+    <p class="slogan">30秒 · 8张 · 0门槛</p>
+    <a href="#" class="cta">免费生成 →</a>
+  </div>
+  <div class="right">
+    <div class="right-content">
+      <h2>三步出图</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-text">
+            <h3>输入品牌</h3>
+            <p>品牌名 + 品牌色 + 目标市场</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-text">
+            <h3>描述产品</h3>
+            <p>一句话核心卖点，越具体越精准</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-text">
+            <h3>30秒出图</h3>
+            <p>8张素材，IG/TikTok/FB/Google全覆盖</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

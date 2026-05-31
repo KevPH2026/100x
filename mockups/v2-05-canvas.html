@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x v2 - 05 Canvas Workspace</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#1e1e1e;color:#fff;min-height:100vh;display:flex}
+/* 左侧工具栏 */
+.toolbar{width:56px;background:#2d2d2d;border-right:1px solid #3d3d3d;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px}
+.tool-btn{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:#888}
+.tool-btn:hover{background:#3d3d3d;color:#fff}
+.tool-btn.active{background:#8b5cf6;color:#fff}
+
+/* 中间画布区 */
+.workspace{flex:1;display:flex;flex-direction:column}
+.top-bar{height:40px;background:#252525;border-bottom:1px solid #3d3d3d;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.top-bar .left{display:flex;align-items:center;gap:12px}
+.top-bar .logo{font-size:13px;font-weight:800;color:#8b5cf6}
+.top-bar .file-name{font-size:12px;color:#888}
+.top-bar .actions{display:flex;gap:8px}
+.top-bar .btn-sm{padding:4px 12px;border-radius:4px;font-size:11px;font-weight:600}
+.top-bar .btn-export{background:#8b5cf6;color:#fff}
+.top-bar .btn-share{background:transparent;border:1px solid #3d3d3d;color:#888}
+
+.canvas-area{flex:1;display:flex;align-items:center;justify-content:center;background:#1a1a1a;position:relative}
+.canvas-area::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,#333 1px,transparent 1px);background-size:20px 20px;opacity:0.3}
+
+.ad-canvas{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:24px}
+.ad-item{border-radius:8px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);position:relative}
+.ad-item .bg{aspect-ratio:1}
+.ad-item:nth-child(2) .bg{aspect-ratio:9/16}
+.ad-item:nth-child(5) .bg{aspect-ratio:16/9}
+.ad-item .resize-handle{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:7px;padding:1px 4px;border-radius:2px}
+.ad-item .check-mark{position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:10px}
+
+.g1 .bg{background:linear-gradient(135deg,#667eea,#764ba2)}
+.g2 .bg{background:linear-gradient(135deg,#f093fb,#f5576c)}
+.g3 .bg{background:linear-gradient(135deg,#4facfe,#00f2fe)}
+.g4 .bg{background:linear-gradient(135deg,#43e97b,#38f9d7)}
+.g5 .bg{background:linear-gradient(135deg,#fa709a,#fee140)}
+.g6 .bg{background:linear-gradient(135deg,#a18cd1,#fbc2eb)}
+.g7 .bg{background:linear-gradient(135deg,#fccb90,#d57eeb)}
+.g8 .bg{background:linear-gradient(135deg,#e0c3fc,#8ec5fc)}
+
+/* 右侧面板 */
+.panel{width:260px;background:#252525;border-left:1px solid #3d3d3d;display:flex;flex-direction:column}
+.panel-header{padding:16px;border-bottom:1px solid #3d3d3d}
+.panel-header h3{font-size:13px;font-weight:700;margin-bottom:4px}
+.panel-header p{font-size:11px;color:#888}
+.panel-section{padding:16px;border-bottom:1px solid #3d3d3d}
+.panel-section .title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:10px}
+.brand-colors{display:flex;gap:6px;margin-bottom:8px}
+.color-dot{width:24px;height:24px;border-radius:6px;border:2px solid transparent}
+.color-dot.active{border-color:#fff}
+.brand-input{background:#1a1a1a;border:1px solid #3d3d3d;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff;width:100%;font-family:inherit}
+.btn-generate{width:100%;padding:10px;background:#8b5cf6;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px}
+.export-options{display:flex;flex-direction:column;gap:6px}
+.export-opt{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:4px;font-size:11px;color:#888}
+.export-opt .format{font-weight:600;color:#ccc}
+.export-opt .size{font-size:10px;color:#666}
+</style>
+</head>
+<body>
+<!-- 左侧工具栏 -->
+<div class="toolbar">
+  <div class="tool-btn active">🎨</div>
+  <div class="tool-btn">✂️</div>
+  <div class="tool-btn">📝</div>
+  <div class="tool-btn">🖼️</div>
+  <div class="tool-btn">📐</div>
+  <div class="tool-btn" style="margin-top:auto">⚙️</div>
+</div>
+
+<!-- 中间画布 -->
+<div class="workspace">
+  <div class="top-bar">
+    <div class="left">
+      <span class="logo">100x</span>
+      <span class="file-name">your_brand_campaign.pics</span>
+    </div>
+    <div class="actions">
+      <button class="btn-sm btn-share">分享</button>
+      <button class="btn-sm btn-export">导出全部</button>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="ad-canvas">
+      <div class="ad-item g1"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">1:1</div></div>
+      <div class="ad-item g2"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">9:16</div></div>
+      <div class="ad-item g3"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">1:1</div></div>
+      <div class="ad-item g4"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">1:1</div></div>
+      <div class="ad-item g5"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">16:9</div></div>
+      <div class="ad-item g6"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">1:1</div></div>
+      <div class="ad-item g7"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">1:1</div></div>
+      <div class="ad-item g8"><div class="bg"></div><div class="check-mark">✓</div><div class="resize-handle">9:16</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 右侧面板 -->
+<div class="panel">
+  <div class="panel-header">
+    <h3>你的品牌广告素材，我们包了</h3>
+    <p>不是贴Logo，是理解你的品牌</p>
+  </div>
+  <div class="panel-section">
+    <div class="title">品牌色</div>
+    <div class="brand-colors">
+      <div class="color-dot active" style="background:#8b5cf6"></div>
+      <div class="color-dot" style="background:#06b6d4"></div>
+      <div class="color-dot" style="background:#f59e0b"></div>
+    </div>
+    <input class="brand-input" value="夏日新品上市 · 限时8折" readonly>
+    <button class="btn-generate">⚡ 重新生成</button>
+  </div>
+  <div class="panel-section">
+    <div class="title">导出格式</div>
+    <div class="export-options">
+      <div class="export-opt"><span class="format">IG Feed</span><span class="size">1080×1080</span></div>
+      <div class="export-opt"><span class="format">Story</span><span class="size">1080×1920</span></div>
+      <div class="export-opt"><span class="format">FB Ad</span><span class="size">1920×1080</span></div>
+      <div class="export-opt"><span class="format">TikTok</span><span class="size">1080×1920</span></div>
+      <div class="export-opt"><span class="format">Pinterest</span><span class="size">1000×1500</span></div>
+      <div class="export-opt"><span class="format">Google</span><span class="size">1200×628</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

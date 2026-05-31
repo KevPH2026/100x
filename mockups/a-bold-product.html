@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup A - Bold Product</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #000; color: #fff; overflow-x: hidden; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 60px 24px; position: relative; }
+.hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 900px; height: 900px; background: radial-gradient(circle, #7c3aed 0%, transparent 70%); opacity: 0.15; }
+.tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border: 1px solid rgba(124,58,237,0.4); border-radius: 100px; font-size: 13px; color: #a78bfa; margin-bottom: 32px; background: rgba(124,58,237,0.08); }
+.tag::before { content: '⚡'; }
+h1 { font-size: 72px; font-weight: 900; line-height: 1.05; letter-spacing: -3px; margin-bottom: 20px; position: relative; }
+h1 .grad { background: linear-gradient(135deg, #7c3aed, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.sub { font-size: 22px; color: rgba(255,255,255,0.5); max-width: 520px; line-height: 1.5; margin-bottom: 16px; }
+.slogan { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 40px; opacity: 0.85; }
+.cta { display: inline-flex; align-items: center; gap: 10px; padding: 16px 40px; background: linear-gradient(135deg, #7c3aed, #06b6d4); border-radius: 16px; font-size: 17px; font-weight: 700; color: #fff; text-decoration: none; box-shadow: 0 20px 60px rgba(124,58,237,0.3); transition: transform 0.2s; }
+.cta:hover { transform: translateY(-2px); }
+.hint { font-size: 13px; color: rgba(255,255,255,0.2); margin-top: 16px; }
+
+/* Demo preview */
+.demo { margin-top: 60px; width: 100%; max-width: 900px; position: relative; }
+.demo-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+.demo-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.demo-card:nth-child(2) { aspect-ratio: 9/16; grid-row: span 2; }
+.demo-label { text-align: center; font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 8px; }
+
+/* Logos */
+.logos { margin-top: 80px; text-align: center; }
+.logos p { font-size: 13px; color: rgba(255,255,255,0.2); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 3px; }
+.logo-row { display: flex; justify-content: center; gap: 48px; opacity: 0.25; font-size: 18px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="tag">DTC品牌广告素材生成器</div>
+  <h1>你的品牌广告素材<br><span class="grad">我们包了</span></h1>
+  <p class="sub">品牌色 + 卖点 → 30秒出8张多平台广告素材</p>
+  <p class="slogan">不是贴Logo，是理解你的品牌</p>
+  <a href="#" class="cta">免费生成素材 →</a>
+  <p class="hint">无需注册 · 0设计经验 · 8张素材直接拿走</p>
+
+  <div class="demo">
+    <div class="demo-box">
+      <div class="demo-card">📸</div>
+      <div class="demo-card">📱</div>
+      <div class="demo-card">🎨</div>
+      <div class="demo-card">🖼️</div>
+    </div>
+  </div>
+
+  <div class="logos">
+    <p>适配平台</p>
+    <div class="logo-row">
+      <span>Instagram</span>
+      <span>TikTok</span>
+      <span>Facebook</span>
+      <span>Google Ads</span>
+      <span>Pinterest</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

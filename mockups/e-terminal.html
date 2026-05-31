@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup E - Terminal Hacker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'JetBrains Mono', monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; display: flex; flex-direction: column; }
+.terminal-bar { background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot.red { background: #ff5f57; }
+.dot.yellow { background: #febc2e; }
+.dot.green { background: #28c840; }
+.tab { margin-left: 20px; font-size: 13px; color: #8b949e; }
+
+.main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; }
+.prompt { font-size: 14px; color: #58a6ff; margin-bottom: 4px; }
+.cmd { font-size: 14px; margin-bottom: 32px; }
+.cmd .green { color: #3fb950; }
+
+.output { font-size: 56px; font-weight: 700; line-height: 1.15; margin-bottom: 24px; color: #e6edf3; letter-spacing: -2px; }
+.output .highlight { color: #58a6ff; }
+.output .accent { color: #3fb950; }
+
+.desc { font-size: 16px; color: #8b949e; margin-bottom: 8px; line-height: 1.6; max-width: 550px; }
+.slogan { font-size: 20px; font-weight: 700; color: #f0883e; margin-bottom: 32px; }
+
+.run-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: #238636; color: #fff; border-radius: 8px; font-size: 15px; font-weight: 700; text-decoration: none; font-family: inherit; border: 1px solid #2ea043; }
+
+.args { margin-top: 40px; display: flex; gap: 24px; flex-wrap: wrap; }
+.arg { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; }
+.arg .flag { color: #58a6ff; font-size: 14px; margin-bottom: 4px; }
+.arg .val { color: #e6edf3; font-size: 18px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="terminal-bar">
+  <div class="dot red"></div>
+  <div class="dot yellow"></div>
+  <div class="dot green"></div>
+  <div class="tab">100x — bash</div>
+</div>
+<div class="main">
+  <div class="prompt">$</div>
+  <div class="cmd"><span class="green">100x</span> generate --brand "你的品牌" --product "核心卖点"</div>
+  <div class="output">
+    <span class="highlight">你的品牌</span>广告素材<br>
+    <span class="accent">→ 8张素材已生成</span>
+  </div>
+  <div class="desc">品牌色 + 一句话卖点 → 30秒自动生成8张多平台广告素材<br>IG / TikTok / Facebook / Google 全覆盖</div>
+  <div class="slogan">你的品牌广告素材，我们包了</div>
+  <a href="#" class="run-btn">▶ 免费运行</a>
+  <div class="args">
+    <div class="arg"><div class="flag">--time</div><div class="val">30s</div></div>
+    <div class="arg"><div class="flag">--count</div><div class="val">8张</div></div>
+    <div class="arg"><div class="flag">--platforms</div><div class="val">全平台</div></div>
+    <div class="arg"><div class="flag">--cost</div><div class="val">免费</div></div>
+  </div>
+</div>
+</body>
+</html>

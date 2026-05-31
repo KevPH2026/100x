@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup I - Bold Yellow Black</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Anton', -apple-system, sans-serif; background: #000; color: #ffd600; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+.stripe { height: 6px; background: repeating-linear-gradient(90deg, #ffd600 0px, #ffd600 40px, transparent 40px, transparent 60px); }
+
+.main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 60px 24px; }
+
+h1 { font-size: 96px; font-weight: 400; line-height: 0.9; letter-spacing: -2px; text-transform: uppercase; margin-bottom: 20px; }
+.white { color: #fff; }
+.outline { -webkit-text-stroke: 3px #ffd600; color: transparent; }
+.slogan { font-family: -apple-system, sans-serif; font-size: 22px; font-weight: 800; color: #ffd600; margin-bottom: 12px; letter-spacing: 1px; }
+.desc { font-family: -apple-system, sans-serif; font-size: 16px; color: rgba(255,255,255,0.4); margin-bottom: 40px; max-width: 460px; line-height: 1.5; }
+
+.cta { display: inline-flex; align-items: center; gap: 10px; padding: 16px 44px; background: #ffd600; color: #000; font-family: 'Anton', sans-serif; font-size: 22px; letter-spacing: 2px; text-decoration: none; text-transform: uppercase; }
+
+.features { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; border-top: 3px solid #ffd600; }
+.feat { padding: 28px 20px; text-align: center; border-right: 3px solid #ffd600; }
+.feat:last-child { border: none; }
+.feat .num { font-size: 52px; line-height: 1; }
+.feat .label { font-family: -apple-system, sans-serif; font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 6px; font-weight: 700; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="stripe"></div>
+  <div class="main">
+    <h1><span class="white">广告素材</span><br><span class="outline">我们包了</span></h1>
+    <p class="slogan">你的品牌广告素材，我们包了</p>
+    <p class="desc">品牌色 + 卖点 → 30秒出8张多平台广告素材<br>不是贴Logo，是理解你的品牌</p>
+    <a href="#" class="cta">免费生成 →</a>
+  </div>
+  <div class="features">
+    <div class="feat"><div class="num">30s</div><div class="label">出图速度</div></div>
+    <div class="feat"><div class="num">8</div><div class="label">场景并行</div></div>
+    <div class="feat"><div class="num">0</div><div class="label">设计门槛</div></div>
+    <div class="feat"><div class="num">∞</div><div class="label">品牌理解</div></div>
+  </div>
+</div>
+</body>
+</html>

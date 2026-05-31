@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x v2 - 04 Before After Slider</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#111;color:#fff;min-height:100vh}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px}
+
+.text-center{text-align:center;margin-bottom:48px}
+.badge{display:inline-flex;padding:5px 14px;border-radius:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);font-size:12px;color:#f87171;margin-bottom:20px}
+h1{font-size:48px;font-weight:900;letter-spacing:-2px;line-height:1.1;margin-bottom:12px}
+.red{color:#ef4444}
+.sub{font-size:16px;color:rgba(255,255,255,0.4);margin-bottom:8px}
+.slogan{font-size:20px;font-weight:700;margin-bottom:24px}
+
+/* Before/After 对比滑块 */
+.compare-container{width:100%;max-width:800px;position:relative;margin-bottom:40px}
+.compare-row{display:flex;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);height:400px}
+.compare-left{flex:1;position:relative;overflow:hidden;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.compare-right{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.divider-line{width:3px;background:#ef4444;flex-shrink:0;position:relative}
+.divider-line::before{content:'VS';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#ef4444;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
+
+/* 左侧 - 普通AI出图 */
+.compare-left .label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:#666;margin-bottom:16px}
+.ugly-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:80%}
+.ugly-card{aspect-ratio:1;border-radius:6px;background:#222;border:1px dashed #333;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0.5}
+.ugly-card .x{color:#ef4444;font-size:24px;font-weight:900}
+.ugly-note{margin-top:12px;font-size:11px;color:#555;text-align:center}
+
+/* 右侧 - 100x出图 */
+.compare-right{background:linear-gradient(135deg,rgba(139,92,246,0.05),rgba(6,182,212,0.03))}
+.compare-right .label{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:#8b5cf6;margin-bottom:16px}
+.nice-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:80%}
+.nice-card{aspect-ratio:1;border-radius:8px;overflow:hidden;position:relative}
+.nice-card .bg{position:absolute;inset:0}
+.nice-card .badge-sm{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.6);color:#fff;font-size:6px;padding:1px 4px;border-radius:2px}
+.n1 .bg{background:linear-gradient(135deg,#667eea,#764ba2)}
+.n2 .bg{background:linear-gradient(135deg,#4facfe,#00f2fe)}
+.n3 .bg{background:linear-gradient(135deg,#43e97b,#38f9d7)}
+.n4 .bg{background:linear-gradient(135deg,#f093fb,#f5576c)}
+
+.compare-tags{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.tag-bad{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:#f87171;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600}
+.tag-good{background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);color:#a78bfa;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600}
+
+.cta{display:inline-flex;padding:14px 32px;background:#ef4444;border-radius:12px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="text-center">
+    <div class="badge">DTC品牌广告素材生成器</div>
+    <h1>你的品牌广告素材<br><span class="red">我们包了</span></h1>
+    <p class="sub">品牌色 + 卖点 → 30秒出8张多平台广告素材</p>
+    <p class="slogan">不是贴Logo，是理解你的品牌</p>
+  </div>
+
+  <div class="compare-container">
+    <div class="compare-row">
+      <div class="compare-left">
+        <div class="label">❌ 普通AI出图</div>
+        <div class="ugly-grid">
+          <div class="ugly-card"><span class="x">✕</span></div>
+          <div class="ugly-card"><span class="x">✕</span></div>
+          <div class="ugly-card"><span class="x">✕</span></div>
+          <div class="ugly-card"><span class="x">✕</span></div>
+        </div>
+        <div class="ugly-note">跟品牌没关系 · 风格混乱</div>
+      </div>
+      <div class="divider-line"></div>
+      <div class="compare-right">
+        <div class="label">✓ 100x出图</div>
+        <div class="nice-grid">
+          <div class="nice-card n1"><div class="bg"></div><div class="badge-sm">IG Feed</div></div>
+          <div class="nice-card n2"><div class="bg"></div><div class="badge-sm">Story</div></div>
+          <div class="nice-card n3"><div class="bg"></div><div class="badge-sm">FB Ad</div></div>
+          <div class="nice-card n4"><div class="bg"></div><div class="badge-sm">TikTok</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-tags">
+    <span class="tag-bad">❌ 需要写长提示词</span>
+    <span class="tag-bad">❌ 手动选尺寸</span>
+    <span class="tag-bad">❌ 品牌感缺失</span>
+    <span class="tag-good">✓ 10个字搞定</span>
+    <span class="tag-good">✓ 自动适配</span>
+    <span class="tag-good">✓ 品牌DNA融入</span>
+  </div>
+
+  <a href="#" class="cta">免费生成素材 →</a>
+</div>
+</body>
+</html>

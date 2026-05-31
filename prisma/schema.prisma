@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  name          String?
+  inviteCodeId  String?  @unique
+  quotaTotal    Int      @default(0)   // 从邀请码继承
+  quotaUsed     Int      @default(0)   // 已用张数
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  inviteCode    InviteCode? @relation(fields: [inviteCodeId], references: [id])
+  assets        Asset[]
+
+  @@map("users")
+}
+
+model InviteCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  quota       Int       @default(100)   // 可生成张数
+  note        String?                   // Admin 备注（给谁的）
+  usedBy      User?
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("invite_codes")
+}
+
+model Asset {
+  id           String   @id @default(cuid())
+  userId       String
+  imageUrl     String   // Vercel Blob URL
+  brandName    String
+  platform     String   // IG Feed / TikTok / FB etc
+  sceneLabel   String
+  aspectRatio  String
+  headline     String?  // 关联文案主标题
+  sourceUrl    String?  // 来源产品页
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("assets")
+}
+
+model AppConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("app_config")
+}

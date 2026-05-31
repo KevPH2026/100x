@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup D - Brutalist Direct</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans SC', sans-serif; background: #fff; color: #000; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 3px solid #000; }
+.logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+.logo span { color: #e11d48; }
+.nav-btn { padding: 10px 24px; background: #000; color: #fff; font-weight: 700; font-size: 14px; border-radius: 0; text-decoration: none; font-family: inherit; }
+
+.main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 80px 40px; text-align: center; }
+
+/* Giant text */
+h1 { font-size: 88px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin-bottom: 20px; }
+.red { color: #e11d48; }
+.strike { text-decoration: line-through; opacity: 0.3; }
+
+.slogan { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.meta { font-size: 16px; color: #666; margin-bottom: 48px; max-width: 500px; line-height: 1.6; }
+
+.cta { display: inline-block; padding: 18px 48px; background: #e11d48; color: #fff; font-size: 20px; font-weight: 900; text-decoration: none; letter-spacing: -0.5px; }
+
+/* Features row */
+.features { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; border-top: 3px solid #000; }
+.feat { padding: 32px 24px; border-right: 3px solid #000; }
+.feat:last-child { border-right: none; }
+.feat .num { font-size: 48px; font-weight: 900; color: #e11d48; line-height: 1; margin-bottom: 8px; }
+.feat .label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.feat .desc { font-size: 13px; color: #666; margin-top: 4px; }
+
+/* Marquee */
+.marquee { background: #000; color: #fff; padding: 12px 0; overflow: hidden; white-space: nowrap; font-size: 14px; font-weight: 700; letter-spacing: 2px; }
+.marquee-inner { display: inline-block; animation: scroll 15s linear infinite; }
+@keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="topbar">
+    <div class="logo">100<span>x</span></div>
+    <a href="#" class="nav-btn">开始用 →</a>
+  </div>
+
+  <div class="main">
+    <h1><span class="strike">请设计师</span><br>广告素材<span class="red">，</span><br>我们包了</h1>
+    <p class="slogan">DTC品牌 · 30秒 · 8张素材 · 免费试</p>
+    <p class="meta">输入品牌名和卖点，AI读完你的品牌DNA<br>自动生成 IG / TikTok / Facebook 多平台广告素材</p>
+    <a href="#" class="cta">免费生成 →</a>
+  </div>
+
+  <div class="features">
+    <div class="feat">
+      <div class="num">30s</div>
+      <div class="label">出图速度</div>
+      <div class="desc">品牌色+卖点→出图</div>
+    </div>
+    <div class="feat">
+      <div class="num">8</div>
+      <div class="label">场景并行</div>
+      <div class="desc">一张张出？不存在的</div>
+    </div>
+    <div class="feat">
+      <div class="num">0</div>
+      <div class="label">设计门槛</div>
+      <div class="desc">不用PS不用AI</div>
+    </div>
+    <div class="feat">
+      <div class="num">∞</div>
+      <div class="label">品牌理解</div>
+      <div class="desc">不贴Logo，懂你调性</div>
+    </div>
+  </div>
+</div>
+
+<div class="marquee">
+  <div class="marquee-inner">
+    INSTAGRAM &nbsp;·&nbsp; TIKTOK &nbsp;·&nbsp; FACEBOOK &nbsp;·&nbsp; GOOGLE ADS &nbsp;·&nbsp; PINTEREST &nbsp;·&nbsp; SNAPCHAT &nbsp;·&nbsp; INSTAGRAM &nbsp;·&nbsp; TIKTOK &nbsp;·&nbsp; FACEBOOK &nbsp;·&nbsp; GOOGLE ADS &nbsp;·&nbsp; PINTEREST &nbsp;·&nbsp; SNAPCHAT &nbsp;·&nbsp;
+  </div>
+</div>
+</body>
+</html>

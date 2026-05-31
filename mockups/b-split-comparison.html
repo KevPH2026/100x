@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x Mockup B - Split Comparison</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #fafafa; color: #111; }
+.hero { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.left { background: #111; color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 80px 60px; }
+.right { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 80px 60px; background: #fff; }
+
+.badge { display: inline-flex; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.1); margin-bottom: 24px; letter-spacing: 1px; }
+h1 { font-size: 56px; font-weight: 900; line-height: 1.1; letter-spacing: -2px; margin-bottom: 20px; }
+.accent { color: #fbbf24; }
+.desc { font-size: 18px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 12px; max-width: 420px; }
+.slogan { font-size: 22px; font-weight: 700; color: #fbbf24; margin-bottom: 36px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: #fbbf24; color: #111; border-radius: 12px; font-size: 16px; font-weight: 800; text-decoration: none; }
+
+/* Right side - Before/After */
+.right h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 3px; color: #999; margin-bottom: 40px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 440px; }
+.compare-box { border-radius: 16px; padding: 24px; }
+.before { background: #fef2f2; border: 2px solid #fecaca; }
+.after { background: #f0fdf4; border: 2px solid #86efac; }
+.compare-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+.before h3 { color: #dc2626; }
+.after h3 { color: #16a34a; }
+.compare-box ul { list-style: none; }
+.compare-box li { font-size: 14px; padding: 6px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+.before li::before { content: '✕'; color: #dc2626; font-weight: 700; flex-shrink: 0; }
+.after li::before { content: '✓'; color: #16a34a; font-weight: 700; flex-shrink: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; width: 100%; max-width: 440px; }
+.stat { text-align: center; }
+.stat .num { font-size: 36px; font-weight: 900; color: #111; }
+.stat .label { font-size: 12px; color: #999; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="left">
+    <div class="badge">DTC广告素材神器</div>
+    <h1>你的品牌广告素材，<br><span class="accent">我们包了</span></h1>
+    <p class="desc">品牌色 + 一句话卖点 → 30秒自动生成8张多平台广告素材</p>
+    <p class="slogan">不是贴Logo，是理解你的品牌</p>
+    <a href="#" class="btn">免费生成 →</a>
+  </div>
+  <div class="right">
+    <h2>为什么选 100x</h2>
+    <div class="compare">
+      <div class="compare-box before">
+        <h3>❌ 普通AI出图</h3>
+        <ul>
+          <li>写长提示词，折腾半天</li>
+          <li>自己选尺寸选风格</li>
+          <li>出图跟品牌没关系</li>
+          <li>每次都要重新调</li>
+          <li>中文乱码是常态</li>
+        </ul>
+      </div>
+      <div class="compare-box after">
+        <h3>✓ 100x出图</h3>
+        <ul>
+          <li>10个字搞定输入</li>
+          <li>多平台尺寸自动适配</li>
+          <li>品牌色融入每张图</li>
+          <li>8张并行，换版秒出</li>
+          <li>目标市场审美匹配</li>
+        </ul>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num">30s</div><div class="label">出图速度</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">场景并行</div></div>
+      <div class="stat"><div class="num">0</div><div class="label">设计门槛</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
