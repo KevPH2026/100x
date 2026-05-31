@@ -2,7 +2,9 @@
 
 > AI ad creative studio for DTC sellers — paste a product URL, get 8 platform-ready ads in under a minute.
 
-🌐 **Live:** [100x.pics](https://100x.pics)
+🌐 **Live:** [100x.pics](https://100x.pics) · [100pics.today](https://100pics.today)
+
+`#2026AIAgent清客松`
 
 ---
 
@@ -10,7 +12,7 @@
 
 1. **Paste any product URL** — Shopify, Amazon, your own DTC site
 2. **AI scrapes the page** — product info, brand, images, keywords
-3. **AI recommends scenes** — 8 ad scenes tailored to your category (smart ring → sleep / gym, espresso machine → kitchen / cafe)
+3. **AI recommends scenes** — 8 ad scenes tailored to your product category (smart ring → sleep / gym; espresso machine → kitchen / cafe)
 4. **One-click generate** — produces 8 ads sized for Instagram Feed / Story, TikTok, Pinterest, YouTube, Facebook Banner, etc.
 5. **Refine in place** — natural-language edits ("make it warmer", "add morning light")
 
@@ -45,7 +47,7 @@ NEXTAUTH_SECRET=
 NEXTAUTH_URL=http://localhost:3000
 
 # Database
-DATABASE_URL=file:./dev.db   # or postgres://...
+DATABASE_URL=file:./dev.db
 
 # LLM (chat / planning)
 LLM_TEXT_API_KEY=
@@ -71,8 +73,7 @@ URL  ─►  /api/scrape          extract product info + images
     ─►  /api/brand-dna        extract color palette / mood
     ─►  /api/recommend-scenes 8 scenes tailored to product category
     ─►  /api/copywrite        headline / body / CTA variants
-    ─►  /api/adforge          per-scene image gen (sceneIndex-based,
-                              stream to client, ref-image conditioned)
+    ─►  /api/adforge          per-scene image gen (ref-image conditioned)
     ─►  /api/adforge/refine   natural-language edits
 ```
 
