@@ -37,13 +37,13 @@ async function genTokenRouter(
   const base = baseUrl.replace(/\/$/, '').trim();
   const T0 = Date.now();
   try {
-    const body = {
+    const body: Record<string, unknown> = {
       model: 'openai/gpt-5.4-image-2',
       prompt,
-      image_url: refUrl,
       size,
       n: 1,
     };
+    if (refUrl) body.image_url = refUrl;
     console.log(`[TR T+${Date.now()-T0}ms] calling /images/generations...`);
     const res = await fetch(`${base}/images/generations`, {
       method: 'POST',
@@ -82,21 +82,22 @@ async function downloadToBuffer(url: string): Promise<{ buf: Buffer | null; err?
 
 /** Novart Vertex fallback (slow, ~50s). */
 async function genNovartVertex(
-  apiKey: string, baseUrl: string, prompt: string, ratio: string, refUrl: string,
+  apiKey: string, baseUrl: string, prompt: string, ratio: string, refUrl: string | undefined,
 ): Promise<{ buf: Buffer | null; err?: string }> {
   const base = baseUrl.replace(/\/$/, '').trim();
   const T0 = Date.now();
   try {
-    const dl = await fetch(refUrl, { signal: AbortSignal.timeout(8000) });
-    if (!dl.ok) return { buf: null, err: `ref dl ${dl.status}` };
-    const refBuf = Buffer.from(await dl.arrayBuffer());
-    const mime = dl.headers.get('content-type') || 'image/png';
+    const parts: Record<string, unknown>[] = [{ text: prompt }];
+    if (refUrl) {
+      const dl = await fetch(refUrl, { signal: AbortSignal.timeout(8000) });
+      if (!dl.ok) return { buf: null, err: `ref dl ${dl.status}` };
+      const refBuf = Buffer.from(await dl.arrayBuffer());
+      const mime = dl.headers.get('content-type') || 'image/png';
+      parts.push({ inlineData: { mimeType: mime, data: refBuf.toString('base64') } });
+    }
     const body = {
-      contents: [{ role: 'user', parts: [
-        { text: prompt },
-        { inlineData: { mimeType: mime, data: refBuf.toString('base64') } },
-      ]}],
-      generationConfig: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio: ratio, input_fidelity: 'high' } },
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio: ratio } },
     };
     console.log(`[NV T+${Date.now()-T0}ms] calling...`);
     const r = await fetch(`${base}/v1beta/models/nova-image-pro:generateContent`, {
@@ -134,7 +135,6 @@ export async function POST(req: NextRequest) {
     campaignTheme, marketingGoal, mood, urgency, cta } = body;
 
   if (!brandName || !sellingPoint) return NextResponse.json({ error: '品牌名和卖点必填' }, { status: 400 });
-  if (!referenceImage) return NextResponse.json({ error: '需要参考图' }, { status: 400 });
 
   const scenes = (ax.scenes && ax.scenes.length > 0) ? ax.scenes : DEFAULT_SCENES;
   const sceneIdx = sceneIndex ?? 0;
@@ -142,7 +142,9 @@ export async function POST(req: NextRequest) {
   const scene = scenes[sceneIdx];
   const ratio = scene.aspectRatio || '1:1';
 
-  const prompt = `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.
+  const hasRef = !!referenceImage;
+  const refRules = hasRef
+    ? `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.
 
 ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 1. The product MUST be a pixel-perfect 1:1 replica of the reference image.
@@ -153,7 +155,10 @@ ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 6. Do not add or remove buttons, sensors, lights, features.
 7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.
 
-WHAT TO CHANGE (the ONLY thing you change):
+WHAT TO CHANGE (the ONLY thing you change):`
+    : `Create a stunning product advertisement image.`;
+
+  const prompt = `${refRules}
 - Scene: ${scene.desc || 'elegant lifestyle setting'}
 - Mood: ${mood || 'premium and refined'}
 - Target market: ${targetCountry || 'US'}
@@ -162,7 +167,7 @@ WHAT TO CHANGE (the ONLY thing you change):
 - Composition: product is the hero, well-positioned, with room to breathe
 - Camera: Canon EOS R5, 85mm f/1.4, shallow depth of field
 
-BRAND CONTEXT (for scene styling only):
+BRAND CONTEXT:
 Brand: ${brandName}
 Product: ${sellingPoint}
 ${campaignTheme ? `Campaign: ${campaignTheme}` : ''}
@@ -170,7 +175,7 @@ ${marketingGoal ? `Goal: ${marketingGoal}` : ''}
 ${urgency && urgency !== 'none' ? `Urgency: ${urgency}` : ''}
 ${cta ? `CTA hint: ${cta}` : ''}
 
-FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.`;
+${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.' : `Aspect ratio: ${ratio}. Product must be the hero, well-composed, ready for social media.`}`;
 
   console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider-pref=${trKey ? 'tokenrouter' : 'novart'}`);
   const t0 = Date.now();
