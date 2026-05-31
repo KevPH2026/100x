@@ -75,7 +75,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: "idealab-settings",
+      name: "100x-settings",
       // Only persist the keys, not sensitive data
       partialize: (state) => ({
         openrouterKey: state.openrouterKey,

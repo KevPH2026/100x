@@ -39,7 +39,7 @@ export function Step5Generating() {
 
     try {
       // Build a minimal request to re-generate
-      const settings = JSON.parse(localStorage.getItem("idealab-settings") || "{}");
+      const settings = JSON.parse(localStorage.getItem("100x-settings") || "{}");
       const body: Record<string, any> = {
         materials: materials.map(m => m.type === "file" ? { type: m.type, name: m.name, preview: m.preview, content: m.content } : m),
         scene,
@@ -165,7 +165,7 @@ export function Step5Generating() {
                     <Button size="sm" className="flex-1" onClick={() => {
                       const a = document.createElement("a");
                       a.href = d.imageUrl;
-                      a.download = `idealab-design-${d.id}.png`;
+                      a.download = `100x-design-${d.id}.png`;
                       a.target = "_blank";
                       a.click();
                     }}>

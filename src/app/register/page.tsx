@@ -84,7 +84,7 @@ export default function RegisterPage() {
               <path d="M10 25H18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">IdeaLab</h1>
+          <h1 className="text-2xl font-bold text-white">100x</h1>
           <p className="text-zinc-400 text-sm mt-1">AI 灵感创作平台</p>
         </div>
 

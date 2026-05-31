@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IdeaLabLogo } from "@/components/Logo";
+import { 100xLogo } from "@/components/Logo";
 
 export default function EnglishPage() {
   return (
@@ -8,9 +8,9 @@ export default function EnglishPage() {
       <nav className="fixed top-0 inset-x-0 z-50 bg-[#070711]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <IdeaLabLogo size={36} />
+            <100xLogo size={36} />
             <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-purple-400 via-violet-400 to-indigo-400 bg-clip-text text-transparent">
-              IdeaLab
+              100x
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -53,7 +53,7 @@ export default function EnglishPage() {
 
           <p className="text-xl text-white/50 mb-12 max-w-2xl mx-auto leading-relaxed">
             Screenshots, documents, product images, competitor links — anything goes in. 
-            IdeaLab analyzes it and generates publish-ready copy and design drafts automatically.
+            100x analyzes it and generates publish-ready copy and design drafts automatically.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -182,10 +182,10 @@ export default function EnglishPage() {
       <footer className="border-t border-white/5 py-10 px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <IdeaLabLogo size={28} />
-            <span className="font-bold text-white/70">IdeaLab</span>
+            <100xLogo size={28} />
+            <span className="font-bold text-white/70">100x</span>
           </div>
-          <p className="text-sm text-white/20">© 2026 IdeaLab · AI Content Creation Platform</p>
+          <p className="text-sm text-white/20">© 2026 100x · AI Content Creation Platform</p>
         </div>
       </footer>
     </div>

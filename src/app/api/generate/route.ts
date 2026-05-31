@@ -244,8 +244,8 @@ export async function POST(req: NextRequest) {
     const openRouterHeaders = {
       Authorization: `Bearer ${effectiveOpenRouterKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://idealab.now",
-      "X-Title": "IdeaLab",
+      "HTTP-Referer": "https://100x.pics",
+      "X-Title": "100x",
     };
 
     // ══════════════════════════════════════════════════════════════════════
@@ -387,7 +387,7 @@ export async function POST(req: NextRequest) {
         const designPrompt = `Professional marketing poster design for ${sceneLabel}.
 Size: ${sceneWidth}x${sceneHeight}px (${scene?.ratio || "1:1"}).
 Style: ${styleTags?.join(", ") || "modern, tech, premium"}.
-Main headline: ${selectedCopy.headline || "IdeaLab"}
+Main headline: ${selectedCopy.headline || "100x"}
 Subtext: ${selectedCopy.subheadline || "AI 驱动的创意内容平台"}
 Body text: ${selectedCopy.body || "用 AI 释放创意生产力"}
 Call to action: ${selectedCopy.cta || "开始免费使用"}
@@ -430,7 +430,7 @@ Make it visually striking and professional marketing material.`;
           id: "placeholder_1",
           imageUrl: "",
           placeholder: true,
-          label: `${sceneLabel} - ${selectedCopy.headline || "IdeaLab"}`,
+          label: `${sceneLabel} - ${selectedCopy.headline || "100x"}`,
         });
       }
 

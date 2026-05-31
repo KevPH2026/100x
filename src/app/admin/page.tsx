@@ -201,7 +201,7 @@ export default function AdminPage() {
     copyPromptTemplate: DEFAULT_COPY_PROMPT,
     outputLanguage: "zh", outputVariations: 1,
     enableLogoWatermark: false, enableAutoRetry: true, enableMultiFormat: false,
-    brandName: "IdeaLab", brandTagline: "AI灵感创作平台",
+    brandName: "100x", brandTagline: "AI灵感创作平台",
     openaiKey: "", openaiBaseUrl: "https://api.xas231.online/v1", openaiImageModel: "gemini-3.0-pro-image-landscape-2k",
     adforge100x_imageProvider: "minimax",
     adforge100x_novartKey: "",
@@ -400,7 +400,7 @@ export default function AdminPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold">管理员配置</h1>
-              <p className="text-sm text-white/40">IdeaLab 全局设置 · 服务端生效</p>
+              <p className="text-sm text-white/40">100x 全局设置 · 服务端生效</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -1161,7 +1161,7 @@ export default function AdminPage() {
             <h2 className="text-lg font-bold mb-6 flex items-center gap-3"><Sliders className="w-5 h-5 text-violet-400" /> 功能开关</h2>
             <div className="space-y-1">
               {[
-                { key: "enableLogoWatermark", label: "图片水印", desc: "在生成的图片右下角添加 IdeaLab 水印", icon: <Image className="w-4 h-4" /> },
+                { key: "enableLogoWatermark", label: "图片水印", desc: "在生成的图片右下角添加 100x 水印", icon: <Image className="w-4 h-4" /> },
                 { key: "enableAutoRetry", label: "自动重试", desc: "API 调用超时时自动重试（最多3次）", icon: <RefreshCw className="w-4 h-4" /> },
                 { key: "enableMultiFormat", label: "多格式导出", desc: "支持同时导出 PNG + JPG + WebP", icon: <Sliders className="w-4 h-4" /> },
               ].map(item => (

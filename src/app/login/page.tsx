@@ -138,7 +138,7 @@ export default function LoginPage() {
               <path d="M10 25H18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">IdeaLab</h1>
+          <h1 className="text-2xl font-bold text-gray-900">100x</h1>
           <p className="text-gray-500 text-sm mt-1">AI 灵感创作平台</p>
         </div>
 

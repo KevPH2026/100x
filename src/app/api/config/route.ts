@@ -38,7 +38,7 @@ export async function GET() {
       enableMultiFormat: config.features?.enableMultiFormat ?? false,
     },
     branding: {
-      brandName: config.branding?.brandName || "IdeaLab",
+      brandName: config.branding?.brandName || "100x",
       brandTagline: config.branding?.brandTagline || "AI灵感创作平台",
     },
     adforge: {
@@ -123,7 +123,7 @@ export async function PUT(req: NextRequest) {
         imageModel: body.openaiImageModel || existing.openai?.imageModel || "gpt-image-2",
       },
       branding: {
-        brandName: body.brandName || existing.branding?.brandName || "IdeaLab",
+        brandName: body.brandName || existing.branding?.brandName || "100x",
         brandTagline: body.brandTagline || existing.branding?.brandTagline || "AI灵感创作平台",
       },
       adforge100x: {

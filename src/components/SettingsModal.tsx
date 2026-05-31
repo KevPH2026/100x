@@ -267,7 +267,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   <div>
                     <h3 className="font-semibold text-white mb-1">使用服务端预设额度</h3>
                     <p className="text-sm text-gray-400 mb-4">
-                      不填 API Key 时，系统将使用 IdeaLab 服务端的共享额度，优先从你的账户扣除。
+                      不填 API Key 时，系统将使用 100x 服务端的共享额度，优先从你的账户扣除。
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between py-2 border-b border-white/5">

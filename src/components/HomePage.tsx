@@ -33,7 +33,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useWizardStore } from "@/lib/store";
-import { IdeaLabLogo } from "@/components/Logo";
+import { 100xLogo } from "@/components/Logo";
 
 const WORKFLOW = [
   { step: "01", label: "上传素材" },
@@ -261,9 +261,9 @@ function HomeContent({ onStart, onSettings }: { onStart: () => void; onSettings:
       <nav className="fixed top-0 inset-x-0 z-50 bg-[#070711]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <IdeaLabLogo size={36} />
+            <100xLogo size={36} />
             <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-purple-400 via-violet-400 to-indigo-400 bg-clip-text text-transparent">
-              IdeaLab
+              100x
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -377,7 +377,7 @@ function HomeContent({ onStart, onSettings }: { onStart: () => void; onSettings:
               </div>
             ))}
           </div>
-          <p className="text-white/40 text-lg">IdeaLab 让 AI 替你理解、替你创作、替你执行</p>
+          <p className="text-white/40 text-lg">100x 让 AI 替你理解、替你创作、替你执行</p>
         </div>
       </section>
 
@@ -387,7 +387,7 @@ function HomeContent({ onStart, onSettings }: { onStart: () => void; onSettings:
           <div className="text-center mb-16">
             <p className="text-sm font-medium text-violet-400 mb-3 uppercase tracking-widest">你的痛点</p>
             <h2 className="text-4xl font-bold text-white mb-4">做内容这件事，累在哪？</h2>
-            <p className="text-lg text-white/40">IdeaLab 解决这些问题</p>
+            <p className="text-lg text-white/40">100x 解决这些问题</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -619,8 +619,8 @@ function HomeContent({ onStart, onSettings }: { onStart: () => void; onSettings:
       <footer className="py-8 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <IdeaLabLogo size={24} />
-            <span className="text-sm text-white/30">© 2026 IdeaLab. All rights reserved.</span>
+            <100xLogo size={24} />
+            <span className="text-sm text-white/30">© 2026 100x. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-white/30">
             <span>Made with ❤️ by WithHuman.ai</span>
@@ -670,9 +670,9 @@ export default function HomePage() {
           <header className="sticky top-0 z-50 bg-[#070711]/90 backdrop-blur-xl border-b border-white/5 px-6 py-4">
             <div className="max-w-3xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <IdeaLabLogo size={32} />
+                <100xLogo size={32} />
                 <span className="font-bold text-lg bg-gradient-to-r from-purple-400 via-violet-400 to-indigo-400 bg-clip-text text-transparent">
-                  IdeaLab
+                  100x
                 </span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleClose} className="text-white/50 hover:text-white">
