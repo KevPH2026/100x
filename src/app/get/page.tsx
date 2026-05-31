@@ -138,7 +138,7 @@ export default function GeneratePage() {
   const [sellingPoint, setSellingPoint] = useState('');
   const [targetCountry, setTargetCountry] = useState('US');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [selectedScenes, setSelectedScenes] = useState<number[]>([0, 1]);
+  const [selectedScenes, setSelectedScenes] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7]);
 
   // 抠图（浏览器端 @imgly/background-removal）
   const [cutoutImage, setCutoutImage] = useState<string | null>(null);
@@ -296,7 +296,7 @@ export default function GeneratePage() {
       const json = await res.json();
       if (res.ok && Array.isArray(json.scenes) && json.scenes.length >= 4) {
         setScenes(json.scenes);
-        setSelectedScenes([0, 1, 2, 3]); // 默认选前4个
+        setSelectedScenes([0, 1, 2, 3, 4, 5, 6, 7]); // 默认全选
         setScenesRecommended(true);
       }
     } catch (err) {
@@ -361,10 +361,6 @@ export default function GeneratePage() {
 
   // ── 生成 ─────────────────────────────────────────────────────────
   const generate = async () => {
-    if (status !== 'authenticated') {
-      window.location.href = '/login';
-      return;
-    }
     if (!brandName.trim() || !sellingPoint.trim()) {
       setError('品牌名和卖点必填'); return;
     }
