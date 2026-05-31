@@ -210,7 +210,7 @@ export default function GeneratePage() {
   const [marketingGoal, setMarketingGoal] = useState('awareness');
   const [mood, setMood] = useState('energetic');
   const [urgency, setUrgency] = useState('none');
-  const [cta, setCta] = useState('Shop now');
+  const [cta, setCta] = useState('立即购买');
 
   // 生成
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -411,7 +411,7 @@ export default function GeneratePage() {
             marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
             mood: moodObj?.desc || moodObj?.label || mood,
             urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
-            cta: cta.trim() || 'Shop now',
+            cta: cta.trim() || '立即购买',
             brandDNA,
           }),
         });
@@ -875,7 +875,7 @@ export default function GeneratePage() {
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5 flex items-center gap-1"><MousePointerClick className="w-3 h-3" />行动号召</label>
                   <input type="text" value={cta} onChange={e => setCta(e.target.value)}
-                    placeholder="Shop now / 立即购买"
+                    placeholder="立即购买 / Shop Now"
                     className="w-full px-3 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>

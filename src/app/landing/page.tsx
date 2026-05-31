@@ -13,7 +13,7 @@ const T = {
     heroSub: '全球首个DTC品牌主动创意素材生成引擎。',
     heroNote: '品牌需求是被创造，而非调研。',
     cta: '免费生成',
-    ctaSub: '无需注册 · 直接下载',
+    ctaSub: '直接使用 · 无需等待',
     navHow: '使用方法',
     getStarted: '开始使用',
     howTitle: '三步搞定。就这样。',
@@ -29,17 +29,17 @@ const T = {
     planTitle: '按需选择，随时升级',
     plans: [
       {
-        name: 'Trial',
+        name: '体验',
         badge: '免注册',
         price: '¥0',
-        period: '无需注册',
+        period: '直接使用',
         desc: '试试看，直接生成',
         features: ['AI生成1次', '品牌DNA解码', '全平台尺寸'],
         cta: '立即试用',
         highlight: false,
       },
       {
-        name: 'Free',
+        name: '免费',
         badge: '注册即用',
         price: '¥0',
         period: '注册免费',
@@ -50,15 +50,15 @@ const T = {
       },
       {
         name: 'Pro',
-        badge: 'Coming Soon',
+        badge: '即将上线',
         price: '',
-        period: 'Coming Soon',
+        period: '敬请期待',
         desc: '专业卖家首选，无限素材产出',
         features: [
           '无限AI生成', '品牌DNA解码', '全平台尺寸',
           '批量导出 & 水印', '多品牌管理', '优先生成速度',
         ],
-        cta: 'Notify Me',
+        cta: '预约通知',
         highlight: false,
       },
     ],
@@ -245,7 +245,7 @@ const DEMO_SERIES: DemoSeries[] = [
   },
   {
     name: 'NexBot',
-    category: 'Smart Robotics',
+    category: '智能机器人',
     emoji: '🤖',
     tagline: 'Smart Living · Your AI Home Companion',
     scenes: 'IG Feed × Story × FB Ad × TikTok',
@@ -258,7 +258,7 @@ const DEMO_SERIES: DemoSeries[] = [
   },
   {
     name: 'RingFit',
-    category: 'Smart Ring',
+    category: '智能戒指',
     emoji: '💍',
     tagline: 'Wearable Intelligence · Health on Your Finger',
     scenes: 'IG Feed × Story × FB Ad × TikTok',
@@ -461,9 +461,9 @@ export default function LandingPage() {
             <span className="text-sm font-bold tracking-tight text-white/90">100x</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-xs text-white/40 font-medium">
-            <a href="#demo" className="hover:text-white/80 transition-colors">Demo</a>
+            <a href="#demo" className="hover:text-white/80 transition-colors">演示</a>
             <a href="#how" className="hover:text-white/80 transition-colors">{t.navHow}</a>
-            <a href="#pricing" className="hover:text-white/80 transition-colors">Pricing</a>
+            <a href="#pricing" className="hover:text-white/80 transition-colors">定价</a>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
@@ -712,7 +712,7 @@ export default function LandingPage() {
                         {plan.price}
                       </span>
                     ) : (
-                      <span className="text-2xl md:text-3xl font-black text-white/20">STAY TUNED</span>
+                      <span className="text-2xl md:text-3xl font-black text-white/20">敬请期待</span>
                     )}
                     <span className="text-sm text-white/20">{plan.period}</span>
                   </div>
@@ -772,7 +772,7 @@ export default function LandingPage() {
             <div className="w-5 h-5 rounded bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
               <span className="text-[5px] font-black text-white">100x</span>
             </div>
-            <span className="text-xs text-white/10">100x.pics</span>
+            <span className="text-xs text-white/10">100pics.today</span>
           </div>
           <p className="text-xs text-white/8">{t.footer}</p>
         </div>
