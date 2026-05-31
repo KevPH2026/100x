@@ -183,17 +183,18 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   let result: { buf: Buffer | null; err?: string } = { buf: null, err: 'no provider' };
   let providerUsed = '';
 
-  if (trKey) {
-    const size = TR_SIZE_MAP[ratio] || '1024x1024';
-    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage);
-    providerUsed = 'tokenrouter-image2';
-    if (!result.buf) console.error('[TR fail]', result.err);
-  }
-  if (!result.buf && novartKey) {
+  // Novart 优先（更快，~30s），TokenRouter 备用（~50s）
+  if (novartKey) {
     const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
     result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage);
     providerUsed = 'novart-vertex';
     if (!result.buf) console.error('[NV fail]', result.err);
+  }
+  if (!result.buf && trKey) {
+    const size = TR_SIZE_MAP[ratio] || '1024x1024';
+    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage);
+    providerUsed = 'tokenrouter-image2';
+    if (!result.buf) console.error('[TR fail]', result.err);
   }
 
   if (!result.buf) {
