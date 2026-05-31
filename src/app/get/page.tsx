@@ -760,7 +760,7 @@ export default function GeneratePage() {
             {/* ── Step 3: 基础信息 ──────────────────────────────────── */}
             <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-500/20 text-violet-300">STEP 3</span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-500/20 text-violet-300">STEP 2</span>
                 <span className="text-sm font-semibold text-white/80">产品信息</span>
               </div>
               <div>
@@ -834,7 +834,7 @@ export default function GeneratePage() {
             {/* ── Step 4: 营销活动 ─────────────────────────────────── */}
             <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.03)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/20 text-green-300">STEP 4</span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/20 text-green-300">STEP 3</span>
                 <Target className="w-4 h-4 text-green-400" />
                 <span className="text-sm font-semibold text-white/80">营销活动</span>
               </div>
@@ -885,7 +885,7 @@ export default function GeneratePage() {
             {/* ── Step 5: 平台 / 场景 ───────────────────────────────── */}
             <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/20 text-cyan-300">STEP 5</span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/20 text-cyan-300">STEP 4</span>
                 <span className="text-sm font-semibold text-white/80">选择投放平台 / 场景 *</span>
                 {isRecommendingScenes && (
                   <span className="text-[11px] text-cyan-300/80 flex items-center gap-1">
