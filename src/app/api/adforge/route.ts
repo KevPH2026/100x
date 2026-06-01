@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
   if (!trKey && !novartKey) return NextResponse.json({ error: '未配置图片 API key' }, { status: 400 });
 
   const body = await req.json();
-  const { brandName, sellingPoint, targetCountry, sceneIndex, referenceImage,
+  const { brandName, sellingPoint, targetCountry, sceneIndex, customSceneDesc, referenceImage,
     campaignTheme, marketingGoal, mood, urgency, cta } = body;
 
   if (!brandName || !sellingPoint) return NextResponse.json({ error: '品牌名和卖点必填' }, { status: 400 });
@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
   if (sceneIdx < 0 || sceneIdx >= scenes.length) return NextResponse.json({ error: '无效场景索引' }, { status: 400 });
   const scene = scenes[sceneIdx];
   const ratio = scene.aspectRatio || '1:1';
+  const sceneDesc = customSceneDesc?.trim() || scene.desc;
 
   const hasRef = !!referenceImage;
   const refRules = hasRef
@@ -159,7 +160,7 @@ WHAT TO CHANGE (the ONLY thing you change):`
     : `Create a stunning product advertisement image.`;
 
   const prompt = `${refRules}
-- Scene: ${scene.desc || 'elegant lifestyle setting'}
+- Scene: ${sceneDesc}
 - Mood: ${mood || 'premium and refined'}
 - Target market: ${targetCountry || 'US'}
 - Style: professional product photography, magazine-grade
@@ -231,7 +232,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   } catch (e) { console.error('[ADFORGE] DB:', e); }
 
   return NextResponse.json({
-    image: { url: persistentUrl, platform: platformLabel(ratio, scene.platform), scene: scene.label, ratio },
+    image: { url: persistentUrl, platform: platformLabel(ratio, scene.platform), scene: customSceneDesc?.trim() || scene.label, ratio },
     provider: providerUsed,
   });
 }
