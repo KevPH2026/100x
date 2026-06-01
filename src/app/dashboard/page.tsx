@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Download, LogOut, Zap, Image as ImageIcon, ChevronRight, LayoutGrid,
   X, ChevronLeft, ChevronRight as ChevronRightIcon, Filter, Sparkles,
-  Brain, Wand2, Lightbulb, ArrowRight, Eye
+  Brain, Wand2, Lightbulb, ArrowRight, Eye, Trash2
 } from 'lucide-react';
 
 interface Asset {
@@ -47,13 +47,14 @@ function getBrands(assets: Asset[]): string[] {
 }
 
 // ─── 图片预览 Modal ───────────────────────────────────────────
-function ImagePreview({ asset, onClose, onPrev, onNext, hasPrev, hasNext }: {
+function ImagePreview({ asset, onClose, onPrev, onNext, hasPrev, hasNext, onDelete }: {
   asset: Asset;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
   hasPrev: boolean;
   hasNext: boolean;
+  onDelete: () => void;
 }) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -104,6 +105,13 @@ function ImagePreview({ asset, onClose, onPrev, onNext, hasPrev, hasNext }: {
               <span className="text-xs text-zinc-600">
                 {new Date(asset.createdAt).toLocaleDateString('zh-CN')}
               </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="flex items-center gap-1.5 bg-zinc-800 hover:bg-red-600 text-zinc-400 hover:text-white text-xs px-4 py-2 rounded-lg transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                删除
+              </button>
               <a
                 href={asset.imageUrl}
                 download={`${asset.brandName}-${asset.sceneLabel}.png`}
@@ -241,6 +249,23 @@ export default function DashboardPage() {
 
   const previewAsset = previewIndex !== null ? filteredAssets[previewIndex] : null;
 
+  const deleteAsset = async (assetId: string) => {
+    if (!confirm('确定要删除这个素材吗？删除后无法恢复。')) return;
+    try {
+      const res = await fetch(`/api/assets/${assetId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setUserData(prev => prev ? {
+        ...prev,
+        assets: prev.assets.filter(a => a.id !== assetId),
+        quotaUsed: Math.max(0, prev.quotaUsed - 1),
+        quotaRemaining: prev.quotaRemaining + 1,
+      } : prev);
+      setPreviewIndex(null);
+    } catch {
+      alert('删除失败，请重试');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
       {/* Preview Modal */}
@@ -254,6 +279,7 @@ export default function DashboardPage() {
             onNext={() => pi < filteredAssets.length - 1 && setPreviewIndex(pi + 1)}
             hasPrev={pi > 0}
             hasNext={pi < filteredAssets.length - 1}
+            onDelete={() => deleteAsset(previewAsset.id)}
           />
         ) : null;
       })()}
@@ -431,6 +457,13 @@ export default function DashboardPage() {
                       <Download className="w-3 h-3" />
                       下载
                     </a>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteAsset(asset.id); }}
+                      className="bg-zinc-800/80 backdrop-blur-sm text-zinc-400 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-red-600 hover:text-white transition"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      删除
+                    </button>
                   </div>
                   {/* Platform badge */}
                   <div className="absolute top-2 left-2">
