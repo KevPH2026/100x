@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100x.pics — V2 Stripe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; color: #fff; font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; }
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #6366f1 30%, #3b82f6 60%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-border {
+      position: relative;
+      background: #111;
+      border-radius: 12px;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #a78bfa, #6366f1, #3b82f6, #06b6d4);
+      z-index: -1;
+      opacity: 0.5;
+    }
+    .gradient-border:hover::before { opacity: 0.8; }
+    .btn-gradient {
+      background: linear-gradient(135deg, #a78bfa, #6366f1, #3b82f6);
+      color: #fff;
+      transition: all 200ms;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.3);
+    }
+    .btn-gradient:hover { box-shadow: 0 8px 32px rgba(99,102,241,0.5); transform: translateY(-1px); }
+    .btn-white {
+      background: #fff;
+      color: #0a0a0a;
+      transition: all 150ms;
+    }
+    .btn-white:hover { background: #f0f0f0; }
+    .glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 300ms;
+    }
+    .feature-card:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-4px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Glow BG -->
+  <div class="glow" style="top:-200px;left:-100px;background:linear-gradient(135deg,#a78bfa,#6366f1)"></div>
+  <div class="glow" style="top:400px;right:-200px;background:linear-gradient(135deg,#3b82f6,#06b6d4)"></div>
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 backdrop-blur-xl bg-[#0a0a0a]/70 border-b border-white/[0.06]">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center font-bold text-sm">X</div>
+        <span class="font-bold text-lg">100x</span>
+      </div>
+      <div class="flex items-center gap-8 text-sm">
+        <a href="#" class="text-zinc-400 hover:text-white transition">产品</a>
+        <a href="#" class="text-zinc-400 hover:text-white transition">定价</a>
+        <a href="/get" class="btn-white px-5 py-2 rounded-full text-sm font-semibold">开始使用</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-36 pb-24 px-6">
+    <div class="max-w-5xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-sm text-zinc-300 mb-8">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+        AI 驱动的广告素材生成平台
+      </div>
+      <h1 class="text-6xl font-extrabold leading-[1.08] mb-6 tracking-tight">
+        你的广告素材<br>
+        <span class="gradient-text">我们包了</span>
+      </h1>
+      <p class="text-xl text-zinc-400 mb-10 max-w-xl mx-auto leading-relaxed">
+        上传产品图，5 分钟生成多平台广告素材。AI 解码品牌 DNA，自动适配场景和尺寸。
+      </p>
+      <div class="flex items-center justify-center gap-4">
+        <a href="/get" class="btn-gradient px-8 py-3.5 rounded-full text-sm font-semibold">免费开始 →</a>
+        <a href="#" class="px-8 py-3.5 rounded-full text-sm font-medium border border-white/[0.15] hover:border-white/[0.3] transition">观看演示</a>
+      </div>
+
+      <!-- Style image as showcase -->
+      <div class="mt-16 gradient-border p-1">
+        <div class="rounded-xl overflow-hidden bg-[#111]">
+          <img src="/style-imgs/stripe.jpg" alt="AI Generated Ad" class="w-full h-[360px] object-cover opacity-70" />
+          <div class="p-6 text-left flex items-center justify-between">
+            <div>
+              <div class="font-semibold mb-1">品牌素材矩阵 · 一键生成</div>
+              <div class="text-sm text-zinc-500">Instagram · TikTok · Facebook · Pinterest</div>
+            </div>
+            <div class="flex gap-2">
+              <span class="px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs">8 张素材</span>
+              <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs">5 分钟</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="py-24 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold mb-4">极简三步</h2>
+        <p class="text-zinc-400 text-lg">从上传到下载，全程 AI 完成</p>
+      </div>
+      <div class="grid grid-cols-3 gap-6">
+        <div class="feature-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center text-violet-400 text-xl mb-5">①</div>
+          <h3 class="text-lg font-semibold mb-2">上传产品图</h3>
+          <p class="text-sm text-zinc-400 leading-relaxed">拖拽或粘贴产品照片，支持 JPG/PNG/WebP，也可以直接输入产品页链接</p>
+        </div>
+        <div class="feature-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center text-blue-400 text-xl mb-5">②</div>
+          <h3 class="text-lg font-semibold mb-2">解码品牌 DNA</h3>
+          <p class="text-sm text-zinc-400 leading-relaxed">AI 自动提取品牌色彩、风格、调性，构建专属视觉语言体系</p>
+        </div>
+        <div class="feature-card">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 flex items-center justify-center text-cyan-400 text-xl mb-5">③</div>
+          <h3 class="text-lg font-semibold mb-2">一键出图</h3>
+          <p class="text-sm text-zinc-400 leading-relaxed">自动生成 8 张多平台素材，涵盖所有主流平台和广告尺寸</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center gradient-border p-1">
+      <div class="rounded-xl bg-[#111] p-16">
+        <h2 class="text-3xl font-bold mb-4">准备好生成素材了吗？</h2>
+        <p class="text-zinc-400 mb-8">免费体验，无需信用卡</p>
+        <a href="/get" class="btn-gradient px-10 py-4 rounded-full text-base font-semibold inline-block">立即开始生成 →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/[0.06] py-8 px-6">
+    <div class="max-w-6xl mx-auto flex items-center justify-between text-xs text-zinc-600">
+      <span>© 2026 100x.pics</span>
+      <span>AI-powered ad creative engine</span>
+    </div>
+  </footer>
+
+</body>
+</html>

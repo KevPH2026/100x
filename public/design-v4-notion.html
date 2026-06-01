@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100x.pics — V4 Notion</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #ffffff; color: #37352f; font-family: 'Noto Sans SC', -apple-system, sans-serif; }
+    .section-divider { border-bottom: 1px solid #e8e5e0; }
+    .btn-primary { background: #37352f; color: #fff; transition: all 150ms; }
+    .btn-primary:hover { background: #2f2d2a; }
+    .btn-ghost { color: #37352f; border: 1px solid #e8e5e0; transition: all 150ms; }
+    .btn-ghost:hover { background: #f7f6f3; }
+    .icon-box { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .callout { background: #f7f6f3; border-radius: 12px; border: 1px solid #e8e5e0; padding: 24px; }
+    .callout-accent { border-left: 4px solid #9b7ae8; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #e8e5e0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="section-divider">
+    <div class="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">✦</span>
+        <span class="font-semibold text-sm">100x.pics</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm">
+        <a href="#" class="text-[#9b9a97] hover:text-[#37352f] transition">功能</a>
+        <a href="#" class="text-[#9b9a97] hover:text-[#37352f] transition">定价</a>
+        <a href="/get" class="btn-primary px-4 py-1.5 rounded-lg text-sm font-medium">开始使用</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-24 pb-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="max-w-2xl">
+        <p class="text-[#9b9a97] text-sm mb-4 uppercase tracking-wider font-medium">✨ AI 广告素材工具</p>
+        <h1 class="text-[44px] font-bold leading-[1.15] tracking-tight mb-6" style="color:#37352f;">
+          上传产品图<br>5 分钟拿到广告素材
+        </h1>
+        <p class="text-lg text-[#787774] leading-relaxed mb-8 max-w-lg">
+          AI 自动解码品牌风格，生成适配 Instagram、TikTok、Facebook 等平台的广告创意素材。简单、快速、免注册。
+        </p>
+        <div class="flex items-center gap-3">
+          <a href="/get" class="btn-primary px-6 py-2.5 rounded-lg text-sm font-medium">免费体验 →</a>
+          <a href="#" class="btn-ghost px-6 py-2.5 rounded-lg text-sm font-medium">了解更多</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase -->
+  <section class="pb-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="callout callout-accent">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-sm">🎨</span>
+          <span class="text-sm font-semibold text-[#37352f]">AI 生成的品牌素材</span>
+        </div>
+        <img src="/style-imgs/notion.jpg" alt="Style" class="w-full h-[280px] object-cover rounded-lg mb-4" style="filter: saturate(0.85);" />
+        <div class="flex items-center gap-4 text-sm text-[#9b9a97]">
+          <span class="flex items-center gap-1.5">
+            <span class="avatar">👤</span>
+            品牌主
+          </span>
+          <span>·</span>
+          <span>8 张素材</span>
+          <span>·</span>
+          <span>5 分钟完成</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="py-20 px-6 section-divider">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold mb-2 tracking-tight">三个步骤</h2>
+      <p class="text-[#9b9a97] mb-12">不需要设计经验</p>
+      <div class="grid grid-cols-3 gap-8">
+        <div>
+          <div class="icon-box bg-[#f7f6f3] mb-4">📤</div>
+          <h3 class="font-semibold mb-2 text-base">上传产品图</h3>
+          <p class="text-sm text-[#787774] leading-relaxed">拖拽或粘贴产品照片到页面，也可以输入网址自动获取</p>
+        </div>
+        <div>
+          <div class="icon-box bg-[#f7f6f3] mb-4">🧬</div>
+          <h3 class="font-semibold mb-2 text-base">解码品牌 DNA</h3>
+          <p class="text-sm text-[#787774] leading-relaxed">AI 提取色彩、风格、情绪，构建品牌专属视觉语言</p>
+        </div>
+        <div>
+          <div class="icon-box bg-[#f7f6f3] mb-4">🎯</div>
+          <h3 class="font-semibold mb-2 text-base">一键生成</h3>
+          <p class="text-sm text-[#787774] leading-relaxed">8 张多平台素材自动生成，涵盖所有主流广告尺寸</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial-like -->
+  <section class="py-20 px-6 section-divider">
+    <div class="max-w-4xl mx-auto">
+      <div class="callout" style="border-left: 4px solid #e8e5e0;">
+        <p class="text-lg text-[#37352f] leading-relaxed mb-4">
+          "以前做一组社媒素材要请设计师花 2 天，现在 5 分钟就搞定了。产品图上传就能出图，连品牌色调都自动匹配。"
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="avatar">🧑‍💼</div>
+          <div>
+            <div class="text-sm font-semibold">DTC 品牌创始人</div>
+            <div class="text-xs text-[#9b9a97]">跨境电商</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4 tracking-tight">试试看？</h2>
+      <p class="text-[#9b9a97] mb-8 text-lg">免费体验，无需注册</p>
+      <a href="/get" class="btn-primary px-8 py-3 rounded-lg text-sm font-medium inline-block">开始生成广告素材 →</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="section-divider py-6 px-6">
+    <div class="max-w-4xl mx-auto flex items-center justify-between text-xs text-[#c4c3c0]">
+      <span>© 2026 100x.pics</span>
+      <span>AI-powered ad creative engine</span>
+    </div>
+  </footer>
+
+</body>
+</html>
