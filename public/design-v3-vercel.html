@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100x.pics — V3 Vercel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; color: #ededed; font-family: 'Inter', -apple-system, sans-serif; }
+    .triangle-bg {
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L55 50 L5 50 Z' fill='none' stroke='rgba(255,255,255,0.02)' stroke-width='0.5'/%3E%3C/svg%3E");
+    }
+    .btn-white { background: #fff; color: #000; transition: all 150ms; }
+    .btn-white:hover { background: #ccc; }
+    .btn-outline { border: 1px solid #333; color: #888; transition: all 150ms; }
+    .btn-outline:hover { border-color: #fff; color: #fff; }
+    .card {
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 24px;
+      transition: border-color 200ms;
+    }
+    .card:hover { border-color: #444; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; border: 1px solid #222; font-size: 13px; color: #888; }
+    .tag { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: monospace; background: #111; color: #666; }
+  </style>
+</head>
+<body class="triangle-bg">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-zinc-900">
+    <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><polygon points="12,2 22,22 2,22"/></svg>
+        <span class="font-bold text-sm tracking-tight">100x</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm">
+        <a href="#" class="text-zinc-500 hover:text-white transition">Docs</a>
+        <a href="#" class="text-zinc-500 hover:text-white transition">Pricing</a>
+        <a href="/get" class="btn-white px-4 py-1.5 rounded-md text-xs font-semibold">Start</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-40 pb-28 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="max-w-xl">
+        <div class="badge mb-8">
+          <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+          v1.0 — now available
+        </div>
+        <h1 class="text-[56px] font-extrabold leading-[1.05] tracking-[-0.04em] mb-6">
+          AI ad creatives,<br>shipped fast.
+        </h1>
+        <p class="text-zinc-500 text-[17px] leading-relaxed mb-10 max-w-md">
+          Upload a product photo. Get 8 platform-ready ad creatives in 5 minutes. Powered by AI.
+        </p>
+        <div class="flex items-center gap-3">
+          <a href="/get" class="btn-white px-6 py-2.5 rounded-lg text-sm font-semibold">Start Generating</a>
+          <a href="#" class="btn-outline px-6 py-2.5 rounded-lg text-sm">Read Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase -->
+  <section class="pb-20 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="rounded-lg border border-zinc-800 overflow-hidden bg-zinc-950">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+          <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+          <span class="ml-3 text-xs text-zinc-700 font-mono">100x.pics/output</span>
+        </div>
+        <img src="/style-imgs/vercel.jpg" alt="Output" class="w-full h-[320px] object-cover opacity-50" />
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <span class="tag">instagram 1:1</span>
+        <span class="tag">tiktok 9:16</span>
+        <span class="tag">facebook 16:9</span>
+        <span class="tag">pinterest 2:3</span>
+        <span class="tag">+4 more</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="py-20 px-6">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-2xl font-bold mb-12 tracking-tight">How it works</h2>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="card">
+          <div class="text-xs font-mono text-zinc-700 mb-6">01</div>
+          <h3 class="font-semibold mb-2">Upload</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Drop your product image. We handle the rest.</p>
+        </div>
+        <div class="card">
+          <div class="text-xs font-mono text-zinc-700 mb-6">02</div>
+          <h3 class="font-semibold mb-2">Brand DNA</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">Extract colors, style, and mood automatically.</p>
+        </div>
+        <div class="card">
+          <div class="text-xs font-mono text-zinc-700 mb-6">03</div>
+          <h3 class="font-semibold mb-2">Generate</h3>
+          <p class="text-sm text-zinc-500 leading-relaxed">8 creatives, multi-platform, ready to ship.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metrics -->
+  <section class="py-20 px-6 border-y border-zinc-900">
+    <div class="max-w-5xl mx-auto grid grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="text-4xl font-extrabold mb-1">5m</div>
+        <div class="text-sm text-zinc-600">生成时间</div>
+      </div>
+      <div>
+        <div class="text-4xl font-extrabold mb-1">8</div>
+        <div class="text-sm text-zinc-600">素材数量</div>
+      </div>
+      <div>
+        <div class="text-4xl font-extrabold mb-1">6+</div>
+        <div class="text-sm text-zinc-600">平台适配</div>
+      </div>
+      <div>
+        <div class="text-4xl font-extrabold mb-1">0¥</div>
+        <div class="text-sm text-zinc-600">免费体验</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-28 px-6">
+    <div class="max-w-5xl mx-auto text-center">
+      <h2 class="text-4xl font-extrabold mb-4 tracking-tight">Start building your<br>ad creatives today.</h2>
+      <p class="text-zinc-500 mb-8">Free tier available. No credit card required.</p>
+      <a href="/get" class="btn-white px-8 py-3 rounded-lg text-sm font-semibold inline-block">Get Started →</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-zinc-900 py-6 px-6">
+    <div class="max-w-5xl mx-auto flex items-center justify-between text-xs text-zinc-700">
+      <span>© 2026 100x.pics</span>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-white transition">GitHub</a>
+        <a href="#" class="hover:text-white transition">Twitter</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
