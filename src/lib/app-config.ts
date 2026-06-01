@@ -132,12 +132,14 @@ export const DEFAULT_PROMPT_NO_REF = [
   "Style: Professional, modern, clean composition, natural lighting, premium commercial photography. Product is the hero. Aspirational but authentic. No text overlay. High resolution.",
 ].join("\n");
 
-/** 自然语言再编辑模板 — 给 refine 接口用 */
+/** 自然语言再编辑模板 — 给 refine 接口用（强化产品保真） */
 export const DEFAULT_REFINE_PROMPT = [
-  "Refine the existing advertisement image based on this user instruction:",
+  "Edit this advertisement image. Apply the following change while keeping everything else intact:",
   "\"{{userInstruction}}\"",
   "",
-  "Keep the original product, brand identity, and overall composition intact unless the instruction explicitly says otherwise.",
+  "CRITICAL: The original product must remain EXACTLY the same — same shape, color, material, size, position, and details.",
+  "DO NOT replace, remove, or redesign the product. Only change the specific element requested.",
+  "Keep the original composition, layout, and product placement unless the instruction explicitly says to change them.",
   "Apply ONLY the requested change. Output a high-quality social-media-ready ad image.",
   "{{brandDNAContext}}",
 ].join("\n");

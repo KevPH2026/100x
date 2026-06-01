@@ -31,7 +31,7 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
-/** Novart refine 调用 (走 reference_images 注入原图) */
+/** Novart refine 调用 — 用 image 参数注入原图做 img2img */
 async function refineWithNovart(
   apiKey: string, baseUrl: string, model: string,
   prompt: string, aspectRatio: string, sourceB64: string,
@@ -39,13 +39,15 @@ async function refineWithNovart(
   const base = baseUrl.replace(/\/$/, '').trim();
   const ratio = NOVART_RATIO_MAP[aspectRatio] || 'auto';
   try {
+    // 用 OpenAI 兼容接口的 image 参数做 img2img，而非 reference_images
     const reqBody: any = {
       model: model || 'nova-image-2',
       prompt,
       n: 1,
       aspect_ratio: ratio,
       response_format: 'b64_json',
-      reference_images: [sourceB64],
+      image: sourceB64,  // img2img: 以原图为基础编辑
+      image_weight: 0.7, // 保持原图主体 70% 权重
     };
     const res = await fetch(`${base}/v1/images/generations`, {
       method: 'POST',
@@ -69,7 +71,7 @@ async function refineWithNovart(
   }
 }
 
-/** MiniMax refine — 用 style_reference 注入原图 */
+/** MiniMax refine — 用 image 参数做 img2img */
 async function refineWithMinimax(
   apiKey: string, model: string, prompt: string, aspectRatio: string, sourceB64: string,
 ): Promise<{ imageUrl: string } | null> {
@@ -81,7 +83,8 @@ async function refineWithMinimax(
       aspect_ratio: ratio,
       response_format: 'url',
       n: 1,
-      style_reference: [{ type: 'image', image_file: sourceB64 }],
+      image: sourceB64,       // img2img: 以原图为基础编辑
+      image_weight: 0.7,      // 保持原图主体 70% 权重
     };
     const res = await fetch('https://api.minimax.chat/v1/image_generation', {
       method: 'POST',
