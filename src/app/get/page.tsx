@@ -359,7 +359,9 @@ export default function GeneratePage() {
     );
   };
 
-  // ── 生成 ─────────────────────────────────────────────────────────
+  // ── 生成（并发，最多8张同时） ──────────────────────────────────────
+  const MAX_CONCURRENT = 8;
+
   const generate = async () => {
     if (!brandName.trim() || !sellingPoint.trim()) {
       setError('品牌名和卖点必填'); return;
@@ -384,13 +386,13 @@ export default function GeneratePage() {
     const goalObj = goals.find(g => g.id === marketingGoal);
     const urgencyObj = urgencies.find(u => u.id === urgency);
 
+    const totalScenes = selectedScenes.length;
     const results: GeneratedImage[] = [];
+    let completed = 0;
 
-    for (let i = 0; i < selectedScenes.length; i++) {
-      const sceneIdx = selectedScenes[i];
+    // 单张生成任务
+    const generateOne = async (sceneIdx: number): Promise<void> => {
       setCurrentScene(scenes[sceneIdx].label);
-      setProgress(Math.round((i / selectedScenes.length) * 100));
-
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000);
@@ -419,26 +421,45 @@ export default function GeneratePage() {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           console.error(`Scene ${sceneIdx} failed:`, res.status, err);
-          continue;
+          return;
         }
 
         const data = await res.json();
         const imageUrl = data.image?.url;
 
         if (imageUrl) {
-          results.push({
+          const img: GeneratedImage = {
             url: imageUrl,
             platform: data.image.platform || scenes[sceneIdx].platform || 'Ad',
             scene: data.image.scene || scenes[sceneIdx].label,
             ratio: data.image.ratio || scenes[sceneIdx].aspectRatio,
             refineHistory: [],
-          });
+          };
+          results.push(img);
+          // 按生成完成顺序实时更新
           setGeneratedImages([...results]);
         }
       } catch (err) {
         console.error(`Scene ${sceneIdx} error:`, err);
+      } finally {
+        completed++;
+        setProgress(Math.round((completed / totalScenes) * 100));
       }
-    }
+    };
+
+    // 并发池：最多 MAX_CONCURRENT 个同时执行
+    const concurrency = Math.min(MAX_CONCURRENT, totalScenes);
+    let nextIdx = 0;
+
+    const spawnWorker = async (): Promise<void> => {
+      while (nextIdx < totalScenes) {
+        const sceneIdx = selectedScenes[nextIdx++];
+        await generateOne(sceneIdx);
+      }
+    };
+
+    const workers = Array.from({ length: concurrency }, () => spawnWorker());
+    await Promise.all(workers);
 
     setProgress(100);
     setGeneratedImages(results);
@@ -495,6 +516,9 @@ export default function GeneratePage() {
 
   // ── 生成中 ────────────────────────────────────────────────────────
   if (step === 'generating') {
+    const concurrency = Math.min(MAX_CONCURRENT, selectedScenes.length);
+    const inFlight = selectedScenes.length - generatedImages.length - (selectedScenes.length - progress / 100 * selectedScenes.length);
+
     return (
       <div className="min-h-screen bg-[#050507] text-white flex items-center justify-center">
         <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
@@ -504,19 +528,22 @@ export default function GeneratePage() {
             style={{ boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">AI正在生成素材...</h2>
-          <p className="text-white/40 mb-2">正在生成：{currentScene}</p>
-          <p className="text-white/20 text-sm mb-8">每张约30-60秒，请耐心等待</p>
+          <h2 className="text-2xl font-bold mb-2">AI 并发生成中...</h2>
+          <p className="text-white/40 mb-1">
+            {concurrency} 张同时生成 · 已完成 {generatedImages.length}/{selectedScenes.length}
+          </p>
+          <p className="text-white/20 text-sm mb-8">每张约30-60秒，并发加速中</p>
           <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-4">
             <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500"
               style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-sm text-white/30">{progress}% · 已生成 {generatedImages.length}/{selectedScenes.length} 张</p>
+          <p className="text-sm text-white/30">{progress}%</p>
           {generatedImages.length > 0 && (
             <div className="mt-6 grid grid-cols-2 gap-2">
               {generatedImages.map((img, i) => (
-                <div key={i} className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div key={i} className="rounded-lg overflow-hidden border border-white/10">
                   <img src={img.url} alt={img.scene} className="w-full h-24 object-cover" />
+                  <div className="bg-white/5 px-2 py-1 text-[10px] text-white/40">{img.scene}</div>
                 </div>
               ))}
             </div>
