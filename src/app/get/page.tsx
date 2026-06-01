@@ -138,7 +138,8 @@ export default function GeneratePage() {
   const [sellingPoint, setSellingPoint] = useState('');
   const [targetCountry, setTargetCountry] = useState('US');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [selectedScenes, setSelectedScenes] = useState<number[]>([0, 1, 2, 3, 4, 5, 6, 7]);
+  const [selectedScene, setSelectedScene] = useState<number>(0);
+  const [customScene, setCustomScene] = useState(''); // 用户自定义场景描述
 
   // 抠图（浏览器端 @imgly/background-removal）
   const [cutoutImage, setCutoutImage] = useState<string | null>(null);
@@ -296,7 +297,7 @@ export default function GeneratePage() {
       const json = await res.json();
       if (res.ok && Array.isArray(json.scenes) && json.scenes.length >= 4) {
         setScenes(json.scenes);
-        setSelectedScenes([0, 1, 2, 3, 4, 5, 6, 7]); // 默认全选
+        setSelectedScene(0);
         setScenesRecommended(true);
       }
     } catch (err) {
@@ -354,20 +355,14 @@ export default function GeneratePage() {
   };
 
   const toggleScene = (idx: number) => {
-    setSelectedScenes(prev =>
-      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
-    );
+    setSelectedScene(idx);
+    setCustomScene(''); // 切预设场景时清空自定义描述
   };
 
-  // ── 生成（并发，最多8张同时） ──────────────────────────────────────
-  const MAX_CONCURRENT = 8;
-
+  // ── 生成（单张） ──────────────────────────────────────────────────
   const generate = async () => {
     if (!brandName.trim() || !sellingPoint.trim()) {
       setError('品牌名和卖点必填'); return;
-    }
-    if (selectedScenes.length === 0) {
-      setError('至少选择一个场景'); return;
     }
 
     setStep('generating');
@@ -386,83 +381,61 @@ export default function GeneratePage() {
     const goalObj = goals.find(g => g.id === marketingGoal);
     const urgencyObj = urgencies.find(u => u.id === urgency);
 
-    const totalScenes = selectedScenes.length;
-    const results: GeneratedImage[] = [];
-    let completed = 0;
+    const scene = scenes[selectedScene];
+    const sceneDesc = customScene.trim() || scene.desc;
+    setCurrentScene(customScene.trim() || scene.label);
 
-    // 单张生成任务
-    const generateOne = async (sceneIdx: number): Promise<void> => {
-      setCurrentScene(scenes[sceneIdx].label);
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 90000);
-        const res = await fetch('/api/adforge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brandName: brandName.trim(),
-            sellingPoint: sellingPoint.trim(),
-            targetCountry,
-            referenceImage,
-            cutoutImage: cutoutImage || undefined,
-            styleContext,
-            sceneIndex: sceneIdx,
-            campaignTheme: campaignTheme.trim(),
-            marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
-            mood: moodObj?.desc || moodObj?.label || mood,
-            urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
-            cta: cta.trim() || '立即购买',
-            brandDNA,
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000);
+      const res = await fetch('/api/adforge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandName: brandName.trim(),
+          sellingPoint: sellingPoint.trim(),
+          targetCountry,
+          referenceImage,
+          cutoutImage: cutoutImage || undefined,
+          styleContext,
+          sceneIndex: selectedScene,
+          customSceneDesc: customScene.trim() || undefined,
+          campaignTheme: campaignTheme.trim(),
+          marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
+          mood: moodObj?.desc || moodObj?.label || mood,
+          urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
+          cta: cta.trim() || '立即购买',
+          brandDNA,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          console.error(`Scene ${sceneIdx} failed:`, res.status, err);
-          return;
-        }
-
-        const data = await res.json();
-        const imageUrl = data.image?.url;
-
-        if (imageUrl) {
-          const img: GeneratedImage = {
-            url: imageUrl,
-            platform: data.image.platform || scenes[sceneIdx].platform || 'Ad',
-            scene: data.image.scene || scenes[sceneIdx].label,
-            ratio: data.image.ratio || scenes[sceneIdx].aspectRatio,
-            refineHistory: [],
-          };
-          results.push(img);
-          // 按生成完成顺序实时更新
-          setGeneratedImages([...results]);
-        }
-      } catch (err) {
-        console.error(`Scene ${sceneIdx} error:`, err);
-      } finally {
-        completed++;
-        setProgress(Math.round((completed / totalScenes) * 100));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || '生成失败');
+        setStep('result');
+        return;
       }
-    };
 
-    // 并发池：最多 MAX_CONCURRENT 个同时执行
-    const concurrency = Math.min(MAX_CONCURRENT, totalScenes);
-    let nextIdx = 0;
+      const data = await res.json();
+      const imageUrl = data.image?.url;
 
-    const spawnWorker = async (): Promise<void> => {
-      while (nextIdx < totalScenes) {
-        const sceneIdx = selectedScenes[nextIdx++];
-        await generateOne(sceneIdx);
+      if (imageUrl) {
+        setGeneratedImages([{
+          url: imageUrl,
+          platform: data.image.platform || scene.platform || 'Ad',
+          scene: customScene.trim() || (data.image.scene || scene.label),
+          ratio: data.image.ratio || scene.aspectRatio,
+          refineHistory: [],
+        }]);
       }
-    };
-
-    const workers = Array.from({ length: concurrency }, () => spawnWorker());
-    await Promise.all(workers);
+    } catch (err) {
+      console.error('Generate error:', err);
+      setError('生成超时或网络错误');
+    }
 
     setProgress(100);
-    setGeneratedImages(results);
     setStep('result');
   };
 
@@ -516,9 +489,6 @@ export default function GeneratePage() {
 
   // ── 生成中 ────────────────────────────────────────────────────────
   if (step === 'generating') {
-    const concurrency = Math.min(MAX_CONCURRENT, selectedScenes.length);
-    const inFlight = selectedScenes.length - generatedImages.length - (selectedScenes.length - progress / 100 * selectedScenes.length);
-
     return (
       <div className="min-h-screen bg-[#050507] text-white flex items-center justify-center">
         <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
@@ -528,26 +498,13 @@ export default function GeneratePage() {
             style={{ boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">AI 并发生成中...</h2>
-          <p className="text-white/40 mb-1">
-            {concurrency} 张同时生成 · 已完成 {generatedImages.length}/{selectedScenes.length}
-          </p>
-          <p className="text-white/20 text-sm mb-8">每张约30-60秒，并发加速中</p>
-          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-4">
-            <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500"
-              style={{ width: `${progress}%` }} />
+          <h2 className="text-2xl font-bold mb-2">AI 正在生成素材...</h2>
+          <p className="text-white/40 mb-1">场景：{currentScene}</p>
+          <p className="text-white/20 text-sm mb-8">约30-60秒，请耐心等待</p>
+          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
+            <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 animate-pulse"
+              style={{ width: '100%' }} />
           </div>
-          <p className="text-sm text-white/30">{progress}%</p>
-          {generatedImages.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              {generatedImages.map((img, i) => (
-                <div key={i} className="rounded-lg overflow-hidden border border-white/10">
-                  <img src={img.url} alt={img.scene} className="w-full h-24 object-cover" />
-                  <div className="bg-white/5 px-2 py-1 text-[10px] text-white/40">{img.scene}</div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -913,7 +870,7 @@ export default function GeneratePage() {
             <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/20 text-cyan-300">STEP 4</span>
-                <span className="text-sm font-semibold text-white/80">选择投放平台 / 场景 *</span>
+                <span className="text-sm font-semibold text-white/80">选择投放平台 / 场景</span>
                 {isRecommendingScenes && (
                   <span className="text-[11px] text-cyan-300/80 flex items-center gap-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -945,11 +902,11 @@ export default function GeneratePage() {
                   <button key={i} onClick={() => toggleScene(i)}
                     className="relative p-3 rounded-xl text-xs text-center transition-all"
                     style={{
-                      background: selectedScenes.includes(i) ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
-                      border: selectedScenes.includes(i) ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                      color: selectedScenes.includes(i) ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
+                      background: selectedScene === i ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                      border: selectedScene === i ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      color: selectedScene === i ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
                     }}>
-                    {selectedScenes.includes(i) && (
+                    {selectedScene === i && (
                       <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
                     )}
                     <div className="font-medium mb-0.5">{scene.label}</div>
@@ -957,7 +914,21 @@ export default function GeneratePage() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-white/20 mt-2">已选 {selectedScenes.length} 个 · 每张约 30-60 秒</p>
+
+              {/* 自定义场景描述 */}
+              <div className="mt-3">
+                <label className="block text-[11px] font-medium text-white/40 mb-1.5">
+                  或描述你想要的场景（选填，覆盖上方预设场景描述）
+                </label>
+                <textarea
+                  value={customScene}
+                  onChange={e => setCustomScene(e.target.value)}
+                  placeholder="例如：产品放在海边木桌上，阳光从窗户照进来，旁边放一杯咖啡和一本杂志"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl text-xs text-white placeholder:text-white/20 outline-none transition-all resize-none"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                />
+              </div>
             </div>
 
             <button onClick={generate}
