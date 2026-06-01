@@ -139,8 +139,9 @@ export default function GeneratePage() {
   const [sellingPoint, setSellingPoint] = useState('');
   const [targetCountry, setTargetCountry] = useState('US');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [selectedScene, setSelectedScene] = useState<number>(0);
+  const [selectedScenes, setSelectedScenes] = useState<number[]>([0]);
   const [customScene, setCustomScene] = useState(''); // 用户自定义场景描述
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['IG Feed']);
 
   // 抠图（浏览器端 @imgly/background-removal）
   const [cutoutImage, setCutoutImage] = useState<string | null>(null);
@@ -298,7 +299,7 @@ export default function GeneratePage() {
       const json = await res.json();
       if (res.ok && Array.isArray(json.scenes) && json.scenes.length >= 4) {
         setScenes(json.scenes);
-        setSelectedScene(0);
+        setSelectedScenes([0]);
         setScenesRecommended(true);
       }
     } catch (err) {
@@ -356,11 +357,25 @@ export default function GeneratePage() {
   };
 
   const toggleScene = (idx: number) => {
-    setSelectedScene(idx);
-    setCustomScene(''); // 切预设场景时清空自定义描述
+    setSelectedScenes(prev => {
+      if (prev.includes(idx)) {
+        return prev.length > 1 ? prev.filter(i => i !== idx) : prev;
+      }
+      return [...prev, idx];
+    });
+    setCustomScene('');
   };
 
-  // ── 生成（单张） ──────────────────────────────────────────────────
+  const togglePlatform = (key: string) => {
+    setSelectedPlatforms(prev => {
+      if (prev.includes(key)) {
+        return prev.length > 1 ? prev.filter(k => k !== key) : prev;
+      }
+      return [...prev, key];
+    });
+  };
+
+  // ── 生成（多场景×多平台） ────────────────────────────────────────
   const generate = async () => {
     if (!brandName.trim() || !sellingPoint.trim()) {
       setError('品牌名和卖点必填'); return;
@@ -382,58 +397,74 @@ export default function GeneratePage() {
     const goalObj = goals.find(g => g.id === marketingGoal);
     const urgencyObj = urgencies.find(u => u.id === urgency);
 
-    const scene = scenes[selectedScene];
-    const sceneDesc = customScene.trim() || scene.desc;
-    setCurrentScene(customScene.trim() || scene.label);
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 90000);
-      const res = await fetch('/api/adforge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brandName: brandName.trim(),
-          sellingPoint: sellingPoint.trim(),
-          targetCountry,
-          referenceImage,
-          cutoutImage: cutoutImage || undefined,
-          styleContext,
-          sceneIndex: selectedScene,
-          customSceneDesc: customScene.trim() || undefined,
-          campaignTheme: campaignTheme.trim(),
-          marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
-          mood: moodObj?.desc || moodObj?.label || mood,
-          urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
-          cta: cta.trim() || '立即购买',
-          brandDNA,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        setError(err.error || '生成失败');
-        setStep('result');
-        return;
+    // 构建场景×平台组合
+    const sceneIndices = customScene.trim() ? [-1] : selectedScenes;
+    const tasks: Array<{ sceneIdx: number; scene: SceneItem; platformKey: string }> = [];
+    for (const si of sceneIndices) {
+      const scene = si === -1
+        ? { label: '自定义', desc: customScene.trim(), aspectRatio: '1:1', platform: selectedPlatforms[0] || 'IG Feed' }
+        : scenes[si];
+      if (!scene) continue;
+      for (const pk of selectedPlatforms) {
+        tasks.push({ sceneIdx: si, scene, platformKey: pk });
       }
+    }
 
-      const data = await res.json();
-      const imageUrl = data.image?.url;
+    const total = tasks.length;
+    let done = 0;
+    const results: GeneratedImage[] = [];
 
-      if (imageUrl) {
-        setGeneratedImages([{
-          url: imageUrl,
-          platform: data.image.platform || scene.platform || 'Ad',
-          scene: customScene.trim() || (data.image.scene || scene.label),
-          ratio: data.image.ratio || scene.aspectRatio,
-          refineHistory: [],
-        }]);
+    for (const task of tasks) {
+      setCurrentScene(task.scene.label + ' · ' + task.platformKey);
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        const res = await fetch('/api/adforge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brandName: brandName.trim(),
+            sellingPoint: sellingPoint.trim(),
+            targetCountry,
+            referenceImage,
+            cutoutImage: cutoutImage || undefined,
+            styleContext,
+            sceneIndex: task.sceneIdx,
+            customSceneDesc: customScene.trim() || undefined,
+            platformOverride: task.platformKey,
+            campaignTheme: campaignTheme.trim(),
+            marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
+            mood: moodObj?.desc || moodObj?.label || mood,
+            urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
+            cta: cta.trim() || '立即购买',
+            brandDNA,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error('Generate failed for', task.scene.label, err.error);
+        } else {
+          const data = await res.json();
+          const imageUrl = data.image?.url;
+          if (imageUrl) {
+            results.push({
+              url: imageUrl,
+              platform: task.platformKey,
+              scene: customScene.trim() || task.scene.label,
+              ratio: data.image.ratio || task.scene.aspectRatio,
+              refineHistory: [],
+            });
+            setGeneratedImages([...results]);
+          }
+        }
+      } catch (err) {
+        console.error('Generate error:', err);
       }
-    } catch (err) {
-      console.error('Generate error:', err);
-      setError('生成超时或网络错误');
+      done++;
+      setProgress(Math.round((done / total) * 100));
     }
 
     setProgress(100);
@@ -624,7 +655,8 @@ export default function GeneratePage() {
             {[
               { n: 1, label: '产品信息' },
               { n: 2, label: '营销活动' },
-              { n: 3, label: '选择场景' },
+              { n: 3, label: '使用场景' },
+              { n: 4, label: '投放平台' },
             ].map((s, i) => (
               <Fragment key={s.n}>
                 {i > 0 && <div className="w-8 h-px mx-1" style={{ background: formStep > s.n ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)' }} />}
@@ -913,18 +945,19 @@ export default function GeneratePage() {
               <button onClick={() => { setError(''); setFormStep(3); }}
                 className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
                 style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
-                下一步：选择场景
+                下一步：使用场景
               </button>
             </div>
           </div>
           )}
 
-          {/* ── Step 3: 选择场景 ─────────────────────────────────── */}
+          {/* ── Step 3: 使用场景（多选） ──────────────────────────── */}
           {formStep === 3 && (
           <div className="space-y-6">
             <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-sm font-semibold text-white/80">选择投放平台 / 场景</span>
+                <span className="text-sm font-semibold text-white/80">使用场景</span>
+                <span className="text-[11px] text-white/30">（可多选，AI推荐产品可能的使用场景）</span>
                 {isRecommendingScenes && (
                   <span className="text-[11px] text-cyan-300/80 flex items-center gap-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -952,21 +985,24 @@ export default function GeneratePage() {
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {scenes.map((scene, i) => (
-                  <button key={i} onClick={() => toggleScene(i)}
-                    className="relative p-3 rounded-xl text-xs text-center transition-all"
-                    style={{
-                      background: selectedScene === i ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
-                      border: selectedScene === i ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                      color: selectedScene === i ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
-                    }}>
-                    {selectedScene === i && (
-                      <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
-                    )}
-                    <div className="font-medium mb-0.5">{scene.label}</div>
-                    <div className="text-[10px] opacity-50">{scene.platform} · {scene.aspectRatio}</div>
-                  </button>
-                ))}
+                {scenes.map((scene, i) => {
+                  const isSelected = selectedScenes.includes(i);
+                  return (
+                    <button key={i} onClick={() => toggleScene(i)}
+                      className="relative p-3 rounded-xl text-xs text-center transition-all"
+                      style={{
+                        background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                        color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
+                      }}>
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
+                      )}
+                      <div className="font-medium mb-0.5">{scene.label}</div>
+                      <div className="text-[10px] opacity-50">{scene.platform} · {scene.aspectRatio}</div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* 自定义场景描述 */}
@@ -991,11 +1027,66 @@ export default function GeneratePage() {
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 ← 上一步
               </button>
+              <button onClick={() => setFormStep(4)}
+                className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                下一步：投放平台
+              </button>
+            </div>
+          </div>
+          )}
+
+          {/* ── Step 4: 投放平台（多选） ──────────────────────────── */}
+          {formStep === 4 && (
+          <div className="space-y-6">
+            <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-semibold text-white/80">投放平台 / 媒体</span>
+                <span className="text-[11px] text-white/30">（可多选）</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { key: 'IG Feed', label: 'IG Feed', desc: 'Instagram 方图 1:1' },
+                  { key: 'IG Story', label: 'IG Story', desc: 'Instagram 竖版 9:16' },
+                  { key: 'FB', label: 'Facebook 广告', desc: '横版 16:9' },
+                  { key: 'TikTok', label: 'TikTok 广告', desc: '竖版 9:16' },
+                  { key: 'TikTok Video', label: 'TikTok 视频', desc: '竖版 9:16' },
+                  { key: 'Pinterest', label: 'Pinterest', desc: '竖版 2:3' },
+                  { key: 'Google', label: 'Google Ads', desc: '横版 16:9' },
+                  { key: 'YouTube', label: 'YouTube', desc: '横版 16:9' },
+                ].map(p => {
+                  const isSelected = selectedPlatforms.includes(p.key);
+                  return (
+                    <button key={p.key} onClick={() => togglePlatform(p.key)}
+                      className="relative p-3 rounded-xl text-xs text-left transition-all"
+                      style={{
+                        background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                        color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
+                      }}>
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
+                      )}
+                      <div className="font-medium mb-0.5">{p.label}</div>
+                      <div className="text-[10px] opacity-50">{p.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setFormStep(3)}
+                className="flex-1 py-4 rounded-xl text-sm font-bold text-white/60 transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                ← 上一步
+              </button>
               <button onClick={generate}
                 className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
                 style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
                 <span className="flex items-center justify-center gap-2">
-                  <Zap className="w-4 h-4" />开始生成素材
+                  <Zap className="w-4 h-4" />
+                  生成 {selectedScenes.length * selectedPlatforms.length} 张素材
                 </span>
               </button>
             </div>
