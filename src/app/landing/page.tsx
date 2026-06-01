@@ -7,11 +7,11 @@ type Lang = 'zh' | 'en';
 
 const T = {
   zh: {
-    badge: 'DTC广告素材 · 100倍效率',
+    badge: '全球首个主动创意引擎',
     heroLine1: '你的广告素材',
     heroLine2: '我们包了',
-    heroSub: '全球首个DTC品牌主动创意素材生成引擎。',
-    heroNote: '品牌需求是被创造，而非调研。',
+    heroSub: 'AI 主动理解你的品牌，主动生成广告创意。',
+    heroNote: '不需要你告诉 AI 做什么。AI 看一眼产品图，就知道该做什么。',
     cta: '免费生成',
     ctaSub: '直接使用 · 无需等待',
     navHow: '使用方法',
@@ -66,11 +66,11 @@ const T = {
     ctaSub2: '已上线 · 免费使用',
   },
   en: {
-    badge: 'DTC Ad Creatives · 100x Efficiency',
+    badge: 'The First Proactive Creative Engine',
     heroLine1: 'Your ad creatives,',
     heroLine2: 'we got this.',
-    heroSub: 'The first proactive DTC brand creative engine.',
-    heroNote: 'Brand demand is created, not researched.',
+    heroSub: 'AI that proactively understands your brand and generates creatives.',
+    heroNote: "You don't tell AI what to do. AI looks at your product and knows.",
     cta: 'Generate Free',
     ctaSub: 'No sign-up · Download instantly',
     navHow: 'How it works',
@@ -518,6 +518,87 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Proactive vs Reactive ─── */}
+      <section className="py-20 px-6 border-t border-zinc-800/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">
+              {lang === 'zh' ? '为什么是「主动」' : 'WHY PROACTIVE'}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              {lang === 'zh' ? '传统工具等你下指令，100x 主动为你创造' : 'Other tools wait for orders. 100x creates for you.'}
+            </h2>
+            <p className="text-sm text-zinc-500 max-w-lg mx-auto leading-relaxed">
+              {lang === 'zh'
+                ? '传统设计工具是「你描述，它执行」。100x 是「它理解，它创造，它推荐」'
+                : 'Traditional tools: you describe, they execute. 100x: it understands, it creates, it recommends.'}
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* 被动 */}
+            <div className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm">😴</div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-300">{lang === 'zh' ? '传统方式' : 'Traditional'}</p>
+                  <p className="text-[11px] text-zinc-600">{lang === 'zh' ? '被动执行' : 'Reactive'}</p>
+                </div>
+              </div>
+              <ul className="space-y-3">
+                {(lang === 'zh' ? [
+                  '你需要写详细的 prompt',
+                  '你需要自己选场景、选尺寸',
+                  '你需要一个个手动导出',
+                  '你需要判断哪个素材更好',
+                  '你需要反复修改才能用',
+                ] : [
+                  'You write detailed prompts',
+                  'You pick scenes and sizes manually',
+                  'You export one by one',
+                  'You judge which creative works',
+                  'You iterate repeatedly before it\'s usable',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-500">
+                    <span className="text-zinc-700 mt-0.5">✕</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* 主动 */}
+            <div className="p-6 rounded-xl border border-violet-500/30 bg-violet-500/5">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-sm">⚡</div>
+                <div>
+                  <p className="text-sm font-semibold text-violet-300">{lang === 'zh' ? '100x 方式' : '100x'}</p>
+                  <p className="text-[11px] text-violet-500">{lang === 'zh' ? '主动创造' : 'Proactive'}</p>
+                </div>
+              </div>
+              <ul className="space-y-3">
+                {(lang === 'zh' ? [
+                  'AI 主动解码品牌 DNA，理解你的风格',
+                  'AI 主动推荐适配的场景和平台',
+                  'AI 一次生成全套尺寸，批量就绪',
+                  'AI 主动评估素材质量，挑出最好的',
+                  '开箱即用，无需修改',
+                ] : [
+                  'AI decodes your brand DNA automatically',
+                  'AI recommends scenes and platforms for you',
+                  'AI generates all sizes in one batch',
+                  'AI evaluates quality and picks the best',
+                  'Ready to use — no revision needed',
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-300">
+                    <span className="text-violet-400 mt-0.5">✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
