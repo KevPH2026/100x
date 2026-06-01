@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -111,6 +111,7 @@ interface GeneratedImage {
 export default function GeneratePage() {
   const { status } = useSession();
   const [step, setStep] = useState<'form' | 'generating' | 'result'>('form');
+  const [formStep, setFormStep] = useState(1); // 1=产品 2=营销 3=场景 4=确认
 
   // 配置（从后台拉）
   const [scenes, setScenes] = useState<SceneItem[]>(FALLBACK_SCENES);
@@ -609,14 +610,39 @@ export default function GeneratePage() {
 
       <main className="pt-20 pb-16 px-6">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-4"
               style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: 'rgba(196,181,253,0.9)' }}>
               <Sparkles className="w-3 h-3" />
               AI生成广告素材
             </div>
             <h1 className="text-3xl font-black mb-2">生成你的品牌素材</h1>
-            <p className="text-white/30">URL → 品牌DNA → 营销活动 → 多平台素材</p>
+          </div>
+
+          {/* ── 步骤指示器 ─────────────────────────────────── */}
+          <div className="flex items-center justify-center gap-0 mb-8">
+            {[
+              { n: 1, label: '产品信息' },
+              { n: 2, label: '营销活动' },
+              { n: 3, label: '选择场景' },
+            ].map((s, i) => (
+              <Fragment key={s.n}>
+                {i > 0 && <div className="w-8 h-px mx-1" style={{ background: formStep > s.n ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)' }} />}
+                <button onClick={() => { if (s.n < formStep) setFormStep(s.n); }}
+                  className="flex items-center gap-1.5 transition-all">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                    formStep === s.n ? 'bg-violet-500 text-white' :
+                    formStep > s.n ? 'bg-violet-500/30 text-violet-300' : 'bg-white/5 text-white/30'
+                  }`}>
+                    {formStep > s.n ? <Check className="w-3 h-3" /> : s.n}
+                  </span>
+                  <span className={`text-xs font-medium hidden sm:inline ${
+                    formStep === s.n ? 'text-white/80' :
+                    formStep > s.n ? 'text-violet-300/70' : 'text-white/20'
+                  }`}>{s.label}</span>
+                </button>
+              </Fragment>
+            ))}
           </div>
 
           {error && (
@@ -627,15 +653,15 @@ export default function GeneratePage() {
             </div>
           )}
 
+          {/* ── Step 1: 产品信息 ─────────────────────────────────── */}
+          {formStep === 1 && (
           <div className="space-y-6">
-
-            {/* ── Step 1: URL 解析 ─────────────────────────────────── */}
+            {/* URL 解析 */}
             <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(139,92,246,0.25)', background: 'rgba(139,92,246,0.04)' }}>
               <div className="px-5 pt-5 pb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-500/20 text-violet-300">STEP 1</span>
                   <Globe className="w-4 h-4 text-violet-400" />
-                  <span className="text-sm font-semibold text-white/80">从产品网址解析</span>
+                  <span className="text-sm font-semibold text-white/80">从产品网址解析（可选）</span>
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
@@ -698,11 +724,10 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* ── Step 2: 品牌 DNA 卡片 ──────────────────────────────── */}
+            {/* 品牌DNA */}
             {(brandDNA || isExtractingDNA) && (
               <div className="rounded-2xl overflow-hidden p-5" style={{ border: '1px solid rgba(244,114,182,0.25)', background: 'rgba(244,114,182,0.04)' }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-500/20 text-pink-300">STEP 2</span>
                   <Wand2 className="w-4 h-4 text-pink-400" />
                   <span className="text-sm font-semibold text-white/80">品牌 DNA</span>
                   {isExtractingDNA && <Loader2 className="w-3 h-3 animate-spin text-pink-400" />}
@@ -741,10 +766,9 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* ── Step 3: 基础信息 ──────────────────────────────────── */}
+            {/* 产品基础信息 */}
             <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-500/20 text-violet-300">STEP 2</span>
                 <span className="text-sm font-semibold text-white/80">产品信息</span>
               </div>
               <div>
@@ -815,10 +839,24 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* ── Step 4: 营销活动 ─────────────────────────────────── */}
+            <button onClick={() => {
+              if (!brandName.trim() || !sellingPoint.trim()) { setError('品牌名和卖点必填'); return; }
+              setError(''); setFormStep(2);
+            }}
+              className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+              <span className="flex items-center justify-center gap-2">
+                下一步：营销活动
+              </span>
+            </button>
+          </div>
+          )}
+
+          {/* ── Step 2: 营销活动 ─────────────────────────────────── */}
+          {formStep === 2 && (
+          <div className="space-y-6">
             <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.03)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/20 text-green-300">STEP 3</span>
                 <Target className="w-4 h-4 text-green-400" />
                 <span className="text-sm font-semibold text-white/80">营销活动</span>
               </div>
@@ -866,10 +904,26 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            {/* ── Step 5: 平台 / 场景 ───────────────────────────────── */}
+            <div className="flex gap-3">
+              <button onClick={() => setFormStep(1)}
+                className="flex-1 py-4 rounded-xl text-sm font-bold text-white/60 transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                ← 上一步
+              </button>
+              <button onClick={() => { setError(''); setFormStep(3); }}
+                className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                下一步：选择场景
+              </button>
+            </div>
+          </div>
+          )}
+
+          {/* ── Step 3: 选择场景 ─────────────────────────────────── */}
+          {formStep === 3 && (
+          <div className="space-y-6">
             <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/20 text-cyan-300">STEP 4</span>
                 <span className="text-sm font-semibold text-white/80">选择投放平台 / 场景</span>
                 {isRecommendingScenes && (
                   <span className="text-[11px] text-cyan-300/80 flex items-center gap-1">
@@ -931,14 +985,22 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            <button onClick={generate}
-              className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
-              <span className="flex items-center justify-center gap-2">
-                <Zap className="w-4 h-4" />开始生成素材
-              </span>
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => setFormStep(2)}
+                className="flex-1 py-4 rounded-xl text-sm font-bold text-white/60 transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                ← 上一步
+              </button>
+              <button onClick={generate}
+                className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                <span className="flex items-center justify-center gap-2">
+                  <Zap className="w-4 h-4" />开始生成素材
+                </span>
+              </button>
+            </div>
           </div>
+          )}
         </div>
       </main>
     </div>
