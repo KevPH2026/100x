@@ -471,13 +471,6 @@ export default function GeneratePage() {
     setStep('result');
   };
 
-  const downloadImage = (url: string, filename: string) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-  };
-
   // ── 自然语言再编辑 ───────────────────────────────────────────────
   const refineImage = async (idx: number, instruction: string) => {
     if (!instruction.trim()) return;
