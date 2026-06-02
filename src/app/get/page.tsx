@@ -582,7 +582,6 @@ export default function GeneratePage() {
               {generatedImages.map((img, i) => (
                 <ImageCard key={i} img={img} index={i}
                   brandName={brandName}
-                  onDownload={downloadImage}
                   onRefine={refineImage}
                 />
               ))}
@@ -1110,14 +1109,14 @@ function DNAField({ label, value, onChange }: { label: string; value: string; on
   );
 }
 
-// ── 图片卡片（带再编辑） ──────────────────────────────────────────
-function ImageCard({ img, index, brandName, onDownload, onRefine }: {
+// ── 图片卡片（带再编辑 + 水印 + 下载扣点） ────────────────────────
+function ImageCard({ img, index, brandName, onRefine }: {
   img: GeneratedImage; index: number; brandName: string;
-  onDownload: (url: string, filename: string) => void;
   onRefine: (idx: number, instruction: string) => void;
 }) {
   const [refineInput, setRefineInput] = useState('');
   const [showRefine, setShowRefine] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const QUICK = ['让产品更突出', '换个更亮的背景', '增加视觉冲击力', '更高级感'];
 
@@ -1128,11 +1127,52 @@ function ImageCard({ img, index, brandName, onDownload, onRefine }: {
     setRefineInput('');
   };
 
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      // 检查配额
+      const checkRes = await fetch('/api/quota/check');
+      const checkData = await checkRes.json();
+
+      if (checkData.guest) {
+        alert('请先登录后再下载素材');
+        return;
+      }
+      if (!checkData.canGenerate) {
+        alert(`配额不足（剩余 ${checkData.quotaRemaining} 次），请联系管理员充值`);
+        return;
+      }
+
+      // 扣点
+      const consumeRes = await fetch('/api/quota/consume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 1 }) });
+      if (!consumeRes.ok) {
+        const err = await consumeRes.json().catch(() => ({}));
+        alert(err.error || '下载失败，请重试');
+        return;
+      }
+
+      // 下载原图
+      const a = document.createElement('a');
+      a.href = img.url;
+      a.download = `${brandName}_${img.scene}_${img.ratio}.png`;
+      a.click();
+    } catch {
+      alert('下载出错，请重试');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="relative">
         <img src={img.url} alt={img.scene} className="w-full object-cover"
           style={{ aspectRatio: img.ratio.replace(':', '/') }} />
+        {/* 水印 */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none"
+          style={{ background: 'transparent' }}>
+          <span className="text-white/10 text-4xl font-black tracking-widest -rotate-12">100x</span>
+        </div>
         <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span className="text-[10px] font-medium text-white/70">{img.platform}</span>
@@ -1163,9 +1203,9 @@ function ImageCard({ img, index, brandName, onDownload, onRefine }: {
 
       {/* 操作区 */}
       <div className="grid grid-cols-2 divide-x divide-white/5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={() => onDownload(img.url, `${brandName}_${img.scene}_${img.ratio}.png`)}
-          className="py-2.5 flex items-center justify-center gap-1.5 text-xs text-white/50 hover:text-white hover:bg-white/5 transition-all">
-          <Download className="w-3 h-3" />下载
+        <button onClick={handleDownload} disabled={downloading}
+          className="py-2.5 flex items-center justify-center gap-1.5 text-xs text-white/50 hover:text-white hover:bg-white/5 transition-all disabled:opacity-50">
+          <Download className="w-3 h-3" />{downloading ? '下载中...' : '下载（扣1配额）'}
         </button>
         <button onClick={() => setShowRefine(s => !s)}
           className="py-2.5 flex items-center justify-center gap-1.5 text-xs text-violet-300 hover:text-violet-100 hover:bg-violet-500/10 transition-all">
