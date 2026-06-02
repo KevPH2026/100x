@@ -418,7 +418,7 @@ export default function GeneratePage() {
       setCurrentScene(task.scene.label + ' · ' + task.platformKey);
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 90000);
+        const timeout = setTimeout(() => controller.abort(), 120000);
         const res = await fetch('/api/adforge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
