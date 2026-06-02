@@ -81,12 +81,16 @@ function ImagePreview({ asset, onClose, onPrev, onNext, hasPrev, hasNext, onDele
 
         {/* Image */}
         <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
-          <div className="flex items-center justify-center bg-zinc-950 min-h-[300px] max-h-[70vh]">
+          <div className="flex items-center justify-center bg-zinc-950 min-h-[300px] max-h-[70vh] relative">
             <img
               src={asset.imageUrl}
               alt={asset.sceneLabel}
               className="max-w-full max-h-[70vh] object-contain"
             />
+            {/* 水印 */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none">
+              <span className="text-white/10 text-5xl font-black tracking-widest -rotate-12">100x</span>
+            </div>
           </div>
 
           {/* Info bar */}
@@ -112,14 +116,29 @@ function ImagePreview({ asset, onClose, onPrev, onNext, hasPrev, hasNext, onDele
                 <Trash2 className="w-3.5 h-3.5" />
                 删除
               </button>
-              <a
-                href={asset.imageUrl}
-                download={`${asset.brandName}-${asset.sceneLabel}.png`}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  (async () => {
+                    try {
+                      const consumeRes = await fetch('/api/quota/consume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 1 }) });
+                      if (!consumeRes.ok) {
+                        const err = await consumeRes.json().catch(() => ({}));
+                        alert(err.error || '下载失败');
+                        return;
+                      }
+                      const a = document.createElement('a');
+                      a.href = asset.imageUrl;
+                      a.download = `${asset.brandName}-${asset.sceneLabel}.png`;
+                      a.click();
+                    } catch { alert('下载出错'); }
+                  })();
+                }}
                 className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs px-4 py-2 rounded-lg transition"
               >
                 <Download className="w-3.5 h-3.5" />
-                下载
-              </a>
+                下载（扣1配额）
+              </button>
             </div>
           </div>
         </div>
@@ -442,21 +461,39 @@ export default function DashboardPage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
+                  {/* 水印 */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none">
+                    <span className="text-white/[0.07] text-2xl font-black tracking-widest -rotate-12">100x</span>
+                  </div>
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <span className="bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5">
                       <Eye className="w-3 h-3" />
                       预览
                     </span>
-                    <a
-                      href={asset.imageUrl}
-                      download={`${asset.brandName}-${asset.sceneLabel}.png`}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        (async () => {
+                          try {
+                            const consumeRes = await fetch('/api/quota/consume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 1 }) });
+                            if (!consumeRes.ok) {
+                              const err = await consumeRes.json().catch(() => ({}));
+                              alert(err.error || '下载失败');
+                              return;
+                            }
+                            const a = document.createElement('a');
+                            a.href = asset.imageUrl;
+                            a.download = `${asset.brandName}-${asset.sceneLabel}.png`;
+                            a.click();
+                          } catch { alert('下载出错'); }
+                        })();
+                      }}
                       className="bg-violet-600/80 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-violet-500 transition"
-                      onClick={e => e.stopPropagation()}
                     >
                       <Download className="w-3 h-3" />
                       下载
-                    </a>
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteAsset(asset.id); }}
                       className="bg-zinc-800/80 backdrop-blur-sm text-zinc-400 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-red-600 hover:text-white transition"
