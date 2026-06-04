@@ -20,6 +20,8 @@ model User {
 
   inviteCode    InviteCode? @relation(fields: [inviteCodeId], references: [id])
   assets        Asset[]
+  brands        UserBrand[]
+  memories      UserMemory[]
 
   @@map("users")
 }
@@ -51,6 +53,45 @@ model Asset {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("assets")
+}
+
+// ─── 用户品牌档案 ──────────────────────────────────────────
+model UserBrand {
+  id          String   @id @default(cuid())
+  userId      String
+  brandName   String
+  industry    String?           // 行业：美妆/3C/服饰/食品...
+  style       String?           // 品牌风格：极简/奢华/活泼/科技...
+  targetAudience String?        // 目标人群
+  colorPalette Json?            // 品牌色板 [{hex, name}]
+  logoUrl     String?           // 品牌logo
+  notes       String?           // 用户备注
+  usageCount  Int      @default(1)  // 生成次数（自动累加）
+  lastUsedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, brandName])
+  @@map("user_brands")
+}
+
+// ─── 用户偏好记忆 ──────────────────────────────────────────
+model UserMemory {
+  id        String   @id @default(cuid())
+  userId    String
+  category  String              // preference / pattern / insight / feedback
+  key       String              // 如: default_platform / color_preference / scene_preference
+  value     String              // 值（自由文本或JSON字符串）
+  source    String?             // auto / manual — 自动学习还是用户手动设置
+  confidence Float   @default(1.0)  // 置信度 0-1
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, key])
+  @@map("user_memories")
 }
 
 model AppConfig {
