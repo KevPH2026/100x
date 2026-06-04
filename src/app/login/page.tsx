@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,15 +11,26 @@ import { Eye, EyeOff, AlertCircle, Check, Loader2 } from "lucide-react";
 function LoginForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") || "/chat";
   const error = searchParams.get("error");
-  const [email, setEmail] = useState("");
+  const registeredEmail = searchParams.get("email") || "";
+  const isJustRegistered = searchParams.get("registered") === "1";
+  const [email, setEmail] = useState(registeredEmail);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(
+    isJustRegistered ? { type: "success", text: "注册成功！请输入密码登录" } : null
+  );
+
+  // Auto-focus password field if email was pre-filled
+  useEffect(() => {
+    if (registeredEmail && !password) {
+      document.getElementById('login-pw-input')?.focus();
+    }
+  }, [registeredEmail]);
 
   async function handleEmailLogin() {
     if (!email || !password) return;
@@ -85,7 +96,7 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1.5">密码</label>
         <div className="relative">
-          <Input type={showPw ? "text" : "password"} value={password}
+          <Input type={showPw ? "text" : "password"} value={password} id="login-pw-input"
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === "Enter" && (mode === "login" ? handleEmailLogin() : handleRegister())}
             placeholder={mode === "register" ? "至少6位" : "输入密码"} className="h-11 pr-10" />

@@ -43,12 +43,11 @@ export default function RegisterPage() {
         setMsg({ type: 'error', text: data.error || '注册失败' });
       } else {
         setMsg({ type: 'success', text: '注册成功！正在登录…' });
-        // Auto-login after registration, then redirect to /chat
-        await signIn('credentials', {
-          email,
-          password,
-          callbackUrl: '/chat',
-        });
+        try {
+          await signIn('credentials', { email, password, callbackUrl: '/chat' });
+        } catch {
+          router.push(`/login?registered=1&email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent('/chat')}`);
+        }
       }
     } catch {
       setMsg({ type: 'error', text: '网络错误' });
