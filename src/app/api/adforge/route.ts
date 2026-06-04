@@ -136,6 +136,38 @@ export async function POST(req: NextRequest) {
 
   if (!brandName || !sellingPoint) return NextResponse.json({ error: '品牌名和卖点必填' }, { status: 400 });
 
+  // ── 读取用户记忆 ──────────────────────────────────────
+  let userCtx = '';
+  try {
+    const session = await auth();
+    if (session?.user?.id) {
+      const [memRows, brandRow] = await Promise.all([
+        prisma.userMemory.findMany({ where: { userId: session.user.id } }),
+        prisma.userBrand.findUnique({ where: { userId_brandName: { userId: session.user.id, brandName } } }),
+      ]);
+
+      const styleMem = memRows.filter(m => m.category === 'style');
+      const distMem = memRows.filter(m => m.category === 'distribution');
+      const toneMem = memRows.filter(m => m.category === 'brand_tone');
+
+      const prefs: string[] = [];
+      if (styleMem.length) prefs.push(...styleMem.map(m => `${m.key}: ${m.value}`));
+      if (distMem.length) prefs.push(...distMem.map(m => `${m.key}: ${m.value}`));
+      if (toneMem.length) prefs.push(...toneMem.map(m => `${m.key}: ${m.value}`));
+
+      if (brandRow) {
+        prefs.push(`brand industry: ${brandRow.industry}`);
+        prefs.push(`brand style: ${brandRow.style}`);
+        if (brandRow.targetAudience) prefs.push(`target audience: ${brandRow.targetAudience}`);
+        if (brandRow.notes) prefs.push(`brand notes: ${brandRow.notes}`);
+      }
+
+      if (prefs.length) {
+        userCtx = `\nUSER PREFERENCES (learned from history — apply these to make the output match this user's taste):\n${prefs.map(p => `- ${p}`).join('\n')}\n`;
+      }
+    }
+  } catch (e) { console.error('[ADFORGE] Memory read:', e); }
+
   const scenes = (ax.scenes && ax.scenes.length > 0) ? ax.scenes : DEFAULT_SCENES;
   const sceneIdx = sceneIndex ?? 0;
   if (sceneIdx < 0 || sceneIdx >= scenes.length) return NextResponse.json({ error: '无效场景索引' }, { status: 400 });
@@ -175,7 +207,7 @@ ${campaignTheme ? `Campaign: ${campaignTheme}` : ''}
 ${marketingGoal ? `Goal: ${marketingGoal}` : ''}
 ${urgency && urgency !== 'none' ? `Urgency: ${urgency}` : ''}
 ${cta ? `CTA hint: ${cta}` : ''}
-
+${userCtx}
 ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.' : `Aspect ratio: ${ratio}. Product must be the hero, well-composed, ready for social media.`}`;
 
   console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider-pref=${trKey ? 'tokenrouter' : 'novart'}`);
@@ -227,6 +259,14 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
             aspectRatio: ratio, sourceUrl: body.sourceUrl || null,
           }}),
         ]);
+        // 更新品牌使用计数
+        try {
+          await prisma.userBrand.upsert({
+            where: { userId_brandName: { userId: session.user.id, brandName } },
+            update: { usageCount: { increment: 1 }, lastUsedAt: new Date() },
+            create: { userId: session.user.id, brandName, usageCount: 1 },
+          });
+        } catch {}
       }
     }
   } catch (e) { console.error('[ADFORGE] DB:', e); }
