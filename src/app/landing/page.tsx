@@ -148,7 +148,7 @@ function CTASection({ lang }: { lang: Lang }) {
           : 'No waiting. Experience AI-powered brand creatives now.'}
       </p>
 
-      <a href="/get"
+      <a href="/chat"
         className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-8 py-3.5 rounded-lg transition-colors">
         <Sparkles className="w-4 h-4" />
         {t.ctaMain}
@@ -440,7 +440,7 @@ export default function LandingPage() {
               className="text-xs text-zinc-500 hover:text-zinc-300 px-2.5 py-1.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors">
               {lang === 'zh' ? 'EN' : '中文'}
             </button>
-            <a href="/get" className="h-8 px-4 rounded-md text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 flex items-center gap-1.5 transition-colors">
+            <a href="/chat" className="h-8 px-4 rounded-md text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 flex items-center gap-1.5 transition-colors">
               {t.getStarted}
               <ArrowRight className="w-3 h-3" />
             </a>
@@ -469,7 +469,7 @@ export default function LandingPage() {
             {t.heroNote}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="/get" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-8 py-3.5 rounded-lg transition-colors">
+            <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-8 py-3.5 rounded-lg transition-colors">
               {t.cta}
               <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
             </a>
@@ -776,7 +776,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <a href="/get"
+                <a href="/chat"
                   className={`group inline-flex items-center justify-center gap-2 w-full text-sm font-semibold rounded-lg px-6 py-3 transition-colors ${
                     plan.highlight
                       ? 'bg-violet-600 text-white hover:bg-violet-500'
@@ -800,7 +800,7 @@ export default function LandingPage() {
             <span className="text-violet-400">{t.heroLine2}</span>
           </h2>
           <p className="text-zinc-500 mb-10">{t.heroSub}</p>
-          <a href="/get" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-10 py-4 rounded-lg transition-colors">
+          <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-10 py-4 rounded-lg transition-colors">
             {t.cta}
             <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
           </a>

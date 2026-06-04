@@ -168,11 +168,15 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) { console.error('[ADFORGE] Memory read:', e); }
 
+  // Support dynamic ratio/platform from Agent
+  const forceRatio = body.forceRatio as string | undefined;
+  const forcePlatform = body.forcePlatform as string | undefined;
+
   const scenes = (ax.scenes && ax.scenes.length > 0) ? ax.scenes : DEFAULT_SCENES;
   const sceneIdx = sceneIndex ?? 0;
-  if (sceneIdx < 0 || sceneIdx >= scenes.length) return NextResponse.json({ error: '无效场景索引' }, { status: 400 });
-  const scene = scenes[sceneIdx];
-  const ratio = scene.aspectRatio || '1:1';
+  if (sceneIdx < 0 || sceneIdx >= scenes.length && !customSceneDesc) return NextResponse.json({ error: '无效场景索引' }, { status: 400 });
+  const scene = scenes[Math.min(sceneIdx, scenes.length - 1)] || { aspectRatio: '1:1', desc: customSceneDesc || 'product shot', label: 'Custom' };
+  const ratio = forceRatio || scene.aspectRatio || '1:1';
   const sceneDesc = customSceneDesc?.trim() || scene.desc;
 
   const hasRef = !!referenceImage;
@@ -255,7 +259,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
           prisma.user.update({ where: { id: session.user.id }, data: { quotaUsed: { increment: 1 } } }),
           prisma.asset.create({ data: {
             userId: session.user.id, imageUrl: persistentUrl, brandName,
-            platform: platformLabel(ratio, scene.platform), sceneLabel: scene.label,
+            platform: forcePlatform || platformLabel(ratio, scene.platform), sceneLabel: sceneDesc?.slice(0, 50) || scene.label,
             aspectRatio: ratio, sourceUrl: body.sourceUrl || null,
           }}),
         ]);
