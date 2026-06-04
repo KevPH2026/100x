@@ -11,8 +11,10 @@ model User {
   email         String   @unique
   password      String
   name          String?
+  company       String?                 // 公司名称
+  phone         String?                 // 联系电话
   inviteCodeId  String?  @unique
-  quotaTotal    Int      @default(0)   // 从邀请码继承
+  quotaTotal    Int      @default(10)   // 免费用户默认10张
   quotaUsed     Int      @default(0)   // 已用张数
   disabled      Boolean  @default(false)
   createdAt     DateTime @default(now())
