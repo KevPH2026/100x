@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Eye, EyeOff, AlertCircle, Check, Loader2, Building2, User, Phone, Mail, Lock, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,8 +42,18 @@ export default function RegisterPage() {
       if (!res.ok) {
         setMsg({ type: 'error', text: data.error || '注册失败' });
       } else {
-        setMsg({ type: 'success', text: '注册成功！正在跳转…' });
-        setTimeout(() => router.push('/login?registered=1'), 800);
+        setMsg({ type: 'success', text: '注册成功！正在登录…' });
+        // Auto-login after registration
+        const loginResult = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+        if (loginResult?.ok) {
+          router.push('/chat');
+        } else {
+          router.push('/login?registered=1');
+        }
       }
     } catch {
       setMsg({ type: 'error', text: '网络错误' });

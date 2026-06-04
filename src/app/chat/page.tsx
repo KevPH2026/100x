@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import {
   Send, Sparkles, Globe, Edit3, Check, X, Image as ImageIcon,
   Loader2, Download, LayoutDashboard, LogOut, User, ChevronRight,
-  ExternalLink, Palette, Target, Tag, Zap,
+  ExternalLink, Palette, Target, Tag, Zap, PanelRightOpen, PanelRightClose, XCircle,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,11 +61,11 @@ function EditableField({
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { onSave(draft); setEditing(false); } if (e.key === 'Escape') { setDraft(value); setEditing(false); } }}
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200 outline-none focus:border-violet-500"
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200 outline-none focus:border-violet-500 min-w-0"
           autoFocus
         />
-        <button onClick={() => { onSave(draft); setEditing(false); }} className="text-emerald-400 hover:text-emerald-300"><Check className="w-3 h-3" /></button>
-        <button onClick={() => { setDraft(value); setEditing(false); }} className="text-zinc-500 hover:text-zinc-400"><X className="w-3 h-3" /></button>
+        <button onClick={() => { onSave(draft); setEditing(false); }} className="text-emerald-400 hover:text-emerald-300 shrink-0"><Check className="w-3 h-3" /></button>
+        <button onClick={() => { setDraft(value); setEditing(false); }} className="text-zinc-500 hover:text-zinc-400 shrink-0"><X className="w-3 h-3" /></button>
       </div>
     );
   }
@@ -74,8 +74,8 @@ function EditableField({
     <div className="flex items-center gap-1.5 group cursor-pointer" onClick={() => setEditing(true)}>
       <Icon className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
       <span className="text-xs text-zinc-500 shrink-0">{label}</span>
-      <span className="text-xs text-zinc-200">{value || placeholder || '—'}</span>
-      <Edit3 className="w-3 h-3 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <span className="text-xs text-zinc-200 truncate">{value || placeholder || '—'}</span>
+      <Edit3 className="w-3 h-3 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </div>
   );
 }
@@ -106,17 +106,17 @@ function BrandPanel({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-zinc-100">{brand.brandName}</h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold text-zinc-100 truncate">{brand.brandName}</h3>
           {brand.website && (
-            <a href={brand.website} target="_blank" rel="noopener" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-0.5 mt-0.5">
+            <a href={brand.website} target="_blank" rel="noopener" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-0.5 mt-0.5 truncate">
               {brand.website.replace(/^https?:\/\//, '')}
-              <ExternalLink className="w-2.5 h-2.5" />
+              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
             </a>
           )}
         </div>
         {brand.logoUrl && (
-          <img src={brand.logoUrl} alt="" className="w-10 h-10 rounded-lg border border-zinc-700 object-cover" />
+          <img src={brand.logoUrl} alt="" className="w-10 h-10 rounded-lg border border-zinc-700 object-cover shrink-0 ml-2" />
         )}
       </div>
 
@@ -210,7 +210,7 @@ function ImageGrid({ images, onDownload }: { images: GeneratedImage[]; onDownloa
             ) : (
               <>
                 <img src={img.url} alt={img.scene} className="w-full aspect-square object-cover" />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 max-md:active:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                   <span className="text-xs text-white/80">{img.platform}</span>
                   <button
                     onClick={() => onDownload(img)}
@@ -240,6 +240,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [rightTab, setRightTab] = useState<'brand' | 'images'>('brand');
+  const [panelOpen, setPanelOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -306,6 +307,8 @@ export default function ChatPage() {
         setBrand(prev => ({ ...prev, ...data.brandProfile }));
         setBrandConfirmed(false);
         setRightTab('brand');
+        // On mobile, auto-open panel when brand is detected
+        if (window.innerWidth < 768) setPanelOpen(true);
       }
 
       // Handle generate action
@@ -339,6 +342,7 @@ export default function ChatPage() {
   }) => {
     setGenerating(true);
     setRightTab('images');
+    if (window.innerWidth < 768) setPanelOpen(true);
 
     const newImages: GeneratedImage[] = params.scenes.map(s => ({
       url: '', platform: s.platform || s.label, scene: s.label, ratio: s.aspectRatio, loading: true,
@@ -423,21 +427,25 @@ export default function ChatPage() {
     sendMessage(text);
   }, [sendMessage]);
 
+  // Badge count for panel toggle
+  const badgeCount = (brand ? 1 : 0) + images.filter(i => !i.loading && !i.error).length;
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950 text-zinc-100">
+    <div className="h-[100dvh] flex flex-col bg-zinc-950 text-zinc-100">
       {/* Top Bar */}
-      <header className="shrink-0 h-12 border-b border-zinc-800 flex items-center justify-between px-4">
-        <a href="/" className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">x</div>
-          <span className="text-sm font-semibold text-zinc-200">100x</span>
-        </a>
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 h-12 border-b border-zinc-800 flex items-center justify-between px-3 md:px-4">
+        <div className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">x</div>
+            <span className="text-sm font-semibold text-zinc-200">100x</span>
+          </a>
+        </div>
+        <div className="flex items-center gap-2 md:gap-3">
           {session?.user && (
             <>
-              <a href="/get" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">旧版工具</a>
-              <a href="/dashboard" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+              <a href="/dashboard" className="hidden md:flex text-xs text-zinc-500 hover:text-zinc-300 transition-colors items-center gap-1">
                 <LayoutDashboard className="w-3.5 h-3.5" />素材库
               </a>
             </>
@@ -451,18 +459,30 @@ export default function ChatPage() {
               <User className="w-3.5 h-3.5" />登录
             </a>
           )}
+          {/* Panel toggle (mobile: always visible, desktop: hidden when panel is open) */}
+          <button
+            onClick={() => setPanelOpen(!panelOpen)}
+            className="relative text-zinc-500 hover:text-zinc-300 transition-colors md:hidden"
+          >
+            <PanelRightOpen className="w-5 h-5" />
+            {badgeCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-600 text-[10px] flex items-center justify-center text-white">
+                {badgeCount > 9 ? '9+' : badgeCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left: Chat */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+          <div className="flex-1 overflow-y-auto px-3 md:px-4 py-6 space-y-4">
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'}`}>
-                <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-2' : ''}`}>
+                <div className={`max-w-[85%] md:max-w-[80%] ${msg.role === 'user' ? 'order-2' : ''}`}>
                   <div className="flex items-start gap-2.5">
                     {msg.role === 'agent' && (
                       <div className="shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mt-0.5">
@@ -498,7 +518,7 @@ export default function ChatPage() {
                           key={i}
                           onClick={() => handleSuggestion(s)}
                           disabled={sending}
-                          className="text-xs px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 transition-colors disabled:opacity-50 flex items-center gap-1"
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 active:bg-zinc-800 transition-colors disabled:opacity-50 flex items-center gap-1"
                         >
                           {s} <ChevronRight className="w-3 h-3" />
                         </button>
@@ -531,7 +551,7 @@ export default function ChatPage() {
           </div>
 
           {/* Input */}
-          <div className="shrink-0 border-t border-zinc-800 p-4">
+          <div className="shrink-0 border-t border-zinc-800 p-3 md:p-4 pb-[env(safe-area-inset-bottom,0px)] md:pb-4">
             <div className="flex items-end gap-2 max-w-3xl mx-auto">
               <textarea
                 ref={inputRef}
@@ -541,12 +561,12 @@ export default function ChatPage() {
                 placeholder="输入品牌网站、需求、或指令..."
                 disabled={sending || generating}
                 rows={1}
-                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-zinc-600 resize-none disabled:opacity-50"
+                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 md:px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-zinc-600 resize-none disabled:opacity-50"
               />
               <button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || sending || generating}
-                className="shrink-0 w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white flex items-center justify-center transition-colors"
+                className="shrink-0 w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 active:bg-violet-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white flex items-center justify-center transition-colors"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -554,8 +574,8 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Right: Brand Panel + Images */}
-        <div className="w-[340px] shrink-0 border-l border-zinc-800 flex flex-col">
+        {/* Right: Brand Panel + Images — Desktop */}
+        <div className="hidden md:flex w-[340px] shrink-0 border-l border-zinc-800 flex-col">
           {/* Tab Switcher */}
           <div className="shrink-0 flex border-b border-zinc-800">
             <button
@@ -591,6 +611,64 @@ export default function ChatPage() {
             )}
           </div>
         </div>
+
+        {/* Right: Brand Panel + Images — Mobile Overlay */}
+        {panelOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="md:hidden fixed inset-0 bg-black/60 z-40"
+              onClick={() => setPanelOpen(false)}
+            />
+            {/* Slide-up Panel */}
+            <div className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-zinc-950 border-t border-zinc-800 rounded-t-2xl flex flex-col"
+              style={{ height: '75dvh', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              {/* Handle bar */}
+              <div className="flex justify-center pt-2 pb-1" onClick={() => setPanelOpen(false)}>
+                <div className="w-10 h-1 rounded-full bg-zinc-700" />
+              </div>
+              {/* Tab Switcher */}
+              <div className="shrink-0 flex border-b border-zinc-800">
+                <button
+                  onClick={() => setRightTab('brand')}
+                  className={`flex-1 py-2.5 text-xs font-medium transition-colors ${rightTab === 'brand' ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-500'}`}
+                >
+                  品牌档案
+                </button>
+                <button
+                  onClick={() => setRightTab('images')}
+                  className={`flex-1 py-2.5 text-xs font-medium transition-colors relative ${rightTab === 'images' ? 'text-violet-400 border-b-2 border-violet-400' : 'text-zinc-500'}`}
+                >
+                  生成结果
+                  {images.length > 0 && (
+                    <span className="absolute -top-0.5 right-4 w-4 h-4 rounded-full bg-violet-600 text-[10px] flex items-center justify-center">
+                      {images.filter(i => !i.loading && !i.error).length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setPanelOpen(false)}
+                  className="px-3 text-zinc-500 hover:text-zinc-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Panel Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {rightTab === 'brand' ? (
+                  <BrandPanel
+                    brand={brand}
+                    onUpdate={setBrand}
+                    onConfirm={() => { sendMessage('确认'); setPanelOpen(false); }}
+                    confirmed={brandConfirmed}
+                  />
+                ) : (
+                  <ImageGrid images={images} onDownload={handleDownload} />
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
