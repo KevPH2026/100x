@@ -16,6 +16,7 @@ interface Stats {
 
 interface AdminUser {
   id: string; email: string; name: string | null;
+  company: string | null; phone: string | null;
   quotaTotal: number; quotaUsed: number; disabled: boolean;
   createdAt: string; _count: { assets: number };
 }
@@ -259,6 +260,8 @@ function UsersTab() {
               <tr className="border-b border-zinc-800 text-zinc-500 text-xs">
                 <th className="text-left py-3 font-medium">邮箱</th>
                 <th className="text-left py-3 font-medium">姓名</th>
+                <th className="text-left py-3 font-medium">公司</th>
+                <th className="text-left py-3 font-medium">电话</th>
                 <th className="text-right py-3 font-medium">配额</th>
                 <th className="text-right py-3 font-medium">已用</th>
                 <th className="text-right py-3 font-medium">剩余</th>
@@ -270,8 +273,10 @@ function UsersTab() {
             <tbody>
               {users.map(u => (
                 <tr key={u.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/50">
-                  <td className="py-3 text-white">{u.email}</td>
-                  <td className="py-3 text-zinc-400">{u.name || '—'}</td>
+                  <td className="py-3 text-white text-sm">{u.email}</td>
+                  <td className="py-3 text-zinc-300 text-sm">{u.name || '—'}</td>
+                  <td className="py-3 text-zinc-400 text-sm">{u.company || '—'}</td>
+                  <td className="py-3 text-zinc-400 text-sm">{u.phone || '—'}</td>
                   <td className="py-3 text-right">
                     {editingId === u.id ? (
                       <input type="number" value={editQuota} onChange={e => setEditQuota(e.target.value)}

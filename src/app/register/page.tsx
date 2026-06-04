@@ -1,224 +1,215 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Eye, EyeOff, AlertCircle, Check, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, AlertCircle, Check, Loader2, Building2, User, Phone, Mail, Lock, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  function validateStep1(): boolean {
+    if (!email) { setMsg({ type: 'error', text: '请输入邮箱' }); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg({ type: 'error', text: '邮箱格式不正确' }); return false; }
+    if (!password) { setMsg({ type: 'error', text: '请输入密码' }); return false; }
+    if (password.length < 6) { setMsg({ type: 'error', text: '密码至少6位' }); return false; }
+    return true;
+  }
 
   async function handleRegister() {
-    setMsg(null);
-
-    if (!email || !password || !confirmPassword) {
-      setMsg({ type: "error", text: "请填写所有必填字段" });
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setMsg({ type: "error", text: "请输入有效的邮箱地址" });
-      return;
-    }
-    if (password.length < 6) {
-      setMsg({ type: "error", text: "密码至少 6 位" });
-      return;
-    }
-    if (password !== confirmPassword) {
-      setMsg({ type: "error", text: "两次密码输入不一致" });
-      return;
-    }
+    if (!name.trim()) { setMsg({ type: 'error', text: '请输入你的姓名' }); return; }
+    if (!company.trim()) { setMsg({ type: 'error', text: '请输入公司名称' }); return; }
 
     setLoading(true);
+    setMsg(null);
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          inviteCode: inviteCode || undefined,
-        }),
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name: name.trim(), company: company.trim(), phone: phone.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsg({ type: "error", text: data.error || "注册失败，请重试" });
+        setMsg({ type: 'error', text: data.error || '注册失败' });
       } else {
-        setMsg({ type: "success", text: "注册成功！正在跳转到登录页…" });
-        setTimeout(() => {
-          router.push("/login?registered=1");
-        }, 800);
+        setMsg({ type: 'success', text: '注册成功！正在跳转…' });
+        setTimeout(() => router.push('/login?registered=1'), 800);
       }
     } catch {
-      setMsg({ type: "error", text: "网络错误，请重试" });
+      setMsg({ type: 'error', text: '网络错误' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-4">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <path
-                d="M14 3C14 3 10 7 10 12C10 14.5 11.5 16.5 14 17.5C16.5 18.5 18 20.5 18 23"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              <circle cx="14" cy="11" r="4" fill="white" />
-              <path d="M14 21V25" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M10 25H18" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-3">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">100x</h1>
-          <p className="text-zinc-400 text-sm mt-1">AI 灵感创作平台</p>
+          <h1 className="text-xl font-bold text-white">100x</h1>
+          <p className="text-zinc-500 text-xs mt-0.5">免费注册，开始生成广告素材</p>
         </div>
 
-        <Card className="p-8 bg-zinc-900 border border-zinc-800 shadow-2xl rounded-3xl">
-          <h2 className="text-lg font-semibold text-white mb-1">创建账号</h2>
-          <p className="text-zinc-400 text-sm mb-6">填写信息完成注册</p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          {/* Progress */}
+          <div className="flex items-center gap-2 mb-5">
+            <div className={`flex items-center gap-1.5 text-xs font-medium ${step === 1 ? 'text-violet-400' : 'text-zinc-500'}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 1 ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>1</div>
+              账号
+            </div>
+            <div className="flex-1 h-px bg-zinc-800" />
+            <div className={`flex items-center gap-1.5 text-xs font-medium ${step === 2 ? 'text-violet-400' : 'text-zinc-500'}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step === 2 ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}>2</div>
+              信息
+            </div>
+          </div>
 
-          {/* Message Banner */}
+          {/* Message */}
           {msg && (
-            <div
-              className={`mb-5 flex items-center gap-2 text-sm rounded-xl p-3 ${
-                msg.type === "error"
-                  ? "text-red-400 bg-red-950/60 border border-red-900/50"
-                  : "text-emerald-400 bg-emerald-950/60 border border-emerald-900/50"
-              }`}
-            >
-              {msg.type === "error" ? (
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              ) : (
-                <Check className="w-4 h-4 flex-shrink-0" />
-              )}
+            <div className={`mb-4 flex items-center gap-2 text-xs rounded-lg p-2.5 ${
+              msg.type === 'error'
+                ? 'text-red-400 bg-red-950/60 border border-red-900/50'
+                : 'text-emerald-400 bg-emerald-950/60 border border-emerald-900/50'
+            }`}>
+              {msg.type === 'error' ? <AlertCircle className="w-3.5 h-3.5 shrink-0" /> : <Check className="w-3.5 h-3.5 shrink-0" />}
               {msg.text}
             </div>
           )}
 
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              邮箱 <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              autoFocus
-              autoComplete="email"
-              className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20 rounded-xl"
-            />
-          </div>
+          {/* Step 1: Account */}
+          {step === 1 && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">邮箱</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    autoFocus
+                    className="w-full h-10 pl-9 pr-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500 transition-colors"
+                  />
+                </div>
+              </div>
 
-          {/* Password */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              密码 <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="至少 6 位"
-                autoComplete="new-password"
-                className="h-11 pr-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20 rounded-xl"
-              />
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">密码</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="至少6位"
+                    onKeyDown={e => { if (e.key === 'Enter' && validateStep1()) setStep(2); }}
+                    className="w-full h-10 pl-9 pr-10 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500 transition-colors"
+                  />
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                onClick={() => { if (validateStep1()) setStep(2); }}
+                className="w-full h-10 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors mt-2"
               >
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                下一步
               </button>
             </div>
-          </div>
+          )}
 
-          {/* Confirm Password */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              确认密码 <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Input
-                type={showConfirmPw ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="再次输入密码"
-                autoComplete="new-password"
-                onKeyDown={(e) => e.key === "Enter" && handleRegister()}
-                className="h-11 pr-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20 rounded-xl"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPw(!showConfirmPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
-              >
-                {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+          {/* Step 2: Business Info */}
+          {step === 2 && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  你的姓名 <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="张三"
+                    autoFocus
+                    className="w-full h-10 pl-9 pr-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  公司名称 <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  <input
+                    type="text"
+                    value={company}
+                    onChange={e => setCompany(e.target.value)}
+                    placeholder="你的品牌/公司名"
+                    className="w-full h-10 pl-9 pr-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  联系电话 <span className="text-zinc-600 text-[10px]">选填，方便我们联系你</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="138-xxxx-xxxx"
+                    onKeyDown={e => { if (e.key === 'Enter') handleRegister(); }}
+                    className="w-full h-10 pl-9 pr-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setStep(1)}
+                  className="h-10 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition-colors"
+                >
+                  返回
+                </button>
+                <button
+                  onClick={handleRegister}
+                  disabled={loading}
+                  className="flex-1 h-10 bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading ? '注册中…' : '免费注册'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Invite Code */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              邀请码
-              <span className="ml-1.5 text-xs text-zinc-500 font-normal">（选填）</span>
-            </label>
-            <Input
-              type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              placeholder="XXXXXXXX"
-              autoComplete="off"
-              spellCheck={false}
-              className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20 rounded-xl tracking-widest font-mono uppercase"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={handleRegister}
-            disabled={loading || !email || !password || !confirmPassword}
-            className="w-full h-11 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-violet-800 disabled:to-indigo-800 disabled:opacity-50 text-white rounded-xl font-medium transition-all"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {loading ? "注册中…" : "创建账号"}
-          </Button>
-
-          {/* Login Link */}
-          <p className="text-center text-zinc-500 text-sm mt-5">
-            已有账号？{" "}
-            <Link
-              href="/login"
-              className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
-            >
-              立即登录
-            </Link>
-          </p>
-        </Card>
-
-        <p className="text-center text-zinc-600 text-xs mt-6">
-          注册即表示同意{" "}
-          <span className="text-violet-500 cursor-pointer hover:text-violet-400">服务条款</span>{" "}
-          和{" "}
-          <span className="text-violet-500 cursor-pointer hover:text-violet-400">隐私政策</span>
+        <p className="text-center text-zinc-600 text-xs mt-5">
+          已有账号？{' '}
+          <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors">登录</Link>
         </p>
       </div>
     </div>
