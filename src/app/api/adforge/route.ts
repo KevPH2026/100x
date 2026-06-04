@@ -7,6 +7,31 @@ import { readAppConfig, DEFAULT_SCENES } from '@/lib/app-config';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
+// ── Rate Limiter (in-memory, per-user, sliding window) ──────────────────────
+const WINDOW_MS = 60_000; // 1 minute window
+const MAX_PER_WINDOW = 3;  // max 3 generations per minute per user
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(userId: string): { ok: boolean; retryAfterMs: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + WINDOW_MS });
+    // Prune old entries periodically
+    if (rateLimitMap.size > 1000) {
+      for (const [k, v] of rateLimitMap) {
+        if (now > v.resetAt) rateLimitMap.delete(k);
+      }
+    }
+    return { ok: true, retryAfterMs: 0 };
+  }
+  if (entry.count >= MAX_PER_WINDOW) {
+    return { ok: false, retryAfterMs: entry.resetAt - now };
+  }
+  entry.count++;
+  return { ok: true, retryAfterMs: 0 };
+}
+
 const ENV_TR_KEY = process.env.TOKENROUTER_API_KEY || '';
 const ENV_TR_BASE = (process.env.TOKENROUTER_BASE_URL || 'https://api.tokenrouter.com/v1').trim();
 const ENV_NOVART_KEY = process.env.NOVART_API_KEY || '';
@@ -121,6 +146,18 @@ async function genNovartVertex(
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit check
+  const authResult = await auth();
+  if (authResult?.user?.id) {
+    const rl = checkRateLimit(authResult.user.id);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `请求太频繁，请等待 ${Math.ceil(rl.retryAfterMs / 1000)} 秒后再试` },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
+    }
+  }
+
   const config = await readAppConfig();
   const ax = config.adforge100x || {};
   const trKey = (ax as any).tokenrouterKey || ENV_TR_KEY;
