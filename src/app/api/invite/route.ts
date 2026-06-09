@@ -1,4 +1,3 @@
-// Admin API: 生成邀请码
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
@@ -7,7 +6,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { adminPassword, quota = 100, note = '', count = 1 } = body;
+  const { adminPassword, quota = 100, maxUses = 50, note = '', count = 1 } = body;
 
   if (adminPassword !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: '无权限' }, { status: 401 });
@@ -19,13 +18,15 @@ export async function POST(req: NextRequest) {
         data: {
           code: nanoid(10).toUpperCase(),
           quota: Number(quota),
+          maxUses: Number(maxUses),
+          currentUses: 0,
           note: note || null,
         },
       })
     )
   );
 
-  return NextResponse.json({ success: true, codes: codes.map(c => ({ code: c.code, quota: c.quota, note: c.note })) });
+  return NextResponse.json({ success: true, codes: codes.map(c => ({ code: c.code, quota: c.quota, maxUses: c.maxUses, note: c.note })) });
 }
 
 export async function GET(req: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   const codes = await prisma.inviteCode.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { usedBy: { select: { email: true, createdAt: true } } },
+    include: { users: { select: { email: true } } },
   });
 
   return NextResponse.json({ success: true, codes });

@@ -33,13 +33,12 @@ export async function POST(req: NextRequest) {
   if (inviteCode?.trim()) {
     const code = await prisma.inviteCode.findUnique({
       where: { code: inviteCode.trim().toUpperCase() },
-      include: { usedBy: true },
     });
     if (!code) {
       return NextResponse.json({ error: '邀请码无效' }, { status: 400 });
     }
-    if (code.usedBy) {
-      return NextResponse.json({ error: '邀请码已被使用' }, { status: 400 });
+    if (code.currentUses >= code.maxUses) {
+      return NextResponse.json({ error: '邀请码已用完' }, { status: 400 });
     }
     quota = code.quota || 100;
     inviteCodeId = code.id;
@@ -59,11 +58,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 标记邀请码已使用
+    // 邀请码使用次数 +1
     if (inviteCodeId) {
       await tx.inviteCode.update({
         where: { id: inviteCodeId },
-        data: { usedBy: { connect: { id: u.id } }, usedAt: new Date() },
+        data: { currentUses: { increment: 1 } },
       });
     }
 

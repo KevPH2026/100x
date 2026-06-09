@@ -45,10 +45,11 @@ export async function GET(req: NextRequest) {
           id: true,
           code: true,
           quota: true,
+          maxUses: true,
+          currentUses: true,
           note: true,
-          usedAt: true,
           createdAt: true,
-          usedBy: { select: { email: true } },
+          users: { select: { email: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -57,14 +58,19 @@ export async function GET(req: NextRequest) {
       prisma.inviteCode.count({ where }),
     ]);
 
-    const invitesWithUserEmail = invites.map((inv) => ({
-      ...inv,
-      userEmail: inv.usedBy?.email ?? null,
-      usedBy: undefined,
+    const result = invites.map((inv) => ({
+      id: inv.id,
+      code: inv.code,
+      quota: inv.quota,
+      maxUses: inv.maxUses,
+      currentUses: inv.currentUses,
+      note: inv.note,
+      createdAt: inv.createdAt,
+      userEmails: inv.users.map(u => u.email),
     }));
 
     return NextResponse.json({
-      invites: invitesWithUserEmail,
+      invites: result,
       total,
       totalPages: Math.ceil(total / limit),
     });
@@ -84,14 +90,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const count = Math.min(100, Math.max(1, Number(body.count) || 1));
     const quota = Number(body.quota) || 100;
+    const maxUses = Number(body.maxUses) || 50;
     const notePrefix = body.notePrefix || '';
 
     const codes: string[] = [];
-    const data: { code: string; quota: number; note: string | null }[] = [];
+    const data: { code: string; quota: number; maxUses: number; currentUses: number; note: string | null }[] = [];
 
     for (let i = 0; i < count; i++) {
       let code = generateCode();
-      // 确保不重复
       let exists = await prisma.inviteCode.findUnique({ where: { code } });
       while (exists) {
         code = generateCode();
@@ -101,6 +107,8 @@ export async function POST(req: NextRequest) {
       data.push({
         code,
         quota,
+        maxUses,
+        currentUses: 0,
         note: notePrefix ? `${notePrefix}-${i + 1}` : null,
       });
     }

@@ -31,11 +31,13 @@ model User {
 model InviteCode {
   id          String    @id @default(cuid())
   code        String    @unique
-  quota       Int       @default(100)   // 可生成张数
-  note        String?                   // Admin 备注（给谁的）
-  usedBy      User?
-  usedAt      DateTime?
+  quota       Int       @default(100)   // 每个用户可生成张数
+  maxUses     Int       @default(50)    // 最大使用次数（多少个用户可用）
+  currentUses Int       @default(0)     // 已使用次数
+  note        String?                   // Admin 备注
   createdAt   DateTime  @default(now())
+
+  users       User[]
 
   @@map("invite_codes")
 }
