@@ -344,6 +344,10 @@ export default function ChatPage() {
     setRightTab('images');
     if (window.innerWidth < 768) setPanelOpen(true);
 
+    // 再编辑时：优先用上一版生成的图片做参考（保持产品一致性）
+    const lastGeneratedUrl = images.find(i => i.url && !i.error)?.url;
+    const refImage = lastGeneratedUrl || params.referenceImage;
+
     const newImages: GeneratedImage[] = params.scenes.map(s => ({
       url: '', platform: s.platform || s.label, scene: s.label, ratio: s.aspectRatio, loading: true,
     }));
@@ -361,7 +365,8 @@ export default function ChatPage() {
             sellingPoint: params.sellingPoint,
             sceneIndex: 0,
             customSceneDesc: scene.desc,
-            referenceImage: params.referenceImage,
+            referenceImage: refImage,
+            isReEdit: !!lastGeneratedUrl,
             targetCountry: params.targetCountry || 'US',
             mood: params.mood || 'modern and clean',
             forceRatio: scene.aspectRatio,
@@ -394,7 +399,7 @@ export default function ChatPage() {
       timestamp: Date.now(),
       suggestions: ['再来几张其他平台的', '调整品牌档案重新生成'],
     }]);
-  }, []);
+  }, [images]);
 
   const handleDownload = useCallback(async (img: GeneratedImage) => {
     if (!session?.user) {

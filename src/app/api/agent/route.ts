@@ -456,6 +456,9 @@ export async function POST(req: NextRequest) {
         const scenes = await buildScenesWithLLM(message, brand);
         const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
 
+        // Determine reference image: prefer brand logoUrl
+        const refImg = brand.logoUrl || undefined;
+
         response = {
           reply: `好的！为 **${brand.brandName}** 生成 **${scenes.length} 张**素材：\n\n` +
             scenes.map((s, i) => `${i + 1}. ${s.label}（${s.aspectRatio}）`).join('\n') +
@@ -465,7 +468,7 @@ export async function POST(req: NextRequest) {
             brandName: brand.brandName,
             sellingPoint: intentResult.generateDetails?.desc || sellingPoint,
             scenes,
-            referenceImage: brand.logoUrl,
+            referenceImage: refImg,
             targetCountry: 'US',
             mood: (brand as any).moodKeywords?.join(', ') || 'modern and clean',
           },
