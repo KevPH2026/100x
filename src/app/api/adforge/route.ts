@@ -217,9 +217,10 @@ export async function POST(req: NextRequest) {
   const sceneDesc = customSceneDesc?.trim() || scene.desc;
 
   const hasRef = !!referenceImage;
+  const isReEdit = !!body.isReEdit;
   const refRules = hasRef
     ? `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.
-
+${isReEdit ? '\nTHIS IS A RE-EDIT: The user wants to change ONLY the background/scene. The product MUST remain 100% identical to the reference image. Do NOT modify, reimagine, or change the product in any way.\n' : ''}
 ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 1. The product MUST be a pixel-perfect 1:1 replica of the reference image.
 2. DO NOT redesign, reimagine, simplify, or improve the product.
@@ -228,7 +229,7 @@ ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 5. Keep proportions and geometry identical.
 6. Do not add or remove buttons, sensors, lights, features.
 7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.
-
+${isReEdit ? '8. The PRODUCT is the star — it must look exactly the same as in the reference, just placed in a different setting.\n' : ''}
 WHAT TO CHANGE (the ONLY thing you change):`
     : `Create a stunning product advertisement image.`;
 
