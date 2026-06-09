@@ -109,7 +109,7 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            邀请码 <span className="text-xs text-gray-400 font-normal">（选填）</span>
+            邀请码 <span className="text-xs text-gray-400 font-normal">（输入邀请码，获取100张素材生成额度）</span>
           </label>
           <Input
             type="text"
