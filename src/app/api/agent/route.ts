@@ -206,10 +206,11 @@ ${scraped.body.slice(0, 3000)}`;
 // ─── LLM Intent Detection ────────────────────────────────────────────────────
 
 async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<{
-  intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat';
+  intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat' | 'brand_info';
   extractedUrl?: string;
   generateDetails?: { count?: number; platforms?: string[]; desc?: string };
   editFields?: Record<string, string>;
+  brandInfo?: { brandName?: string; industry?: string; sellingPoints?: string[]; targetAudience?: string; description?: string };
 }> {
   // Fast path: URL detection is regex-based and reliable
   const url = extractUrl(message);
@@ -228,17 +229,20 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
 
 Respond with JSON only:
 {
-  "intent": "generate" | "edit" | "clarify" | "chat",
+  "intent": "generate" | "edit" | "clarify" | "chat" | "brand_info",
   "generateDetails": { "count": number, "platforms": ["ig"|"fb"|"tiktok"|"pinterest"|"google"|"youtube"|"all"], "desc": "custom description or null" },
-  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" }
+  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" },
+  "brandInfo": { "brandName": "string or null", "industry": "string or null", "sellingPoints": ["array of strings or empty"], "targetAudience": "string or null", "description": "string or null" }
 }
 
 Rules:
+- "brand_info": user is describing their brand directly (name, product, target audience). Extract all brand fields.
 - "generate": user wants to create ad images. Extract count, platforms, any custom description.
 - "edit": user wants to modify brand profile. Extract which fields to change.
 - "clarify": user is asking a question or needs more info.
 - "chat": general conversation or doesn't fit other categories.
-- Has brand profile already: ${hasBrand}`;
+- Has brand profile already: ${hasBrand}
+- If user mentions a brand name + product/service info, use "brand_info" intent.`;
 
   try {
     const llmResponse = await callLLM(systemPrompt, message);
@@ -402,6 +406,36 @@ export async function POST(req: NextRequest) {
             reply: `⚠️ 无法访问 ${url}（${e.message}）\n\n你可以直接告诉我品牌名和卖点，我手动帮你建档案。`,
             action: 'ask_clarify',
             suggestions: ['品牌名叫XX，卖的是XX', '换个网址试试'],
+          };
+        }
+        break;
+      }
+
+      case 'brand_info': {
+        // User provided brand info directly without URL
+        const info = intentResult.brandInfo;
+        if (info?.brandName) {
+          const profile: BrandProfile = {
+            brandName: info.brandName,
+            industry: info.industry || undefined,
+            sellingPoints: info.sellingPoints?.filter(Boolean) || undefined,
+            targetAudience: info.targetAudience || undefined,
+            description: info.description || undefined,
+          };
+          response = {
+            reply: `收到！我整理了 **${profile.brandName}** 的品牌档案：\n\n` +
+              (profile.industry ? `**行业：** ${profile.industry}\n` : '') +
+              (profile.targetAudience ? `**目标人群：** ${profile.targetAudience}\n` : '') +
+              (profile.sellingPoints?.length ? `**核心卖点：** ${profile.sellingPoints.join(' / ')}\n` : '') +
+              `\n右侧是品牌档案，有需要调整的吗？确认后就可以开始生成素材了。`,
+            action: 'brand_analyzed',
+            brandProfile: profile,
+            suggestions: ['确认，开始生成素材', '补充一下品牌风格', '加上品牌网站'],
+          };
+        } else {
+          response = {
+            reply: '告诉我更多关于你的品牌信息：品牌名、产品、目标客户等，我来帮你建立档案。',
+            action: 'ask_clarify',
           };
         }
         break;
