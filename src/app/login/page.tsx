@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Eye, EyeOff, AlertCircle, Check, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 function LoginForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -25,7 +26,6 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
     isJustRegistered ? { type: "success", text: "注册成功！请输入密码登录" } : null
   );
 
-  // Auto-focus password field if email was pre-filled
   useEffect(() => {
     if (registeredEmail && !password) {
       document.getElementById('login-pw-input')?.focus();
@@ -84,13 +84,13 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1.5">昵称（选填）</label>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="你怎么称呼都行" className="h-11" />
+          <Input value={name} onChange={e => setName(e.target.value)} placeholder="你怎么称呼都行" className="h-11 text-gray-900 placeholder:text-gray-400" />
         </div>
       )}
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1.5">邮箱</label>
-        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="h-11" autoFocus />
+        <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="h-11 text-gray-900 placeholder:text-gray-400" autoFocus />
       </div>
 
       <div className="mb-4">
@@ -99,7 +99,7 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
           <Input type={showPw ? "text" : "password"} value={password} id="login-pw-input"
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === "Enter" && (mode === "login" ? handleEmailLogin() : handleRegister())}
-            placeholder={mode === "register" ? "至少6位" : "输入密码"} className="h-11 pr-10" />
+            placeholder={mode === "register" ? "至少6位" : "输入密码"} className="h-11 pr-10 text-gray-900 placeholder:text-gray-400" />
           <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
             {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -118,7 +118,7 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
             placeholder="XXXXXXXX"
             autoComplete="off"
             spellCheck={false}
-            className="h-11 tracking-widest font-mono uppercase"
+            className="h-11 tracking-widest font-mono uppercase text-gray-900 placeholder:text-gray-400"
           />
         </div>
       )}
@@ -168,6 +168,14 @@ export default function LoginPage() {
             <LoginForm key={mode} mode={mode} />
           </Suspense>
         </Card>
+
+        {/* 微信咨询 */}
+        <div className="mt-6 flex flex-col items-center">
+          <p className="text-gray-400 text-xs mb-3">如有问题，扫码添加微信咨询</p>
+          <div className="bg-white rounded-2xl p-3 shadow-sm">
+            <Image src="/wechat-qr.jpg" alt="微信咨询" width={120} height={120} className="rounded-lg" />
+          </div>
+        </div>
 
         <p className="text-center text-gray-400 text-xs mt-6">
           注册即表示同意 <span className="text-violet-500">服务条款</span> 和 <span className="text-violet-500">隐私政策</span>
