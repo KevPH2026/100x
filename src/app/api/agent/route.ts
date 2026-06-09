@@ -16,6 +16,9 @@ interface BrandProfile {
   targetAudience?: string;
   description?: string;
   sellingPoints?: string[];
+  toneOfVoice?: string;
+  competitors?: string[];
+  priceRange?: string;
   logoUrl?: string;
 }
 
@@ -34,7 +37,39 @@ interface AgentResponse {
   suggestions?: string[];
 }
 
-// ─── Intent Detection ─────────────────────────────────────────────────────────
+// ─── LLM (MiniMax Text) ──────────────────────────────────────────────────────
+
+const MINIMAX_KEY = process.env.MINIMAX_API_KEY || '';
+
+async function callLLM(systemPrompt: string, userMessage: string): Promise<string> {
+  const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${MINIMAX_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'MiniMax-Text-01',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error(`LLM API ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// ─── URL Scrape ───────────────────────────────────────────────────────────────
 
 function extractUrl(text: string): string | null {
   const m = text.match(/https?:\/\/[^\s<>"{}|\\^`\]]+/);
@@ -43,34 +78,7 @@ function extractUrl(text: string): string | null {
   return m2 ? m2[1] : null;
 }
 
-function detectIntent(message: string): 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'general' {
-  const msg = message.trim();
-  const msgLower = msg.toLowerCase();
-
-  // URL detection — highest priority
-  if (extractUrl(msg)) return 'analyze_url';
-
-  // Greet
-  if (/^(你好|hi|hello|hey|嗨|嗨|yo|sup|哈喽)[\s!！.。?？]*$/i.test(msg)) return 'greet';
-
-  // Confirm
-  if (/^(好的|确认|ok|yes|对|没错|可以|没问题|确认了|就这样|done|sure|correct|right)[\s!！.。?？]*$/i.test(msg)) return 'confirm';
-
-  // Generate
-  if (/(生成|做|来|搞|给我|来几个|搞几个|create|generate|make|produce).*(素材|图|广告|material|ad|image|creative|海报|banner)/i.test(msg)) return 'generate';
-  if (/^\d+\s*张/.test(msg)) return 'generate';
-  if (/(帮我|给我|来一套|全平台|各平台).*图/i.test(msg)) return 'generate';
-  if (/素材|广告图|product.?shot|ad.?creative/i.test(msg)) return 'generate';
-
-  // Edit
-  if (/(不是|不对|修改|改成|换成|应该是|edit|change|fix|wrong|actually|correction)/i.test(msg)) return 'edit';
-
-  return 'general';
-}
-
-// ─── URL Analysis ─────────────────────────────────────────────────────────────
-
-async function analyzeUrl(url: string): Promise<BrandProfile> {
+async function scrapeWebsite(url: string): Promise<{ title: string; description: string; keywords: string; body: string; ogImage: string }> {
   let fetchUrl = url;
   if (!/^https?:\/\//i.test(fetchUrl)) fetchUrl = 'https://' + fetchUrl;
 
@@ -87,7 +95,6 @@ async function analyzeUrl(url: string): Promise<BrandProfile> {
 
   const html = await res.text();
 
-  // Extract meta
   const getMeta = (patterns: string[]): string => {
     for (const p of patterns) {
       const m = html.match(new RegExp(`<meta[^>]*(?:name|property)=["']${p}["'][^>]*content=["']([^"']+)["']`, 'i'));
@@ -99,154 +106,215 @@ async function analyzeUrl(url: string): Promise<BrandProfile> {
   };
 
   const title = getMeta(['og:title', 'twitter:title']) || html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || '';
-  const desc = getMeta(['og:description', 'twitter:description', 'description']);
+  const description = getMeta(['og:description', 'twitter:description', 'description']);
   const keywords = getMeta(['keywords']);
   const ogImage = getMeta(['og:image', 'twitter:image']);
-  const siteName = getMeta(['og:site_name', 'application-name']);
 
-  const hostname = new URL(fetchUrl).hostname.replace(/^www\./, '');
-  const brandName = siteName || title.split(/[|\-–—•·]/)[0].trim() || hostname.split('.')[0];
+  // Extract body text (strip tags, get first ~3000 chars)
+  let body = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+    .replace(/<header[\s\S]*?<\/header>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 4000);
 
-  // Infer industry from content
-  const contentText = `${title} ${desc} ${keywords}`.toLowerCase();
-  const industry = inferIndustry(contentText);
-  const style = inferStyle(contentText);
-  const targetAudience = inferAudience(contentText);
-  const kwList = keywords.split(/[,，;；]/).map(k => k.trim()).filter(Boolean).slice(0, 8);
-  const sellingPoints = extractSellingPoints(desc, contentText);
-
-  return {
-    brandName: brandName.slice(0, 50),
-    website: fetchUrl,
-    industry,
-    style,
-    keywords: kwList.length > 0 ? kwList : extractKeywords(title, desc),
-    targetAudience,
-    description: (desc || title).slice(0, 300),
-    sellingPoints,
-    logoUrl: ogImage || undefined,
-  };
+  return { title, description, keywords, body, ogImage };
 }
 
-function inferIndustry(text: string): string {
-  const map: [RegExp, string][] = [
-    [/\b(skincare|beauty|cosmetic| makeup|serum|cream|moistur)\b/i, '美妆护肤'],
-    [/\b(fashion|cloth|apparel|wear|shoe|bag|luxury|jewelry|accessor)\b/i, '时尚服饰'],
-    [/\b(electronic|tech|gadget|phone|laptop|device|smart|iot)\b/i, '电子科技'],
-    [/\b(food|beverage|drink|snack|coffee|tea|supplement|nutrit|health|vitamin)\b/i, '食品健康'],
-    [/\b(home|furniture|decor|kitchen|garden|bedding|living)\b/i, '家居生活'],
-    [/\b(sport|fitness|outdoor|gym|athletic|yoga|running|hiking)\b/i, '运动户外'],
-    [/\b(pet|dog|cat|animal|kibble|treat)\b/i, '宠物用品'],
-    [/\b(toy|game|kids|child|baby|maternity|parent)\b/i, '母婴玩具'],
-    [/\b(car|auto|vehicle|motor|drive|tire|accessor)\b/i, '汽车用品'],
-    [/\b(education|learn|course|school|tutor|book|read)\b/i, '教育文化'],
-    [/\b(saaS|software|platform|tool|app|service|B2B|enterprise)\b/i, '软件服务'],
+// ─── LLM Brand Analysis ──────────────────────────────────────────────────────
+
+async function analyzeBrandWithLLM(url: string): Promise<BrandProfile> {
+  const scraped = await scrapeWebsite(url);
+
+  const hostname = new URL(url.startsWith('http') ? url : 'https://' + url).hostname.replace(/^www\./, '');
+  const fallbackName = scraped.title.split(/[|\-–—•·]/)[0].trim() || hostname.split('.')[0];
+
+  // Check if we have enough content for LLM analysis
+  const contentForLLM = `${scraped.title}\n${scraped.description}\n${scraped.keywords}\n${scraped.body}`;
+  if (contentForLLM.trim().length < 30) {
+    // Fallback to basic extraction if too little content
+    return {
+      brandName: fallbackName.slice(0, 50),
+      website: url.startsWith('http') ? url : 'https://' + url,
+      description: scraped.description.slice(0, 300) || scraped.title,
+      logoUrl: scraped.ogImage || undefined,
+    };
+  }
+
+  const systemPrompt = `You are a brand analysis expert for a DTC (Direct-to-Consumer) advertising creative platform. Analyze the website content and extract brand intelligence.
+
+You MUST respond with valid JSON only, no markdown, no explanation, just the JSON object with these fields:
+{
+  "brandName": "Brand name (short, clean)",
+  "industry": "One of: 美妆护肤/时尚服饰/电子科技/食品健康/家居生活/运动户外/宠物用品/母婴玩具/汽车用品/教育文化/软件服务/综合电商",
+  "style": "One of: 高端奢华/极简主义/活力潮流/自然有机/专业经典/甜美可爱/现代简约",
+  "targetAudience": "Target audience description (Chinese, e.g. 25-40岁都市女性)",
+  "toneOfVoice": "Brand tone of voice (Chinese, e.g. 温柔亲切/专业权威/年轻活泼)",
+  "sellingPoints": ["Top 3-5 selling points or value propositions (Chinese)"],
+  "keywords": ["5-8 brand/product keywords"],
+  "competitors": ["2-3 competitor brand names"],
+  "priceRange": "Price positioning: 高端/中高端/中端/性价比",
+  "description": "One sentence brand summary (Chinese, max 100 chars)",
+  "moodKeywords": ["3-5 visual mood keywords for ad generation (English, e.g. 'clean', 'minimalist', 'warm')"]
+}`;
+
+  const userMessage = `Analyze this brand website:
+URL: ${url}
+Title: ${scraped.title}
+Meta Description: ${scraped.description}
+Meta Keywords: ${scraped.keywords}
+
+Page Content:
+${scraped.body.slice(0, 3000)}`;
+
+  const llmResponse = await callLLM(systemPrompt, userMessage);
+
+  try {
+    // Clean response - remove markdown code blocks if present
+    const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      brandName: (parsed.brandName || fallbackName).slice(0, 50),
+      website: url.startsWith('http') ? url : 'https://' + url,
+      industry: parsed.industry,
+      style: parsed.style,
+      targetAudience: parsed.targetAudience,
+      toneOfVoice: parsed.toneOfVoice,
+      sellingPoints: parsed.sellingPoints || [],
+      keywords: parsed.keywords || [],
+      competitors: parsed.competitors || [],
+      priceRange: parsed.priceRange,
+      description: parsed.description || scraped.description.slice(0, 300),
+      logoUrl: scraped.ogImage || undefined,
+    };
+  } catch {
+    // LLM output not valid JSON, return what we can
+    return {
+      brandName: fallbackName.slice(0, 50),
+      website: url.startsWith('http') ? url : 'https://' + url,
+      description: scraped.description.slice(0, 300) || scraped.title,
+      logoUrl: scraped.ogImage || undefined,
+    };
+  }
+}
+
+// ─── LLM Intent Detection ────────────────────────────────────────────────────
+
+async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<{
+  intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat';
+  extractedUrl?: string;
+  generateDetails?: { count?: number; platforms?: string[]; desc?: string };
+  editFields?: Record<string, string>;
+}> {
+  // Fast path: URL detection is regex-based and reliable
+  const url = extractUrl(message);
+  if (url) return { intent: 'analyze_url', extractedUrl: url };
+
+  // Fast path for simple cases
+  if (/^(你好|hi|hello|hey|嗨|yo|哈喽)[\s!！.。?？]*$/i.test(message.trim())) {
+    return { intent: 'greet' };
+  }
+  if (/^(好的|确认|ok|yes|对|没错|可以|没问题|确认了|就这样|done|sure|correct|right)[\s!！.。?？]*$/i.test(message.trim())) {
+    return { intent: 'confirm' };
+  }
+
+  // Use LLM for complex intent detection
+  const systemPrompt = `You are analyzing user messages in a DTC ad creative platform chat. Determine the user's intent.
+
+Respond with JSON only:
+{
+  "intent": "generate" | "edit" | "clarify" | "chat",
+  "generateDetails": { "count": number, "platforms": ["ig"|"fb"|"tiktok"|"pinterest"|"google"|"youtube"|"all"], "desc": "custom description or null" },
+  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" }
+}
+
+Rules:
+- "generate": user wants to create ad images. Extract count, platforms, any custom description.
+- "edit": user wants to modify brand profile. Extract which fields to change.
+- "clarify": user is asking a question or needs more info.
+- "chat": general conversation or doesn't fit other categories.
+- Has brand profile already: ${hasBrand}`;
+
+  try {
+    const llmResponse = await callLLM(systemPrompt, message);
+    const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    // Fallback to regex-based detection
+    if (/(生成|做|来|搞|给我|create|generate|make).*(素材|图|广告|material|ad|image)/i.test(message)) return { intent: 'generate', generateDetails: { count: 3 } };
+    if (/(不是|不对|修改|改成|换成|edit|change|fix)/i.test(message)) return { intent: 'edit' };
+    return { intent: 'chat' };
+  }
+}
+
+// ─── LLM Generate Scene Builder ──────────────────────────────────────────────
+
+async function buildScenesWithLLM(
+  message: string,
+  brand: BrandProfile,
+): Promise<{ label: string; desc: string; aspectRatio: string; platform: string }[]> {
+  const systemPrompt = `You are an advertising creative director. Generate scene descriptions for ad image generation.
+
+Given a brand and user request, create specific scene descriptions. Each scene should be a vivid, detailed visual description suitable for AI image generation.
+
+Respond with JSON array only:
+[
+  {
+    "label": "Short label like 'IG Feed' or 'Facebook Ad'",
+    "desc": "Detailed visual scene description in English (2-3 sentences). Include: product placement, setting/background, lighting, mood, composition. Be specific about colors, textures, and visual elements that match the brand style.",
+    "aspectRatio": "One of: 1:1, 16:9, 9:16, 2:3, 3:2",
+    "platform": "Platform name: IG Feed, IG Story, Facebook, TikTok, Pinterest, Google Ads, YouTube"
+  }
+]
+
+Generate 2-6 scenes. Default to 3 if count not specified.`;
+
+  const brandContext = `Brand: ${brand.brandName}
+Industry: ${brand.industry || 'Unknown'}
+Style: ${brand.style || 'Modern'}
+Target Audience: ${brand.targetAudience || 'General'}
+Selling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}
+Tone: ${brand.toneOfVoice || 'Professional'}
+Mood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}
+User Request: ${message}`;
+
+  try {
+    const llmResponse = await callLLM(systemPrompt, brandContext);
+    const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const scenes = JSON.parse(cleaned);
+    if (Array.isArray(scenes) && scenes.length > 0) return scenes.slice(0, 6);
+  } catch { /* fallback below */ }
+
+  // Fallback scenes
+  return [
+    { label: 'IG Feed', desc: `Product hero shot for ${brand.brandName}, clean background with brand-appropriate colors, professional studio lighting, modern composition`, aspectRatio: '1:1', platform: 'IG Feed' },
+    { label: 'Facebook Ad', desc: `Lifestyle product showcase for ${brand.brandName}, aspirational setting, natural lighting, scroll-stopping visual`, aspectRatio: '16:9', platform: 'Facebook' },
+    { label: 'IG Story', desc: `Vertical immersive product experience for ${brand.brandName}, bold visual impact, trendy aesthetic`, aspectRatio: '9:16', platform: 'IG Story' },
   ];
-  for (const [re, label] of map) {
-    if (re.test(text)) return label;
-  }
-  return '综合电商';
 }
 
-function inferStyle(text: string): string {
-  if (/\b(luxury|premium|elegance|sophisticat|high.?end|boutique|designer)\b/i.test(text)) return '高端奢华';
-  if (/\b(minimal|clean|simple|scandi|nordic|zen|bare)\b/i.test(text)) return '极简主义';
-  if (/\b(vibrant|bold|colorful|fun|playful|energetic|young|pop)\b/i.test(text)) return '活力潮流';
-  if (/\b(natural|organic|eco|green|sustainable|earth|raw|pure)\b/i.test(text)) return '自然有机';
-  if (/\b(professional|corporate|business|formal|classic|traditional)\b/i.test(text)) return '专业经典';
-  if (/\b(cute|kawaii|sweet|lovely|pastel|soft)\b/i.test(text)) return '甜美可爱';
-  return '现代简约';
-}
+// ─── LLM Chat Response ───────────────────────────────────────────────────────
 
-function inferAudience(text: string): string {
-  if (/\b(women|woman|female|her|she|beauty|makeup)\b/i.test(text)) return '25-40岁女性';
-  if (/\b(men|man|male|him|his|grooming|shave)\b/i.test(text)) return '25-40岁男性';
-  if (/\b(kids|child|baby|parent|mom|maternity)\b/i.test(text)) return '年轻父母';
-  if (/\b(teen|gen.?z|youth|student|young)\b/i.test(text)) return '18-25岁年轻人';
-  if (/\b(senior|elder|aging|retire|50\+|mature)\b/i.test(text)) return '40岁以上';
-  return '25-45岁都市消费者';
-}
+async function generateChatResponse(message: string, brand: BrandProfile | null): Promise<string> {
+  const systemPrompt = `You are a friendly and professional AI ad creative assistant for "100x" platform (100x.pics). You help DTC brands create advertising materials.
 
-function extractKeywords(title: string, desc: string): string[] {
-  const words = `${title} ${desc}`.split(/[\s,，.。;；:：!！?？/\\|—\-–—·•]+/);
-  return words.filter(w => w.length > 2 && w.length < 20).slice(0, 6);
-}
+Your job:
+- Help users understand what you can do (analyze brand websites, generate ad creatives)
+- Be concise and action-oriented
+- Always guide toward the next step: share website → confirm profile → generate ads
+- If user has no brand, ask for their website or brand info
+- If user has brand, suggest generating ads
+- Keep responses under 3 sentences unless explaining something complex
+- Write in Chinese unless the user writes in English
 
-function extractSellingPoints(desc: string, fullText: string): string[] {
-  const points: string[] = [];
-  const sentences = (desc || fullText).split(/[.。!！?？;；\n]+/);
-  for (const s of sentences) {
-    const trimmed = s.trim();
-    if (trimmed.length > 5 && trimmed.length < 80 && points.length < 4) {
-      points.push(trimmed);
-    }
-  }
-  return points;
-}
+Current brand profile: ${brand ? JSON.stringify(brand) : 'None'}`;
 
-// ─── Generate Param Parser ────────────────────────────────────────────────────
-
-function parseGenerateParams(message: string, brand?: BrandProfile | null): {
-  count: number;
-  platforms: string[];
-  customDesc?: string;
-} {
-  let count = 3;
-  const numMatch = message.match(/(\d+)\s*张/);
-  if (numMatch) count = Math.min(parseInt(numMatch[1]), 8);
-
-  const platforms: string[] = [];
-  const msg = message.toLowerCase();
-
-  if (/ig|instagram|ins/.test(msg)) platforms.push('ig');
-  if (/fb|facebook/.test(msg)) platforms.push('fb');
-  if (/tiktok|tt|抖音/.test(msg)) platforms.push('tiktok');
-  if (/pinterest|pin/.test(msg)) platforms.push('pinterest');
-  if (/google|谷歌/.test(msg)) platforms.push('google');
-  if (/youtube|yt|油管/.test(msg)) platforms.push('youtube');
-  if (/全平台|all|全套|一套/.test(msg)) platforms.push('all');
-
-  // Extract any custom description
-  const customDesc = message.replace(/生成|做|来|搞|给我|来几个|搞几个|\d+张|素材|图|广告|ig|instagram|fb|facebook|tiktok|pinterest|google|youtube|全平台|all|全套/gi, '').trim() || undefined;
-
-  return { count, platforms, customDesc };
-}
-
-const PLATFORM_SCENES: Record<string, { label: string; desc: string; aspectRatio: string; platform: string }[]> = {
-  ig: [
-    { label: 'IG Feed', desc: 'Instagram feed post, product hero shot with lifestyle feel', aspectRatio: '1:1', platform: 'IG Feed' },
-    { label: 'IG Story', desc: 'Instagram story vertical format, immersive product showcase', aspectRatio: '9:16', platform: 'IG Story' },
-  ],
-  fb: [
-    { label: 'Facebook Ad', desc: 'Facebook ad creative, scroll-stopping product shot', aspectRatio: '16:9', platform: 'Facebook' },
-  ],
-  tiktok: [
-    { label: 'TikTok Ad', desc: 'TikTok in-feed ad, vertical format, bold visual impact', aspectRatio: '9:16', platform: 'TikTok' },
-  ],
-  pinterest: [
-    { label: 'Pinterest Pin', desc: 'Pinterest pin, tall format, inspirational product styling', aspectRatio: '2:3', platform: 'Pinterest' },
-  ],
-  google: [
-    { label: 'Google Ad', desc: 'Google display ad, clean product shot with clear branding', aspectRatio: '16:9', platform: 'Google Ads' },
-  ],
-  youtube: [
-    { label: 'YouTube Thumbnail', desc: 'YouTube video thumbnail, eye-catching product reveal', aspectRatio: '16:9', platform: 'YouTube' },
-  ],
-};
-
-function buildScenes(platforms: string[], count: number): { label: string; desc: string; aspectRatio: string; platform?: string }[] {
-  if (platforms.includes('all') || platforms.length === 0) {
-    const all: typeof PLATFORM_SCENES.ig = [];
-    for (const scenes of Object.values(PLATFORM_SCENES)) all.push(...scenes);
-    return all.slice(0, count || 6);
-  }
-
-  const result: typeof PLATFORM_SCENES.ig = [];
-  for (const p of platforms) {
-    const scenes = PLATFORM_SCENES[p];
-    if (scenes) result.push(...scenes);
-  }
-  return result.slice(0, count || 6);
+  return callLLM(systemPrompt, message);
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
@@ -276,22 +344,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const intent = detectIntent(message);
+    const currentBrand = clientBrand || existingBrand;
+    const intentResult = await detectIntentWithLLM(message, !!currentBrand?.brandName);
     let response: AgentResponse;
 
-    switch (intent) {
+    switch (intentResult.intent) {
       case 'greet': {
-        if (existingBrand) {
+        if (currentBrand) {
           const assetCount = userId ? await prisma.asset.count({ where: { userId } }) : 0;
           response = {
-            reply: `欢迎回来！你的品牌 **${existingBrand.brandName}** 已经准备好了${assetCount > 0 ? `，之前生成了 ${assetCount} 张素材` : ''}。\n\n今天想生成什么素材？直接告诉我平台和数量就行，比如"来3张IG Feed素材"。`,
+            reply: `欢迎回来！你的品牌 **${currentBrand.brandName}** 已就绪${assetCount > 0 ? `，之前生成了 ${assetCount} 张素材` : ''}。\n\n今天想生成什么素材？`,
             action: 'greet',
-            brandProfile: existingBrand,
+            brandProfile: currentBrand,
             suggestions: ['来3张IG Feed素材', '生成全平台一套', '换一个品牌网站分析'],
           };
         } else {
           response = {
-            reply: '你好！我是 **100x AI素材助手** 🎨\n\n告诉我你的**品牌网站**，我来帮你快速建立品牌档案，然后一键生成广告素材。\n\n比如直接发网址：`glowskin.com`',
+            reply: '你好！我是 **100x AI素材助手** 🎨\n\n告诉我你的**品牌网站**，我来帮你分析品牌基因，然后一键生成广告素材。\n\n比如直接发网址：`glossier.com`',
             action: 'greet',
             suggestions: ['分析我的品牌网站', '直接告诉我品牌名和卖点'],
           };
@@ -300,24 +369,37 @@ export async function POST(req: NextRequest) {
       }
 
       case 'analyze_url': {
-        const url = extractUrl(message)!;
+        const url = intentResult.extractedUrl || extractUrl(message)!;
         try {
-          const profile = await analyzeUrl(url);
+          const profile = await analyzeBrandWithLLM(url);
+
+          const replyParts = [
+            `🔍 分析完成！**${profile.brandName}** 品牌档案：`,
+            ``,
+            `**行业：** ${profile.industry || '待确认'}`,
+            `**风格：** ${profile.style || '待确认'}`,
+            `**目标人群：** ${profile.targetAudience || '待确认'}`,
+          ];
+          if (profile.sellingPoints?.length) {
+            replyParts.push(`**核心卖点：** ${profile.sellingPoints.slice(0, 3).join(' / ')}`);
+          }
+          if (profile.toneOfVoice) {
+            replyParts.push(`**品牌调性：** ${profile.toneOfVoice}`);
+          }
+          if (profile.description) {
+            replyParts.push(`\n📝 ${profile.description}`);
+          }
+          replyParts.push(`\n右侧是我提炼的品牌档案，看看有没有需要**调整或补充**的？确认后就可以开始生成素材了。`);
+
           response = {
-            reply: `🔍 分析完成！我从 **${profile.brandName}** 提取了以下品牌信息：\n\n` +
-              `**行业：** ${profile.industry}\n` +
-              `**风格：** ${profile.style}\n` +
-              `**目标人群：** ${profile.targetAudience}\n` +
-              (profile.keywords?.length ? `**关键词：** ${profile.keywords.join('、')}\n` : '') +
-              (profile.description ? `\n📝 ${profile.description.slice(0, 150)}...\n` : '') +
-              `\n右侧是我提炼的品牌档案，看看有没有需要**调整或补充**的？确认后我就可以帮你生成素材了。`,
+            reply: replyParts.join('\n'),
             action: 'brand_analyzed',
             brandProfile: profile,
             suggestions: ['确认，开始生成素材', '目标人群需要改一下', '补充：我们的核心卖点是...'],
           };
         } catch (e: any) {
           response = {
-            reply: `⚠️ 无法访问 ${url}。可能原因：\n- 网站无法访问\n- 需要特殊权限\n\n你可以直接告诉我品牌名和卖点，我手动帮你建档案。`,
+            reply: `⚠️ 无法访问 ${url}（${e.message}）\n\n你可以直接告诉我品牌名和卖点，我手动帮你建档案。`,
             action: 'ask_clarify',
             suggestions: ['品牌名叫XX，卖的是XX', '换个网址试试'],
           };
@@ -326,7 +408,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'generate': {
-        const brand = clientBrand || existingBrand;
+        const brand = currentBrand;
         if (!brand?.brandName) {
           response = {
             reply: '我需要先了解你的品牌才能生成素材。告诉我你的**品牌网站**或者**品牌名+核心卖点**？',
@@ -336,8 +418,8 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        const params = parseGenerateParams(message, brand);
-        const scenes = buildScenes(params.platforms, params.count);
+        // Use LLM to build creative scenes
+        const scenes = await buildScenesWithLLM(message, brand);
         const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
 
         response = {
@@ -347,37 +429,25 @@ export async function POST(req: NextRequest) {
           action: 'generate',
           generateParams: {
             brandName: brand.brandName,
-            sellingPoint: params.customDesc || sellingPoint,
+            sellingPoint: intentResult.generateDetails?.desc || sellingPoint,
             scenes,
             referenceImage: brand.logoUrl,
             targetCountry: 'US',
-            mood: brand.style === '高端奢华' ? 'luxury and refined' : 'modern and clean',
+            mood: (brand as any).moodKeywords?.join(', ') || 'modern and clean',
           },
         };
         break;
       }
 
       case 'edit': {
-        const brand = clientBrand || existingBrand;
+        const brand = currentBrand;
         if (brand) {
-          // Parse edit intent from message
           const updatedBrand = { ...brand };
-          if (/行业|industry/.test(message)) {
-            const newIndustry = message.replace(/.*(?:行业|industry)[是为：:\s]*/i, '').replace(/[，。,.\s].*/, '').trim();
-            if (newIndustry) updatedBrand.industry = newIndustry;
-          }
-          if (/风格|style/.test(message)) {
-            const newStyle = message.replace(/.*(?:风格|style)[是为：:\s]*/i, '').replace(/[，。,.\s].*/, '').trim();
-            if (newStyle) updatedBrand.style = newStyle;
-          }
-          if (/人群|audience|target/.test(message)) {
-            const newAud = message.replace(/.*(?:人群|audience)[是为：:\s]*/i, '').replace(/[，。,.\s].*/, '').trim();
-            if (newAud) updatedBrand.targetAudience = newAud;
-          }
-          if (/卖点|selling|core/.test(message)) {
-            const sp = message.replace(/.*(?:卖点|selling|core)[是为：:\s]*/i, '').trim();
-            if (sp) updatedBrand.sellingPoints = [sp, ...(updatedBrand.sellingPoints || [])];
-          }
+          const fields = intentResult.editFields || {};
+          if (fields.industry) updatedBrand.industry = fields.industry;
+          if (fields.style) updatedBrand.style = fields.style;
+          if (fields.targetAudience) updatedBrand.targetAudience = fields.targetAudience;
+          if (fields.sellingPoint) updatedBrand.sellingPoints = [fields.sellingPoint, ...(updatedBrand.sellingPoints || [])];
 
           response = {
             reply: '✅ 已更新品牌档案。看看右侧信息是否正确？',
@@ -395,8 +465,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'confirm': {
-        const brand = clientBrand || existingBrand;
-        // Save brand to DB
+        const brand = currentBrand;
         if (userId && brand?.brandName) {
           try {
             await prisma.userBrand.upsert({
@@ -422,7 +491,7 @@ export async function POST(req: NextRequest) {
 
         response = {
           reply: brand?.brandName
-            ? `**${brand.brandName}** 品牌档案已保存 ✅\n\n现在告诉我你想生成什么素材？比如：\n- "来3张IG Feed素材"\n- "生成全平台一套6张"\n- "做一张Facebook广告图"`
+            ? `**${brand.brandName}** 品牌档案已保存 ✅\n\n现在告诉我你想生成什么素材？\n- "来3张IG Feed素材"\n- "生成全平台一套"\n- "做一张Facebook广告图"`
             : '好的！你想生成什么素材？',
           action: 'brand_saved',
           suggestions: ['来3张IG Feed素材', '生成全平台一套', '做一张Facebook广告图'],
@@ -431,29 +500,15 @@ export async function POST(req: NextRequest) {
       }
 
       default: {
-        // General — try to extract brand info from free-form text
-        const brand = clientBrand || existingBrand;
-        if (!brand?.brandName && message.length > 3) {
-          // Try to extract brand name and product info
-          response = {
-            reply: `收到！为了帮你生成更精准的素材，我需要了解几个信息：\n\n1. 你的**品牌网站**是什么？（我可以自动分析）\n2. 或者直接告诉我**品牌名**和**核心产品/卖点**\n3. 你的**目标市场**是哪里？（美国/欧洲/东南亚等）`,
-            action: 'ask_clarify',
-            suggestions: ['网站是 xxx.com', '品牌叫XX，卖的是XX'],
-          };
-        } else if (brand?.brandName) {
-          // Treat as generate request
-          response = {
-            reply: `好的，我理解为你要为 **${brand.brandName}** 生成素材。想生成几张、什么平台的？`,
-            action: 'ask_clarify',
-            suggestions: ['3张IG Feed', '全平台一套', '来2张TikTok素材'],
-          };
-        } else {
-          response = {
-            reply: '告诉我你的品牌网站，我来帮你快速开始！比如直接发网址：`yourbrand.com`',
-            action: 'ask_clarify',
-            suggestions: ['我的网站是...'],
-          };
-        }
+        // 'chat' or 'clarify' — use LLM for natural conversation
+        const chatReply = await generateChatResponse(message, currentBrand);
+        response = {
+          reply: chatReply,
+          action: currentBrand?.brandName ? 'ask_clarify' : 'ask_clarify',
+          suggestions: currentBrand?.brandName
+            ? ['来3张IG Feed素材', '生成全平台一套']
+            : ['我的网站是 xxx.com', '品牌叫XX，卖的是XX'],
+        };
         break;
       }
     }
