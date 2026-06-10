@@ -173,7 +173,8 @@ export default function LoginPage() {
         <div className="mt-6 flex flex-col items-center">
           <p className="text-gray-400 text-xs mb-3">如有问题，扫码添加微信咨询</p>
           <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <Image src="/wechat-qr.jpg" alt="微信咨询" width={120} height={120} className="rounded-lg" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/wechat-qr.jpg" alt="微信咨询" width={120} height={120} className="rounded-lg" />
           </div>
         </div>
 
