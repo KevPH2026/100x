@@ -172,7 +172,7 @@ function DashboardTab() {
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
           <p className="text-xs text-zinc-500 mb-1">配额使用率</p>
-          <p className="text-xl font-bold text-white">{((stats?.quotaUsageRate ?? 0) * 100).toFixed(1)}%</p>
+          <p className="text-xl font-bold text-white">{(stats?.quotaUsageRate ?? 0).toFixed(1)}%</p>
         </div>
       </div>
       {/* Daily chart */}
@@ -186,7 +186,7 @@ function DashboardTab() {
               <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-[10px] text-zinc-500">{d.count}</span>
                 <div className="w-full bg-violet-600/80 rounded-t" style={{ height: `${h}%` }} />
-                <span className="text-[10px] text-zinc-600">{d.date.slice(5)}</span>
+                <span className="text-[10px] text-zinc-600">{d.date.slice(5,10)}</span>
               </div>
             );
           })}
