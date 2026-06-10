@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #09090b;
+    color: #fafafa;
+    width: 1200px;
+    overflow-x: hidden;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative;
+    padding: 80px 80px 60px;
+    background: linear-gradient(180deg, #0c0a1a 0%, #09090b 100%);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(139,92,246,0.15);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a78bfa;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+  }
+  .hero-badge span {
+    width: 6px; height: 6px;
+    background: #a78bfa;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .hero h1 {
+    font-size: 72px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 30%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 22px;
+    color: #a1a1aa;
+    font-weight: 400;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  .hero-url {
+    margin-top: 24px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #a78bfa;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Screenshot strip ── */
+  .screens {
+    padding: 40px 80px 80px;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+  .screen {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+  }
+  .screen img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .screen-main { width: 700px; }
+  .screen-side { width: 380px; margin-top: 40px; }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);
+    margin: 0 80px;
+  }
+
+  /* ── Features ── */
+  .features {
+    padding: 80px;
+  }
+  .features-header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+  .features-header h2 {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .features-header p {
+    font-size: 18px;
+    color: #71717a;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .feat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .feat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #8b5cf6, #6366f1);
+    opacity: 0.6;
+  }
+  .feat-icon {
+    width: 48px; height: 48px;
+    background: rgba(139,92,246,0.12);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .feat-card h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .feat-card p {
+    font-size: 15px;
+    color: #a1a1aa;
+    line-height: 1.6;
+  }
+  .feat-tag {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 4px 12px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #a78bfa;
+  }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: flex;
+    gap: 0;
+    margin: 0 80px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 40px 20px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val {
+    font-size: 40px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 14px;
+    color: #71717a;
+    font-weight: 500;
+  }
+
+  /* ── CTA ── */
+  .cta {
+    padding: 80px;
+    text-align: center;
+    position: relative;
+  }
+  .cta::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta h2 {
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .cta p {
+    font-size: 20px;
+    color: #71717a;
+    margin-bottom: 32px;
+  }
+  .cta-btn {
+    display: inline-block;
+    padding: 16px 48px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 8px 32px rgba(139,92,246,0.3);
+  }
+  .cta-footer {
+    margin-top: 60px;
+    font-size: 13px;
+    color: #3f3f46;
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge"><span></span> AI-POWERED AD CREATIVE PLATFORM</div>
+  <h1>你的广告素材<br>我们包了</h1>
+  <p>上传产品图，AI 自动生成多平台广告素材。Instagram、TikTok、Facebook、Pinterest 一键搞定。</p>
+  <div class="hero-url">100x.pics</div>
+</div>
+
+<!-- Screenshots -->
+<div class="screens">
+  <div class="screen screen-main">
+    <img src="v2_01_hero.png" alt="100x.pics Homepage">
+  </div>
+  <div class="screen screen-side">
+    <img src="v2_03_chat.png" alt="AI Agent Chat">
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Features -->
+<div class="features">
+  <div class="features-header">
+    <h2>核心能力</h2>
+    <p>从产品图到投放素材，AI 全链路搞定</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🧠</div>
+      <h3>AI 主动生成引擎</h3>
+      <p>上传一张产品图，AI 自动理解品牌调性，生成8种场景×6种尺寸的广告素材。无需 prompt 工程，AI 自己策划创意。</p>
+      <span class="feat-tag">Nova-G-Image-2</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">💬</div>
+      <h3>Agent Native 交互</h3>
+      <p>对话式品牌档案建立。告诉 AI 你的产品、受众、投放平台，它自动记忆并持续优化创意方向。</p>
+      <span class="feat-tag">LLM 驱动</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📐</div>
+      <h3>多平台一键适配</h3>
+      <p>Instagram Feed 1:1、TikTok 9:16、Pinterest 2:3、Facebook 16:9……自动生成所有尺寸，直接下载投放。</p>
+      <span class="feat-tag">8种场景 × 6种尺寸</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🗂</div>
+      <h3>用户资产管理</h3>
+      <p>所有生成素材按品牌、平台、场景分类归档。支持再编辑——不满意？让 AI 换个场景重新来。</p>
+      <span class="feat-tag">云端存储</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎨</div>
+      <h3>品牌 DNA 解码</h3>
+      <p>AI 自动提取品牌视觉基因——主色、风格、调性，确保每张素材都符合品牌一致性。</p>
+      <span class="feat-tag">视觉一致性</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <h3>零门槛上手</h3>
+      <p>免费注册，无需邀请码。上传即用，下载才扣点。没有任何设计门槛，会说话就能用。</p>
+      <span class="feat-tag">Free to Start</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val">51+</div>
+    <div class="stat-label">已生成素材</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">8</div>
+    <div class="stat-label">投放平台</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">48</div>
+    <div class="stat-label">素材规格</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">&lt;5min</div>
+    <div class="stat-label">从上传到投放</div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <h2>试试看，免费</h2>
+  <p>上传一张产品图，感受 AI 的创意能力</p>
+  <a class="cta-btn" href="#">100x.pics</a>
+  <div class="cta-footer">100x.pics — AI-POWERED AD CREATIVE PLATFORM</div>
+</div>
+
+</body>
+</html>

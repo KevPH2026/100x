@@ -403,7 +403,7 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
 }
 
 export default function LandingPage() {
-  const [lang, setLang] = useState<Lang>('zh');
+  const [lang, setLang] = useState<Lang>('en');
   const [activeSeries, setActiveSeries] = useState(0);
   const t = T[lang];
   const total = DEMO_SERIES.length;
