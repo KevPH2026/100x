@@ -7,7 +7,7 @@ function verifyAdmin(req: NextRequest) {
   return true;
 }
 
-// GET /api/admin/assets — 素材列表
+// GET /api/admin/assets — 素材列表（支持userId过滤+客户聚合）
 export async function GET(req: NextRequest) {
   if (!verifyAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -16,8 +16,11 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')));
   const search = searchParams.get('search') || '';
   const platform = searchParams.get('platform') || '';
+  const userId = searchParams.get('userId') || '';
+  const groupByUser = searchParams.get('groupByUser') === 'true';
 
   const where: Record<string, unknown> = {};
+  if (userId) where.userId = userId;
   if (search) {
     where.OR = [
       { brandName: { contains: search, mode: 'insensitive' } },
@@ -28,10 +31,29 @@ export async function GET(req: NextRequest) {
     where.platform = { contains: platform, mode: 'insensitive' };
   }
 
+  // 按客户聚合模式
+  if (groupByUser) {
+    const users = await prisma.user.findMany({
+      where: search ? { email: { contains: search, mode: 'insensitive' } } : {},
+      select: {
+        id: true, email: true, name: true, company: true,
+        _count: { select: { assets: true, brands: true } },
+        assets: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+      },
+      orderBy: { assets: { _count: 'desc' } },
+    });
+    const clients = users.filter(u => u._count.assets > 0).map(u => ({
+      id: u.id, email: u.email, name: u.name, company: u.company,
+      assetCount: u._count.assets, brandCount: u._count.brands,
+      lastActive: u.assets[0]?.createdAt || null,
+    }));
+    return NextResponse.json({ clients, total: clients.length });
+  }
+
   const [assets, total] = await Promise.all([
     prisma.asset.findMany({
       where,
-      include: { user: { select: { email: true, name: true } } },
+      include: { user: { select: { email: true, name: true, company: true } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
