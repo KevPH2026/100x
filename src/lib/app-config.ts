@@ -75,6 +75,14 @@ export type AppConfig = {
     /** 紧迫感预设 */
     urgencies?: Array<{ id: string; label: string; desc: string }>;
   };
+  agentPrompts?: {
+    brandAnalysis?: string;
+    intentDetection?: string;
+    sceneBuilder?: string;
+    chatResponse?: string;
+    imageGenWithRef?: string;
+    imageGenNoRef?: string;
+  };
   updatedAt?: string;
   updatedBy?: string;
 };

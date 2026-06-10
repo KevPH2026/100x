@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   BarChart3, Users, Image as ImageIcon, Ticket, Settings,
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
-  Lock, Check, X, AlertCircle, RefreshCw, Eye
+  Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
+  Save, RotateCcw, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ const TABS = [
   { key: 'users', label: '用户', icon: Users },
   { key: 'assets', label: '素材库', icon: ImageIcon },
   { key: 'invites', label: '邀请码', icon: Ticket },
+  { key: 'workflows', label: '工作流', icon: GitBranch },
   { key: 'settings', label: '配置', icon: Settings },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -129,6 +131,7 @@ export default function AdminPage() {
           {tab === 'users' && <UsersTab />}
           {tab === 'assets' && <AssetsTab />}
           {tab === 'invites' && <InvitesTab />}
+          {tab === 'workflows' && <WorkflowsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -528,6 +531,176 @@ function InvitesTab() {
           <Pagination page={page} totalPages={Math.ceil(total / limit)} setPage={setPage} />
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Workflows & Prompts ────────────────────────────────────────
+interface PromptData {
+  label: string; desc: string; default: string; current: string;
+  model: string; variables: string[]; customized: boolean;
+}
+interface WorkflowNode {
+  id: string; label: string; desc: string; type: string; model: string; next: string[]; promptKey?: string;
+}
+
+function WorkflowsTab() {
+  const [prompts, setPrompts] = useState<Record<string, PromptData> | null>(null);
+  const [workflow, setWorkflow] = useState<WorkflowNode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/prompts').then(r => r.json());
+      setPrompts(res.prompts);
+      setWorkflow(res.workflow || []);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const startEdit = (key: string) => {
+    if (!prompts) return;
+    setEditingKey(key);
+    setEditValue(prompts[key].current);
+  };
+
+  const saveOne = async (key: string) => {
+    if (!prompts) return;
+    setSaving(true);
+    const updated = { ...prompts[key], current: editValue, customized: editValue !== prompts[key].default };
+    const newPrompts = { ...prompts, [key]: updated };
+    const agentPrompts: Record<string, string> = {};
+    for (const [k, v] of Object.entries(newPrompts)) {
+      agentPrompts[k] = v.current;
+    }
+    const res = await fetch('/api/admin/prompts', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentPrompts }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      showToast(`"${updated.label}" 已保存`);
+      setEditingKey(null);
+      load();
+    } else {
+      showToast('保存失败');
+    }
+  };
+
+  const resetAll = async () => {
+    if (!confirm('确认重置所有Prompt为默认值？此操作不可撤销。')) return;
+    const res = await fetch('/api/admin/prompts', { method: 'DELETE' });
+    if (res.ok) { showToast('已重置为默认值'); load(); }
+    else showToast('重置失败');
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">工作流 & Prompt</h2>
+          <p className="text-xs text-zinc-500 mt-1">查看Agent工作流逻辑，调整Prompt影响所有后续用户</p>
+        </div>
+        <button onClick={resetAll}
+          className="px-4 py-2 text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg hover:border-zinc-600 transition flex items-center gap-2">
+          <RotateCcw className="w-3 h-3" />全部重置
+        </button>
+      </div>
+
+      {/* Toast */}
+      {toast && <div className="text-sm text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" />{toast}</div>}
+
+      {/* ─── Workflow Visualization ─── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <p className="text-sm font-medium text-white mb-4">Agent 工作流</p>
+        <div className="flex flex-wrap gap-3">
+          {workflow.map((node, i) => {
+            const promptData = prompts && node.promptKey ? prompts[node.promptKey] : null;
+            return (
+              <div key={node.id} className="flex items-center gap-3">
+                <div className={`px-4 py-3 rounded-lg border min-w-[140px] ${
+                  node.type === 'prompt' ? 'bg-violet-950/40 border-violet-800/50' : 'bg-zinc-800/50 border-zinc-700/50'
+                }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${node.type === 'prompt' ? 'bg-violet-400' : 'bg-zinc-500'}`} />
+                    <span className="text-xs font-medium text-white">{node.label}</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 leading-tight">{node.desc}</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">{node.model}</p>
+                  {node.type === 'prompt' && promptData?.customized && (
+                    <span className="inline-block text-[9px] text-violet-400 bg-violet-900/30 px-1.5 py-0.5 rounded mt-1">已自定义</span>
+                  )}
+                </div>
+                {i < workflow.length - 1 && (
+                  <ChevronRight className="w-4 h-4 text-zinc-600 shrink-0" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Prompt Cards ─── */}
+      <div className="space-y-4">
+        <p className="text-sm font-medium text-white">Prompt 模板</p>
+        {prompts && Object.entries(prompts).map(([key, p]) => (
+          <div key={key} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-3 flex items-center justify-between border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-white">{p.label}</span>
+                {p.customized && <span className="text-[9px] text-violet-400 bg-violet-900/30 px-1.5 py-0.5 rounded">已自定义</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-zinc-600">{p.model}</span>
+                <button onClick={() => editingKey === key ? setEditingKey(null) : startEdit(key)}
+                  className="text-xs text-violet-400 hover:text-violet-300">
+                  {editingKey === key ? '收起' : '编辑'}
+                </button>
+              </div>
+            </div>
+
+            {/* Description + Variables */}
+            <div className="px-5 py-2 flex items-center gap-4">
+              <p className="text-xs text-zinc-500">{p.desc}</p>
+              <div className="flex gap-1.5 shrink-0">
+                {p.variables.map(v => (
+                  <span key={v} className="text-[9px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">{`{{${v}}}`}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Editor */}
+            {editingKey === key && (
+              <div className="px-5 pb-4 space-y-3">
+                <textarea value={editValue} onChange={e => setEditValue(e.target.value)} rows={12}
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs outline-none resize-y font-mono leading-relaxed" />
+                <div className="flex items-center gap-3">
+                  <button onClick={() => saveOne(key)} disabled={saving}
+                    className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs rounded-lg transition flex items-center gap-2">
+                    <Save className="w-3 h-3" />{saving ? '保存中...' : '保存'}
+                  </button>
+                  <button onClick={() => { setEditValue(p.default); }}
+                    className="px-4 py-2 text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg hover:border-zinc-600 transition flex items-center gap-2">
+                    <RotateCcw className="w-3 h-3" />恢复默认
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { readAppConfig } from '@/lib/app-config';
 
 export const maxDuration = 60;
 
@@ -69,7 +70,111 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
   return data.choices?.[0]?.message?.content || '';
 }
 
-// ─── URL Scrape ───────────────────────────────────────────────────────────────
+// ─── Default Prompts ────────────────────────────────────────────────────────
+
+const DEFAULT_PROMPTS = {
+  brandAnalysis: `You are a brand analysis expert for a DTC (Direct-to-Consumer) advertising creative platform. Analyze the website content and extract brand intelligence.
+
+You MUST respond with valid JSON only, no markdown, no explanation, just the JSON object with these fields:
+{
+  "brandName": "Brand name (short, clean)",
+  "industry": "One of: 美妆护肤/时尚服饰/电子科技/食品健康/家居生活/运动户外/宠物用品/母婴玩具/汽车用品/教育文化/软件服务/综合电商",
+  "style": "One of: 高端奢华/极简主义/活力潮流/自然有机/专业经典/甜美可爱/现代简约",
+  "targetAudience": "Target audience description (Chinese, e.g. 25-40岁都市女性)",
+  "toneOfVoice": "Brand tone of voice (Chinese, e.g. 温柔亲切/专业权威/年轻活泼)",
+  "sellingPoints": ["Top 3-5 selling points or value propositions (Chinese)"],
+  "keywords": ["5-8 brand/product keywords"],
+  "competitors": ["2-3 competitor brand names"],
+  "priceRange": "Price positioning: 高端/中高端/中端/性价比",
+  "description": "One sentence brand summary (Chinese, max 100 chars)",
+  "moodKeywords": ["3-5 visual mood keywords for ad generation (English, e.g. 'clean', 'minimalist', 'warm')"]
+}`,
+
+  intentDetection: `You are analyzing user messages in a DTC ad creative platform chat. Determine the user's intent.
+
+Respond with JSON only:
+{
+  "intent": "generate" | "edit" | "clarify" | "chat" | "brand_info",
+  "generateDetails": { "count": number, "platforms": ["ig"|"fb"|"tiktok"|"pinterest"|"google"|"youtube"|"all"], "desc": "custom description or null" },
+  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" },
+  "brandInfo": { "brandName": "string or null", "industry": "string or null", "sellingPoints": ["array of strings or empty"], "targetAudience": "string or null", "description": "string or null" }
+}
+
+Rules:
+- "brand_info": user is describing their brand directly (name, product, target audience). Extract all brand fields.
+- "generate": user wants to create ad images. Extract count, platforms, any custom description.
+- "edit": user wants to modify brand profile. Extract which fields to change.
+- "clarify": user is asking a question or needs more info.
+- "chat": general conversation or doesn't fit other categories.`,
+
+  sceneBuilder: `You are an advertising creative director. Generate scene descriptions for ad image generation.
+
+Given a brand and user request, create specific scene descriptions. Each scene should be a vivid, detailed visual description suitable for AI image generation.
+
+Respond with JSON array only:
+[
+  {
+    "label": "Short label like 'IG Feed' or 'Facebook Ad'",
+    "desc": "Detailed visual scene description in English (2-3 sentences). Include: product placement, setting/background, lighting, mood, composition. Be specific about colors, textures, and visual elements that match the brand style.",
+    "aspectRatio": "One of: 1:1, 16:9, 9:16, 2:3, 3:2",
+    "platform": "Platform name: IG Feed, IG Story, Facebook, TikTok, Pinterest, Google Ads, YouTube"
+  }
+]
+
+Generate 2-6 scenes. Default to 3 if count not specified.`,
+
+  chatResponse: `You are a friendly and professional AI ad creative assistant for "100x" platform (100x.pics). You help DTC brands create advertising materials.
+
+Your job:
+- Help users understand what you can do (analyze brand websites, generate ad creatives)
+- Be concise and action-oriented
+- Always guide toward the next step: share website → confirm profile → generate ads
+- If user has no brand, ask for their website or brand info
+- If user has brand, suggest generating ads
+- Keep responses under 3 sentences unless explaining something complex
+- Write in Chinese unless the user writes in English`,
+
+  imageGenWithRef: `MISSION: Place the EXACT product from the reference image into a new scene.
+
+ABSOLUTE RULES — VIOLATING ANY = FAILURE:
+1. The product MUST be a pixel-perfect 1:1 replica of the reference image.
+2. DO NOT redesign, reimagine, simplify, or improve the product.
+3. Match every color hex value, every curve, every contour, every surface finish exactly.
+4. Keep all logos, text, engravings, markings as-is.
+5. Keep proportions and geometry identical.
+6. Do not add or remove buttons, sensors, lights, features.
+7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.`,
+
+  imageGenNoRef: `Create a stunning product advertisement image.`,
+};
+
+let _cachedPrompts: typeof DEFAULT_PROMPTS | null = null;
+
+async function loadAgentPrompts(): Promise<typeof DEFAULT_PROMPTS> {
+  if (_cachedPrompts) return _cachedPrompts;
+  try {
+    const config = await readAppConfig();
+    const ap = config.agentPrompts;
+    if (ap && Object.keys(ap).length > 0) {
+      _cachedPrompts = {
+        brandAnalysis: ap.brandAnalysis || DEFAULT_PROMPTS.brandAnalysis,
+        intentDetection: ap.intentDetection || DEFAULT_PROMPTS.intentDetection,
+        sceneBuilder: ap.sceneBuilder || DEFAULT_PROMPTS.sceneBuilder,
+        chatResponse: ap.chatResponse || DEFAULT_PROMPTS.chatResponse,
+        imageGenWithRef: ap.imageGenWithRef || DEFAULT_PROMPTS.imageGenWithRef,
+        imageGenNoRef: ap.imageGenNoRef || DEFAULT_PROMPTS.imageGenNoRef,
+      };
+    } else {
+      _cachedPrompts = { ...DEFAULT_PROMPTS };
+    }
+  } catch {
+    _cachedPrompts = { ...DEFAULT_PROMPTS };
+  }
+  return _cachedPrompts!;
+}
+
+/** Clear prompt cache (call after admin saves new prompts) */
+export function clearPromptCache() { _cachedPrompts = null; }
 
 function extractUrl(text: string): string | null {
   const m = text.match(/https?:\/\/[^\s<>"{}|\\^`\]]+/);
@@ -145,22 +250,9 @@ async function analyzeBrandWithLLM(url: string): Promise<BrandProfile> {
     };
   }
 
-  const systemPrompt = `You are a brand analysis expert for a DTC (Direct-to-Consumer) advertising creative platform. Analyze the website content and extract brand intelligence.
+  const prompts = await loadAgentPrompts();
 
-You MUST respond with valid JSON only, no markdown, no explanation, just the JSON object with these fields:
-{
-  "brandName": "Brand name (short, clean)",
-  "industry": "One of: 美妆护肤/时尚服饰/电子科技/食品健康/家居生活/运动户外/宠物用品/母婴玩具/汽车用品/教育文化/软件服务/综合电商",
-  "style": "One of: 高端奢华/极简主义/活力潮流/自然有机/专业经典/甜美可爱/现代简约",
-  "targetAudience": "Target audience description (Chinese, e.g. 25-40岁都市女性)",
-  "toneOfVoice": "Brand tone of voice (Chinese, e.g. 温柔亲切/专业权威/年轻活泼)",
-  "sellingPoints": ["Top 3-5 selling points or value propositions (Chinese)"],
-  "keywords": ["5-8 brand/product keywords"],
-  "competitors": ["2-3 competitor brand names"],
-  "priceRange": "Price positioning: 高端/中高端/中端/性价比",
-  "description": "One sentence brand summary (Chinese, max 100 chars)",
-  "moodKeywords": ["3-5 visual mood keywords for ad generation (English, e.g. 'clean', 'minimalist', 'warm')"]
-}`;
+  const systemPrompt = prompts.brandAnalysis;
 
   const userMessage = `Analyze this brand website:
 URL: ${url}
@@ -225,24 +317,8 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
   }
 
   // Use LLM for complex intent detection
-  const systemPrompt = `You are analyzing user messages in a DTC ad creative platform chat. Determine the user's intent.
-
-Respond with JSON only:
-{
-  "intent": "generate" | "edit" | "clarify" | "chat" | "brand_info",
-  "generateDetails": { "count": number, "platforms": ["ig"|"fb"|"tiktok"|"pinterest"|"google"|"youtube"|"all"], "desc": "custom description or null" },
-  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" },
-  "brandInfo": { "brandName": "string or null", "industry": "string or null", "sellingPoints": ["array of strings or empty"], "targetAudience": "string or null", "description": "string or null" }
-}
-
-Rules:
-- "brand_info": user is describing their brand directly (name, product, target audience). Extract all brand fields.
-- "generate": user wants to create ad images. Extract count, platforms, any custom description.
-- "edit": user wants to modify brand profile. Extract which fields to change.
-- "clarify": user is asking a question or needs more info.
-- "chat": general conversation or doesn't fit other categories.
-- Has brand profile already: ${hasBrand}
-- If user mentions a brand name + product/service info, use "brand_info" intent.`;
+  const prompts = await loadAgentPrompts();
+  const systemPrompt = prompts.intentDetection + `\n\n- Has brand profile already: ${hasBrand}\n- If user mentions a brand name + product/service info, use "brand_info" intent.`;
 
   try {
     const llmResponse = await callLLM(systemPrompt, message);
@@ -262,21 +338,8 @@ async function buildScenesWithLLM(
   message: string,
   brand: BrandProfile,
 ): Promise<{ label: string; desc: string; aspectRatio: string; platform: string }[]> {
-  const systemPrompt = `You are an advertising creative director. Generate scene descriptions for ad image generation.
-
-Given a brand and user request, create specific scene descriptions. Each scene should be a vivid, detailed visual description suitable for AI image generation.
-
-Respond with JSON array only:
-[
-  {
-    "label": "Short label like 'IG Feed' or 'Facebook Ad'",
-    "desc": "Detailed visual scene description in English (2-3 sentences). Include: product placement, setting/background, lighting, mood, composition. Be specific about colors, textures, and visual elements that match the brand style.",
-    "aspectRatio": "One of: 1:1, 16:9, 9:16, 2:3, 3:2",
-    "platform": "Platform name: IG Feed, IG Story, Facebook, TikTok, Pinterest, Google Ads, YouTube"
-  }
-]
-
-Generate 2-6 scenes. Default to 3 if count not specified.`;
+  const prompts = await loadAgentPrompts();
+  const systemPrompt = prompts.sceneBuilder;
 
   const brandContext = `Brand: ${brand.brandName}
 Industry: ${brand.industry || 'Unknown'}
@@ -305,18 +368,8 @@ User Request: ${message}`;
 // ─── LLM Chat Response ───────────────────────────────────────────────────────
 
 async function generateChatResponse(message: string, brand: BrandProfile | null): Promise<string> {
-  const systemPrompt = `You are a friendly and professional AI ad creative assistant for "100x" platform (100x.pics). You help DTC brands create advertising materials.
-
-Your job:
-- Help users understand what you can do (analyze brand websites, generate ad creatives)
-- Be concise and action-oriented
-- Always guide toward the next step: share website → confirm profile → generate ads
-- If user has no brand, ask for their website or brand info
-- If user has brand, suggest generating ads
-- Keep responses under 3 sentences unless explaining something complex
-- Write in Chinese unless the user writes in English
-
-Current brand profile: ${brand ? JSON.stringify(brand) : 'None'}`;
+  const prompts = await loadAgentPrompts();
+  const systemPrompt = prompts.chatResponse + `\n\nCurrent brand profile: ${brand ? JSON.stringify(brand) : 'None'}`;
 
   return callLLM(systemPrompt, message);
 }
