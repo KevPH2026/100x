@@ -1,0 +1,1 @@
+subtitles=subs.srt:force_style='FontName=Helvetica Neue,FontSize=18,PrimaryColour=&Hffffff,OutlineColour=&H40000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=50,Alignment=2'

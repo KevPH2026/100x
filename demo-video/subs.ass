@@ -1,0 +1,17 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1280
+PlayResY: 720
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, Italic, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV
+Style: Default,Helvetica Neue,18,&H00FFFFFF,&H40000000,&H00000000,-1,0,1,2,0,2,10,10,50
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.20,0:00:04.00,Default,,0,0,0,,100x.pics — AI ad creatives, done.\N100x.pics — AI广告素材，一步到位
+Dialogue: 0,0:00:04.50,0:00:08.00,Default,,0,0,0,,Upload your product. AI learns your brand.\N上传产品图，AI自动学习品牌基因
+Dialogue: 0,0:00:08.50,0:00:13.00,Default,,0,0,0,,8 scenes. 6 sizes. Generated in seconds.\N8大场景 6种尺寸 秒级生成
+Dialogue: 0,0:00:13.50,0:00:17.80,Default,,0,0,0,,Instagram, TikTok, Facebook. One click.\NInstagram TikTok Facebook 一键适配
+Dialogue: 0,0:00:18.30,0:00:21.50,Default,,0,0,0,,Real brands, real results. Under 5 min.\N真实品牌 真实效果 5分钟搞定
+Dialogue: 0,0:00:22.00,0:00:24.00,Default,,0,0,0,,100x.pics — Try it free.\N100x.pics — 免费体验
