@@ -547,11 +547,13 @@ interface WorkflowNode {
 function WorkflowsTab() {
   const [prompts, setPrompts] = useState<Record<string, PromptData> | null>(null);
   const [workflow, setWorkflow] = useState<WorkflowNode[]>([]);
+  const [runtime, setRuntime] = useState<Record<string, { value: unknown; default: unknown; label: string; desc: string }> | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  const [rtSaving, setRtSaving] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -561,6 +563,7 @@ function WorkflowsTab() {
       const res = await fetch('/api/admin/prompts').then(r => r.json());
       setPrompts(res.prompts);
       setWorkflow(res.workflow || []);
+      setRuntime(res.runtime || null);
     } catch { /* ignore */ }
     setLoading(false);
   }, []);
@@ -596,8 +599,24 @@ function WorkflowsTab() {
     }
   };
 
+  const saveRuntime = async () => {
+    if (!runtime) return;
+    setRtSaving(true);
+    const agentRuntime: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(runtime)) {
+      agentRuntime[k] = v.value;
+    }
+    const res = await fetch('/api/admin/prompts', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentRuntime }),
+    });
+    setRtSaving(false);
+    if (res.ok) { showToast('运行时配置已保存'); load(); }
+    else showToast('保存失败');
+  };
+
   const resetAll = async () => {
-    if (!confirm('确认重置所有Prompt为默认值？此操作不可撤销。')) return;
+    if (!confirm('确认重置所有Prompt和运行时配置为默认值？此操作不可撤销。')) return;
     const res = await fetch('/api/admin/prompts', { method: 'DELETE' });
     if (res.ok) { showToast('已重置为默认值'); load(); }
     else showToast('重置失败');
@@ -609,8 +628,8 @@ function WorkflowsTab() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">工作流 & Prompt</h2>
-          <p className="text-xs text-zinc-500 mt-1">查看Agent工作流逻辑，调整Prompt影响所有后续用户</p>
+          <h2 className="text-lg font-semibold text-white">工作流 & 配置</h2>
+          <p className="text-xs text-zinc-500 mt-1">控制Agent实际行为 — Prompt、模型、速率限制全部生效</p>
         </div>
         <button onClick={resetAll}
           className="px-4 py-2 text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg hover:border-zinc-600 transition flex items-center gap-2">
@@ -620,6 +639,46 @@ function WorkflowsTab() {
 
       {/* Toast */}
       {toast && <div className="text-sm text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" />{toast}</div>}
+
+      {/* ─── Runtime Config ─── */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-white">运行时配置</p>
+          <button onClick={saveRuntime} disabled={rtSaving}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs rounded-lg transition flex items-center gap-2">
+            <Save className="w-3 h-3" />{rtSaving ? '保存中...' : '保存配置'}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {runtime && Object.entries(runtime).map(([key, field]) => {
+            const isSelect = key === 'imageProvider';
+            const isNumber = typeof field.value === 'number';
+            return (
+              <div key={key}>
+                <label className="text-xs text-zinc-500 mb-1 block">{field.label}</label>
+                {isSelect ? (
+                  <select value={String(field.value)} onChange={e => setRuntime({ ...runtime!, [key]: { ...field, value: e.target.value } })}
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none">
+                    <option value="auto">auto (Novart优先, TR备用)</option>
+                    <option value="novart">novart (仅Novart)</option>
+                    <option value="tokenrouter">tokenrouter (仅TR)</option>
+                  </select>
+                ) : (
+                  <input
+                    type={isNumber ? 'number' : 'text'}
+                    step={key === 'llmTemperature' ? '0.1' : undefined}
+                    min={isNumber ? 0 : undefined}
+                    value={String(field.value)}
+                    onChange={e => setRuntime({ ...runtime!, [key]: { ...field, value: isNumber ? Number(e.target.value) : e.target.value } })}
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none font-mono"
+                  />
+                )}
+                <p className="text-[10px] text-zinc-600 mt-1">{field.desc} (默认: {String(field.default)})</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* ─── Workflow Visualization ─── */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -705,66 +764,39 @@ function WorkflowsTab() {
   );
 }
 
-// ─── Settings (keep it simple — link to existing config API) ────
+// ─── Settings (API keys remain here — runtime config moved to WorkflowsTab) ────
 function SettingsTab() {
   const [config, setConfig] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch('/api/config').then(r => r.json()).then(d => { setConfig(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  const [provider, setProvider] = useState('minimax');
-  const [model, setModel] = useState('minimax-image-01');
-  const [prompt, setPrompt] = useState('');
-
-  useEffect(() => {
-    if (config) {
-      const c = config as Record<string, Record<string, unknown>>;
-      setProvider((c.adforge100x?.imageProvider as string) || 'minimax');
-      setModel((c.adforge100x?.novartModel as string) || (c.adforge100x?.minimaxModel as string) || '');
-      setPrompt((c.adforge100x?.promptTemplate as string) || '');
-    }
-  }, [config]);
-
-  const save = async () => {
-    setSaving(true);
-    await fetch('/api/config', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adforge100x: { imageProvider: provider, [provider === 'novart' ? 'novartModel' : 'minimaxModel']: model, promptTemplate: prompt } }),
-    });
-    setSaving(false);
-  };
-
   if (loading) return <Loading />;
+
+  const c = (config as Record<string, Record<string, unknown>>)?.adforge100x || {};
 
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-white">系统配置</h2>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5 max-w-2xl">
+      <p className="text-xs text-zinc-500">API Key等敏感配置。运行时参数（模型/温度/限流）请到「工作流」Tab调整。</p>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 max-w-2xl">
         <div>
-          <label className="text-xs text-zinc-500 mb-1 block">生图 Provider</label>
-          <select value={provider} onChange={e => setProvider(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none">
-            <option value="minimax">MiniMax</option>
-            <option value="novart">Novart</option>
-          </select>
+          <label className="text-xs text-zinc-500 mb-1 block">Novart API Key</label>
+          <p className="text-sm text-zinc-400 font-mono">{c.novartKey ? '••••••••' + String(c.novartKey).slice(-6) : '未配置'}</p>
         </div>
         <div>
-          <label className="text-xs text-zinc-500 mb-1 block">模型</label>
-          <input value={model} onChange={e => setModel(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none" />
+          <label className="text-xs text-zinc-500 mb-1 block">Novart Base URL</label>
+          <p className="text-sm text-zinc-400 font-mono">{String(c.novartBaseUrl || '未配置')}</p>
         </div>
         <div>
-          <label className="text-xs text-zinc-500 mb-1 block">Prompt 模板</label>
-          <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={6}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none resize-y font-mono text-xs" />
+          <label className="text-xs text-zinc-500 mb-1 block">TokenRouter API Key</label>
+          <p className="text-sm text-zinc-400 font-mono">{(c as any).tokenrouterKey ? '••••••••' : '未配置'}</p>
         </div>
-        <button onClick={save} disabled={saving}
-          className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm rounded-lg transition">
-          {saving ? '保存中...' : '保存配置'}
-        </button>
+        <div className="pt-2 border-t border-zinc-800">
+          <p className="text-[10px] text-zinc-600">以上Key通过 .env.local 或 Vercel 环境变量设置，此处仅展示状态。</p>
+        </div>
       </div>
     </div>
   );

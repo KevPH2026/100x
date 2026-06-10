@@ -8,16 +8,15 @@ export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 // ── Rate Limiter (in-memory, per-user, sliding window) ──────────────────────
-const WINDOW_MS = 60_000; // 1 minute window
-const MAX_PER_WINDOW = 3;  // max 3 generations per minute per user
+const DEFAULT_WINDOW_MS = 60_000;
+const DEFAULT_MAX_PER_WINDOW = 3;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function checkRateLimit(userId: string): { ok: boolean; retryAfterMs: number } {
+function checkRateLimit(userId: string, windowMs: number, maxPerWindow: number): { ok: boolean; retryAfterMs: number } {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + WINDOW_MS });
-    // Prune old entries periodically
+    rateLimitMap.set(userId, { count: 1, resetAt: now + windowMs });
     if (rateLimitMap.size > 1000) {
       for (const [k, v] of rateLimitMap) {
         if (now > v.resetAt) rateLimitMap.delete(k);
@@ -25,7 +24,7 @@ function checkRateLimit(userId: string): { ok: boolean; retryAfterMs: number } {
     }
     return { ok: true, retryAfterMs: 0 };
   }
-  if (entry.count >= MAX_PER_WINDOW) {
+  if (entry.count >= maxPerWindow) {
     return { ok: false, retryAfterMs: entry.resetAt - now };
   }
   entry.count++;
@@ -58,12 +57,13 @@ function platformLabel(ratio: string, fb?: string) {
 /** TokenRouter gpt-5.4-image-2: /images/generations with image_url ref field. */
 async function genTokenRouter(
   apiKey: string, baseUrl: string, prompt: string, size: string, refUrl: string,
+  modelName: string = 'openai/gpt-5.4-image-2', timeoutMs: number = 55000,
 ): Promise<{ buf: Buffer | null; err?: string }> {
   const base = baseUrl.replace(/\/$/, '').trim();
   const T0 = Date.now();
   try {
     const body: Record<string, unknown> = {
-      model: 'openai/gpt-5.4-image-2',
+      model: modelName,
       prompt,
       size,
       n: 1,
@@ -74,7 +74,7 @@ async function genTokenRouter(
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(55000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     console.log(`[TR T+${Date.now()-T0}ms] resp: ${res.status}`);
     if (!res.ok) {
@@ -105,9 +105,10 @@ async function downloadToBuffer(url: string): Promise<{ buf: Buffer | null; err?
   } catch (e: any) { return { buf: null, err: `dl exc ${e?.message}` }; }
 }
 
-/** Novart Vertex fallback (slow, ~50s). */
+/** Novart Vertex (configurable model + timeout). */
 async function genNovartVertex(
   apiKey: string, baseUrl: string, prompt: string, ratio: string, refUrl: string | undefined,
+  modelName: string = 'nova-image-pro', timeoutMs: number = 50000,
 ): Promise<{ buf: Buffer | null; err?: string }> {
   const base = baseUrl.replace(/\/$/, '').trim();
   const T0 = Date.now();
@@ -124,10 +125,10 @@ async function genNovartVertex(
       contents: [{ role: 'user', parts }],
       generationConfig: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio: ratio } },
     };
-    console.log(`[NV T+${Date.now()-T0}ms] calling...`);
-    const r = await fetch(`${base}/v1beta/models/nova-image-pro:generateContent`, {
+    console.log(`[NV T+${Date.now()-T0}ms] calling ${modelName}...`);
+    const r = await fetch(`${base}/v1beta/models/${modelName}:generateContent`, {
       method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(50000),
+      body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
     });
     console.log(`[NV T+${Date.now()-T0}ms] resp: ${r.status}`);
     if (!r.ok) return { buf: null, err: `nv ${r.status}` };
@@ -146,10 +147,22 @@ async function genNovartVertex(
 }
 
 export async function POST(req: NextRequest) {
+  const config = await readAppConfig();
+  const rt = config.agentRuntime;
+  const ax = config.adforge100x || {};
+
+  // Runtime config from DB
+  const rateWindowMs = rt?.rateLimitWindowMs || DEFAULT_WINDOW_MS;
+  const rateMax = rt?.rateLimitMaxPerWindow || DEFAULT_MAX_PER_WINDOW;
+  const imageProvider = rt?.imageProvider || 'auto'; // auto = novart优先
+  const novartModel = rt?.novartImageModel || 'nova-image-pro';
+  const trModel = rt?.tokenrouterImageModel || 'openai/gpt-5.4-image-2';
+  const imageTimeoutMs = rt?.imageTimeoutMs || 50000;
+
   // Rate limit check
   const authResult = await auth();
   if (authResult?.user?.id) {
-    const rl = checkRateLimit(authResult.user.id);
+    const rl = checkRateLimit(authResult.user.id, rateWindowMs, rateMax);
     if (!rl.ok) {
       return NextResponse.json(
         { error: `请求太频繁，请等待 ${Math.ceil(rl.retryAfterMs / 1000)} 秒后再试` },
@@ -158,8 +171,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const config = await readAppConfig();
-  const ax = config.adforge100x || {};
   const trKey = (ax as any).tokenrouterKey || ENV_TR_KEY;
   const trBase = ((ax as any).tokenrouterBaseUrl || ENV_TR_BASE).trim();
   const novartKey = ax.novartKey || ENV_NOVART_KEY;
@@ -252,24 +263,40 @@ ${cta ? `CTA hint: ${cta}` : ''}
 ${userCtx}
 ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.' : `Aspect ratio: ${ratio}. Product must be the hero, well-composed, ready for social media.`}`;
 
-  console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider-pref=${trKey ? 'tokenrouter' : 'novart'}`);
+  console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider=${imageProvider}`);
   const t0 = Date.now();
 
   let result: { buf: Buffer | null; err?: string } = { buf: null, err: 'no provider' };
   let providerUsed = '';
 
-  // Novart 优先（更快，~30s），TokenRouter 备用（~50s）
-  if (novartKey) {
+  // Provider selection based on config: novart | tokenrouter | auto (novart优先)
+  const useNovartFirst = imageProvider === 'novart' || imageProvider === 'auto';
+  const useTRFirst = imageProvider === 'tokenrouter';
+
+  if (useNovartFirst && novartKey) {
     const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
-    result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage);
-    providerUsed = 'novart-vertex';
+    result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
+    providerUsed = `novart-${novartModel}`;
     if (!result.buf) console.error('[NV fail]', result.err);
   }
-  if (!result.buf && trKey) {
+  if (!result.buf && useTRFirst && trKey) {
     const size = TR_SIZE_MAP[ratio] || '1024x1024';
-    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage);
-    providerUsed = 'tokenrouter-image2';
+    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage, trModel, imageTimeoutMs);
+    providerUsed = `tr-${trModel}`;
     if (!result.buf) console.error('[TR fail]', result.err);
+  }
+  // Fallback: if primary failed, try the other
+  if (!result.buf && useNovartFirst && trKey) {
+    const size = TR_SIZE_MAP[ratio] || '1024x1024';
+    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage, trModel, imageTimeoutMs);
+    providerUsed = `tr-${trModel}-fallback`;
+    if (!result.buf) console.error('[TR fallback fail]', result.err);
+  }
+  if (!result.buf && useTRFirst && novartKey) {
+    const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
+    result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
+    providerUsed = `novart-${novartModel}-fallback`;
+    if (!result.buf) console.error('[NV fallback fail]', result.err);
   }
 
   if (!result.buf) {

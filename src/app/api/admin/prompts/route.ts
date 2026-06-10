@@ -104,6 +104,7 @@ export async function GET(req: NextRequest) {
 
   const config = await readAppConfig();
   const saved = config.agentPrompts || {};
+  const rt = config.agentRuntime || {};
 
   // Build response with both default and current (saved) values
   const prompts: Record<string, { label: string; desc: string; default: string; current: string; model: string; variables: string[]; customized: boolean }> = {
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
       desc: '输入URL → 抓取网页 → LLM提取品牌DNA（行业/风格/人群/卖点等）',
       default: DEFAULT_PROMPTS.brandAnalysis,
       current: saved.brandAnalysis || DEFAULT_PROMPTS.brandAnalysis,
-      model: 'MiniMax-Text-01',
+      model: rt.llmModel || 'MiniMax-Text-01',
       variables: ['URL内容', 'title', 'description', 'body'],
       customized: !!saved.brandAnalysis,
     },
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest) {
       desc: '分析用户消息，判断意图类型：generate/edit/brand_info/clarify/chat',
       default: DEFAULT_PROMPTS.intentDetection,
       current: saved.intentDetection || DEFAULT_PROMPTS.intentDetection,
-      model: 'MiniMax-Text-01',
+      model: rt.llmModel || 'MiniMax-Text-01',
       variables: ['message', 'hasBrand'],
       customized: !!saved.intentDetection,
     },
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
       desc: '根据品牌信息+用户需求，生成2-6个广告场景描述（label/desc/aspectRatio/platform）',
       default: DEFAULT_PROMPTS.sceneBuilder,
       current: saved.sceneBuilder || DEFAULT_PROMPTS.sceneBuilder,
-      model: 'MiniMax-Text-01',
+      model: rt.llmModel || 'MiniMax-Text-01',
       variables: ['brandName', 'industry', 'style', 'targetAudience', 'sellingPoints', 'moodKeywords', 'message'],
       customized: !!saved.sceneBuilder,
     },
@@ -139,7 +140,7 @@ export async function GET(req: NextRequest) {
       desc: '闲聊/咨询场景下的自然对话回复，引导用户走完品牌建档→生图流程',
       default: DEFAULT_PROMPTS.chatResponse,
       current: saved.chatResponse || DEFAULT_PROMPTS.chatResponse,
-      model: 'MiniMax-Text-01',
+      model: rt.llmModel || 'MiniMax-Text-01',
       variables: ['brand profile JSON'],
       customized: !!saved.chatResponse,
     },
@@ -148,7 +149,7 @@ export async function GET(req: NextRequest) {
       desc: '用户上传了产品参考图时的生图prompt，强调产品保真',
       default: DEFAULT_PROMPTS.imageGenWithRef,
       current: saved.imageGenWithRef || DEFAULT_PROMPTS.imageGenWithRef,
-      model: 'Novart nova-image-pro',
+      model: `Novart ${rt.novartImageModel || 'nova-image-pro'}`,
       variables: ['referenceImage', 'sceneDesc', 'brandName', 'mood'],
       customized: !!saved.imageGenWithRef,
     },
@@ -157,13 +158,28 @@ export async function GET(req: NextRequest) {
       desc: '无参考图时的兜底生图prompt',
       default: DEFAULT_PROMPTS.imageGenNoRef,
       current: saved.imageGenNoRef || DEFAULT_PROMPTS.imageGenNoRef,
-      model: 'Novart nova-image-pro',
+      model: `Novart ${rt.novartImageModel || 'nova-image-pro'}`,
       variables: ['sceneDesc', 'brandName', 'mood'],
       customized: !!saved.imageGenNoRef,
     },
   };
 
-  return NextResponse.json({ workflow: WORKFLOW, prompts });
+  // Runtime config with defaults
+  const runtime = {
+    llmModel: { value: rt.llmModel || 'MiniMax-Text-01', default: 'MiniMax-Text-01', label: 'LLM 模型', desc: 'Agent使用的LLM模型名' },
+    llmTemperature: { value: rt.llmTemperature ?? 0.3, default: 0.3, label: 'Temperature', desc: 'LLM生成温度(0-1)' },
+    llmMaxTokens: { value: rt.llmMaxTokens || 2000, default: 2000, label: 'Max Tokens', desc: 'LLM最大输出token数' },
+    llmTimeoutMs: { value: rt.llmTimeoutMs || 30000, default: 30000, label: 'LLM超时(ms)', desc: 'LLM请求超时毫秒数' },
+    imageProvider: { value: rt.imageProvider || 'auto', default: 'auto', label: '生图Provider', desc: 'auto=novart优先, novart=仅novart, tokenrouter=仅TR' },
+    novartImageModel: { value: rt.novartImageModel || 'nova-image-pro', default: 'nova-image-pro', label: 'Novart模型', desc: 'Novart生图模型名' },
+    tokenrouterImageModel: { value: rt.tokenrouterImageModel || 'openai/gpt-5.4-image-2', default: 'openai/gpt-5.4-image-2', label: 'TR模型', desc: 'TokenRouter生图模型名' },
+    imageTimeoutMs: { value: rt.imageTimeoutMs || 50000, default: 50000, label: '生图超时(ms)', desc: '生图请求超时毫秒数' },
+    rateLimitWindowMs: { value: rt.rateLimitWindowMs || 60000, default: 60000, label: '限流窗口(ms)', desc: '速率限制时间窗口' },
+    rateLimitMaxPerWindow: { value: rt.rateLimitMaxPerWindow || 3, default: 3, label: '限流次数', desc: '窗口内最大请求数' },
+    defaultSceneCount: { value: rt.defaultSceneCount || 3, default: 3, label: '默认场景数', desc: '每次生成默认场景数量' },
+  };
+
+  return NextResponse.json({ workflow: WORKFLOW, prompts, runtime });
 }
 
 export async function PUT(req: NextRequest) {
@@ -173,28 +189,44 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    // body: { agentPrompts: { brandAnalysis: "...", ... } }
-    const newPrompts = body.agentPrompts;
-    if (!newPrompts || typeof newPrompts !== 'object') {
-      return NextResponse.json({ error: '无效数据' }, { status: 400 });
-    }
-
-    // Validate — only allow known keys
-    const allowedKeys = ['brandAnalysis', 'intentDetection', 'sceneBuilder', 'chatResponse', 'imageGenWithRef', 'imageGenNoRef'];
-    const filtered: Record<string, string> = {};
-    for (const key of allowedKeys) {
-      if (typeof newPrompts[key] === 'string' && newPrompts[key].trim()) {
-        filtered[key] = newPrompts[key].trim();
-      }
-    }
-
     const config = await readAppConfig();
-    config.agentPrompts = filtered;
+
+    // Save agentPrompts
+    if (body.agentPrompts && typeof body.agentPrompts === 'object') {
+      const allowedKeys = ['brandAnalysis', 'intentDetection', 'sceneBuilder', 'chatResponse', 'imageGenWithRef', 'imageGenNoRef'];
+      const filtered: Record<string, string> = {};
+      for (const key of allowedKeys) {
+        if (typeof body.agentPrompts[key] === 'string' && body.agentPrompts[key].trim()) {
+          filtered[key] = body.agentPrompts[key].trim();
+        }
+      }
+      config.agentPrompts = filtered;
+    }
+
+    // Save agentRuntime
+    if (body.agentRuntime && typeof body.agentRuntime === 'object') {
+      const rt = body.agentRuntime;
+      const runtime: Record<string, unknown> = {};
+      // Validate and cast types
+      if (typeof rt.llmModel === 'string') runtime.llmModel = rt.llmModel;
+      if (typeof rt.llmTemperature === 'number') runtime.llmTemperature = rt.llmTemperature;
+      if (typeof rt.llmMaxTokens === 'number') runtime.llmMaxTokens = rt.llmMaxTokens;
+      if (typeof rt.llmTimeoutMs === 'number') runtime.llmTimeoutMs = rt.llmTimeoutMs;
+      if (['novart', 'tokenrouter', 'auto'].includes(rt.imageProvider)) runtime.imageProvider = rt.imageProvider;
+      if (typeof rt.novartImageModel === 'string') runtime.novartImageModel = rt.novartImageModel;
+      if (typeof rt.tokenrouterImageModel === 'string') runtime.tokenrouterImageModel = rt.tokenrouterImageModel;
+      if (typeof rt.imageTimeoutMs === 'number') runtime.imageTimeoutMs = rt.imageTimeoutMs;
+      if (typeof rt.rateLimitWindowMs === 'number') runtime.rateLimitWindowMs = rt.rateLimitWindowMs;
+      if (typeof rt.rateLimitMaxPerWindow === 'number') runtime.rateLimitMaxPerWindow = rt.rateLimitMaxPerWindow;
+      if (typeof rt.defaultSceneCount === 'number') runtime.defaultSceneCount = rt.defaultSceneCount;
+      config.agentRuntime = runtime as any;
+    }
+
     config.updatedAt = new Date().toISOString();
     config.updatedBy = 'admin';
     await writeAppConfig(config);
 
-    return NextResponse.json({ ok: true, saved: Object.keys(filtered) });
+    return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -205,9 +237,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
-  // Reset all prompts to defaults
+  // Reset all prompts and runtime to defaults
   const config = await readAppConfig();
   delete config.agentPrompts;
+  delete config.agentRuntime;
   config.updatedAt = new Date().toISOString();
   config.updatedBy = 'admin';
   await writeAppConfig(config);
