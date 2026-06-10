@@ -247,6 +247,35 @@ export default function ChatPage() {
   // Auto-scroll
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Load existing brand when logged in
+  useEffect(() => {
+    if (session?.user && !brand) {
+      fetch('/api/user/brand').then(r => r.ok ? r.json() : null).then(data => {
+        if (data?.brands?.length > 0) {
+          const b = data.brands[0];
+          setBrand({
+            brandName: b.brandName,
+            industry: b.industry || undefined,
+            style: b.style || undefined,
+            targetAudience: b.targetAudience || undefined,
+            description: b.notes || undefined,
+            logoUrl: b.logoUrl || undefined,
+          });
+          setBrandConfirmed(true);
+        }
+      }).catch(() => {});
+    }
+  }, [session?.user]);
+
+  // Load recent assets count
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/quota/check').then(r => r.json()).then(data => {
+        // just trigger session awareness
+      }).catch(() => {});
+    }
+  }, [session?.user]);
+
   // Initial greeting
   useEffect(() => {
     if (messages.length === 0) {
