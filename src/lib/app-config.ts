@@ -83,6 +83,30 @@ export type AppConfig = {
     imageGenWithRef?: string;
     imageGenNoRef?: string;
   };
+  agentRuntime?: {
+    /** LLM 模型名 */
+    llmModel?: string;
+    /** LLM temperature */
+    llmTemperature?: number;
+    /** LLM max_tokens */
+    llmMaxTokens?: number;
+    /** LLM 请求超时 ms */
+    llmTimeoutMs?: number;
+    /** 生图 provider: novart | tokenrouter | auto */
+    imageProvider?: 'novart' | 'tokenrouter' | 'auto';
+    /** Novart 生图模型 */
+    novartImageModel?: string;
+    /** TokenRouter 生图模型 */
+    tokenrouterImageModel?: string;
+    /** 生图请求超时 ms */
+    imageTimeoutMs?: number;
+    /** 速率限制: 窗口 ms */
+    rateLimitWindowMs?: number;
+    /** 速率限制: 窗口内最大次数 */
+    rateLimitMaxPerWindow?: number;
+    /** 默认生成场景数 */
+    defaultSceneCount?: number;
+  };
   updatedAt?: string;
   updatedBy?: string;
 };

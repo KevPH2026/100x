@@ -43,6 +43,14 @@ interface AgentResponse {
 const MINIMAX_KEY = process.env.MINIMAX_API_KEY || '';
 
 async function callLLM(systemPrompt: string, userMessage: string): Promise<string> {
+  // Load runtime config from DB
+  const config = await readAppConfig();
+  const rt = config.agentRuntime;
+  const model = rt?.llmModel || 'MiniMax-Text-01';
+  const temperature = rt?.llmTemperature ?? 0.3;
+  const maxTokens = rt?.llmMaxTokens || 2000;
+  const timeoutMs = rt?.llmTimeoutMs || 30000;
+
   const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
     method: 'POST',
     headers: {
@@ -50,15 +58,15 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'MiniMax-Text-01',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
       ],
-      temperature: 0.3,
-      max_tokens: 2000,
+      temperature,
+      max_tokens: maxTokens,
     }),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!res.ok) {
