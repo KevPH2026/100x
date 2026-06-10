@@ -1,8 +1,0 @@
-[0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.9[x01];
-[x01][2:v]xfade=transition=fade:duration=0.5:offset=12.6[x12];
-[x12][3:v]xfade=transition=fade:duration=0.5:offset=21.2[x23];
-[x23][4:v]xfade=transition=fade:duration=0.5:offset=26.9[outv];
-[0:a][1:a]acrossfade=d=0.5[a01];
-[a01][2:a]acrossfade=d=0.5[a12];
-[a12][3:a]acrossfade=d=0.5[a23];
-[a23][4:a]acrossfade=d=0.5[outa]
