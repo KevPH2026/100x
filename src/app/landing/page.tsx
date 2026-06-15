@@ -818,6 +818,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <a href="https://dtclab.org/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTCLab</a>
+            <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTC Doctor</a>
             <p className="text-xs text-zinc-700">{t.footer}</p>
           </div>
         </div>

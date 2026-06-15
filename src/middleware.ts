@@ -19,6 +19,10 @@ export function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
+    // Allow static files (images, icons, etc.)
+    const isStatic = /\.(jpg|jpeg|png|webp|svg|gif|ico|css|js|woff2?|ttf|mp4|webm|mp3|pdf)$/.test(url.pathname);
+    if (isStatic) return NextResponse.next();
+
     // Only allow specific paths, everything else → landing
     const allowed =
       url.pathname.startsWith('/adforge') ||

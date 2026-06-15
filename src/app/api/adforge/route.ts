@@ -229,8 +229,51 @@ export async function POST(req: NextRequest) {
 
   const hasRef = !!referenceImage;
   const isReEdit = !!body.isReEdit;
-  const refRules = hasRef
-    ? `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.
+
+  // ── Read prompt template from config (admin-controllable) ──
+  const ap = config.agentPrompts || {};
+  const templateKey = hasRef ? 'imageGenWithRef' : 'imageGenNoRef';
+  let template = ap[templateKey] || '';
+
+  // Variable substitution
+  const _mood = mood || 'premium and refined';
+  const _country = targetCountry || 'US';
+  const _campaign = campaignTheme ? `Campaign: ${campaignTheme}` : '';
+  const _goal = marketingGoal ? `Goal: ${marketingGoal}` : '';
+  const _urgency = urgency && urgency !== 'none' ? `Urgency: ${urgency}` : '';
+  const _cta = cta ? `CTA hint: ${cta}` : '';
+
+  const vars: Record<string, string> = {
+    sceneDesc,
+    mood: _mood,
+    targetCountry: _country,
+    brandName,
+    sellingPoint,
+    ratio,
+    campaignTheme: _campaign,
+    marketingGoal: _goal,
+    urgency: _urgency,
+    cta: _cta,
+    isReEdit: isReEdit
+      ? '\nTHIS IS A RE-EDIT: The user wants to change ONLY the background/scene. The product MUST remain 100% identical to the reference image. Do NOT modify, reimagine, or change the product in any way.\n'
+      : '',
+  };
+
+  let prompt: string;
+  if (template) {
+    // Admin customized template — replace {{variables}}
+    prompt = template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
+    // Append brand context + user preferences (not in template, always needed)
+    prompt += `\n\nBRAND CONTEXT:\nBrand: ${brandName}\nProduct: ${sellingPoint}`;
+    if (_campaign) prompt += `\n${_campaign}`;
+    if (_goal) prompt += `\n${_goal}`;
+    if (_urgency) prompt += `\n${_urgency}`;
+    if (_cta) prompt += `\n${_cta}`;
+    if (userCtx) prompt += userCtx;
+  } else {
+    // Fallback: hardcoded defaults (same as before)
+    const refRules = hasRef
+      ? `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.
 ${isReEdit ? '\nTHIS IS A RE-EDIT: The user wants to change ONLY the background/scene. The product MUST remain 100% identical to the reference image. Do NOT modify, reimagine, or change the product in any way.\n' : ''}
 ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 1. The product MUST be a pixel-perfect 1:1 replica of the reference image.
@@ -242,12 +285,12 @@ ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.
 ${isReEdit ? '8. The PRODUCT is the star — it must look exactly the same as in the reference, just placed in a different setting.\n' : ''}
 WHAT TO CHANGE (the ONLY thing you change):`
-    : `Create a stunning product advertisement image.`;
+      : `Create a stunning product advertisement image.`;
 
-  const prompt = `${refRules}
+    prompt = `${refRules}
 - Scene: ${sceneDesc}
-- Mood: ${mood || 'premium and refined'}
-- Target market: ${targetCountry || 'US'}
+- Mood: ${_mood}
+- Target market: ${_country}
 - Style: professional product photography, magazine-grade
 - Lighting: natural, soft, with realistic shadows and reflections
 - Composition: product is the hero, well-positioned, with room to breathe
@@ -256,12 +299,13 @@ WHAT TO CHANGE (the ONLY thing you change):`
 BRAND CONTEXT:
 Brand: ${brandName}
 Product: ${sellingPoint}
-${campaignTheme ? `Campaign: ${campaignTheme}` : ''}
-${marketingGoal ? `Goal: ${marketingGoal}` : ''}
-${urgency && urgency !== 'none' ? `Urgency: ${urgency}` : ''}
-${cta ? `CTA hint: ${cta}` : ''}
+${_campaign}
+${_goal}
+${_urgency}
+${_cta}
 ${userCtx}
 ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.' : `Aspect ratio: ${ratio}. Product must be the hero, well-composed, ready for social media.`}`;
+  }
 
   console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider=${imageProvider}`);
   const t0 = Date.now();
