@@ -5,7 +5,7 @@ import {
   BarChart3, Users, Image as ImageIcon, Ticket, Settings,
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
-  Save, RotateCcw, ChevronDown, ChevronUp
+  Save, RotateCcw, ChevronDown, ChevronUp, Ghost
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ interface InviteRow {
 const TABS = [
   { key: 'dashboard', label: '概览', icon: BarChart3 },
   { key: 'users', label: '用户', icon: Users },
+  { key: 'guests', label: '游客', icon: Ghost },
   { key: 'assets', label: '素材库', icon: ImageIcon },
   { key: 'invites', label: '邀请码', icon: Ticket },
   { key: 'workflows', label: '工作流', icon: GitBranch },
@@ -129,6 +130,7 @@ export default function AdminPage() {
         <div className="max-w-6xl mx-auto p-8">
           {tab === 'dashboard' && <DashboardTab />}
           {tab === 'users' && <UsersTab />}
+          {tab === 'guests' && <GuestsTab />}
           {tab === 'assets' && <AssetsTab />}
           {tab === 'invites' && <InvitesTab />}
           {tab === 'workflows' && <WorkflowsTab />}
@@ -431,6 +433,104 @@ function UsersTab() {
               </div>
             ))}
           </div>
+          <Pagination page={page} totalPages={totalPages} setPage={setPage} />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Guests (未登录用户使用记录) ─────────────────────────────────
+function GuestsTab() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`/api/admin/guests?page=${page}&limit=30`);
+    if (res.ok) {
+      const data = await res.json();
+      setLogs(data.logs);
+      setSummary(data.summary);
+      setTotalPages(data.totalPages);
+    }
+    setLoading(false);
+  }, [page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold text-white">游客使用记录</h2>
+
+      {loading ? <Loading /> : summary && (
+        <>
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">总生成次数</p>
+              <p className="text-2xl font-bold text-white">{summary.totalGenerations}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">成功</p>
+              <p className="text-2xl font-bold text-emerald-400">{summary.totalSuccess}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">失败</p>
+              <p className="text-2xl font-bold text-red-400">{summary.totalFail}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">独立IP数</p>
+              <p className="text-2xl font-bold text-violet-400">{summary.uniqueIps}</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">24h内</p>
+              <p className="text-2xl font-bold text-cyan-400">{summary.last24h}</p>
+            </div>
+          </div>
+
+          {/* Log table */}
+          {logs.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-12">暂无游客使用记录</p>
+          ) : (
+            <div className="space-y-1">
+              <p className="text-xs text-zinc-500 mb-2">最近 {logs.length} 条记录</p>
+              {logs.map(log => (
+                <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/50 hover:bg-zinc-900/50 rounded">
+                  {/* Thumbnail */}
+                  <div className="w-10 h-10 rounded bg-zinc-800 overflow-hidden shrink-0">
+                    {log.imageUrl ? (
+                      <img src={log.imageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <X className="w-4 h-4 text-zinc-600" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 grid grid-cols-6 gap-2 items-center">
+                    <div className="col-span-1 min-w-0">
+                      <p className="text-xs text-white truncate">{log.brandName || '—'}</p>
+                      <p className="text-[10px] text-zinc-500 truncate">{log.sellingPoint || '—'}</p>
+                    </div>
+                    <p className="text-xs text-zinc-400">{log.platform || '—'}</p>
+                    <p className="text-xs text-zinc-400">{log.aspectRatio || '—'}</p>
+                    <p className="text-xs text-zinc-500 truncate">{log.ip || '—'}</p>
+                    <p className="text-xs text-zinc-500">{new Date(log.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${log.success ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'}`}>
+                        {log.success ? '成功' : '失败'}
+                      </span>
+                      {log.provider && <span className="text-[10px] text-zinc-600 truncate">{log.provider}</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
       )}
