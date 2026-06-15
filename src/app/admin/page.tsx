@@ -341,6 +341,35 @@ function UsersTab() {
                 {/* Expanded detail */}
                 {expandedId === u.id && (
                   <div className="bg-zinc-900/50 border-b border-zinc-800/50 px-6 py-4">
+                    {/* Registration info (always shown) */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 pb-4 border-b border-zinc-800/50">
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">邮箱</p>
+                        <p className="text-xs text-white truncate">{u.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">姓名</p>
+                        <p className="text-xs text-white">{u.name || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">公司</p>
+                        <p className="text-xs text-white">{u.company || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">电话</p>
+                        <p className="text-xs text-white">{u.phone || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">注册时间</p>
+                        <p className="text-xs text-white">{u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">状态</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${u.disabled ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400'}`}>
+                          {u.disabled ? '禁用' : '正常'}
+                        </span>
+                      </div>
+                    </div>
                     {expandLoading ? <Loading /> : expandedDetail ? (
                       <div className="space-y-4">
                         {/* Quota bar */}

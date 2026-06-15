@@ -71,7 +71,7 @@ Your job:
 - Keep responses under 3 sentences unless explaining something complex
 - Write in Chinese unless the user writes in English`,
 
-  imageGenWithRef: `MISSION: Place the EXACT product from the reference image into a new scene.
+  imageGenWithRef: `MISSION: Place the EXACT product from the reference image into a new scene. This is product photography compositing, NOT product redesign.{{isReEdit}}
 
 ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 1. The product MUST be a pixel-perfect 1:1 replica of the reference image.
@@ -80,9 +80,30 @@ ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 4. Keep all logos, text, engravings, markings as-is.
 5. Keep proportions and geometry identical.
 6. Do not add or remove buttons, sensors, lights, features.
-7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.`,
+7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.
 
-  imageGenNoRef: `Create a stunning product advertisement image.`,
+- Scene: {{sceneDesc}}
+- Mood: {{mood}}
+- Target market: {{targetCountry}}
+- Style: professional product photography, magazine-grade
+- Lighting: natural, soft, with realistic shadows and reflections
+- Composition: product is the hero, well-positioned, with room to breathe
+- Camera: Canon EOS R5, 85mm f/1.4, shallow depth of field
+
+FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.`,
+
+  imageGenNoRef: `Create a stunning product advertisement image.
+
+- Scene: {{sceneDesc}}
+- Mood: {{mood}}
+- Target market: {{targetCountry}}
+- Style: professional product photography, magazine-grade
+- Lighting: natural, soft, with realistic shadows and reflections
+- Composition: product is the hero, well-positioned, with room to breathe
+- Camera: Canon EOS R5, 85mm f/1.4, shallow depth of field
+- Aspect ratio: {{ratio}}
+
+Product must be the hero, well-composed, ready for social media.`,
 };
 
 // Workflow pipeline definition
@@ -146,20 +167,20 @@ export async function GET(req: NextRequest) {
     },
     imageGenWithRef: {
       label: '生图（有参考图）',
-      desc: '用户上传了产品参考图时的生图prompt，强调产品保真',
+      desc: '用户上传了产品参考图时的生图prompt。可用变量: {{sceneDesc}} {{mood}} {{targetCountry}} {{brandName}} {{sellingPoint}} {{ratio}} {{isReEdit}} {{campaignTheme}} {{marketingGoal}} {{urgency}} {{cta}}',
       default: DEFAULT_PROMPTS.imageGenWithRef,
       current: saved.imageGenWithRef || DEFAULT_PROMPTS.imageGenWithRef,
       model: `Novart ${rt.novartImageModel || 'nova-image-pro'}`,
-      variables: ['referenceImage', 'sceneDesc', 'brandName', 'mood'],
+      variables: ['sceneDesc', 'mood', 'targetCountry', 'brandName', 'sellingPoint', 'ratio', 'isReEdit', 'campaignTheme', 'marketingGoal', 'urgency', 'cta'],
       customized: !!saved.imageGenWithRef,
     },
     imageGenNoRef: {
       label: '生图（无参考图）',
-      desc: '无参考图时的兜底生图prompt',
+      desc: '无参考图时的兜底生图prompt。可用变量同上',
       default: DEFAULT_PROMPTS.imageGenNoRef,
       current: saved.imageGenNoRef || DEFAULT_PROMPTS.imageGenNoRef,
       model: `Novart ${rt.novartImageModel || 'nova-image-pro'}`,
-      variables: ['sceneDesc', 'brandName', 'mood'],
+      variables: ['sceneDesc', 'mood', 'targetCountry', 'brandName', 'sellingPoint', 'ratio', 'campaignTheme', 'marketingGoal', 'urgency', 'cta'],
       customized: !!saved.imageGenNoRef,
     },
   };
