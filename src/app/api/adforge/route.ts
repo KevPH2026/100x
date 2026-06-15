@@ -344,6 +344,24 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   }
 
   if (!result.buf) {
+    // 记录失败
+    try {
+      const session = await auth();
+      if (!session?.user?.id) {
+        const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+        await prisma.guestLog.create({ data: {
+          ip: rawIp ? rawIp.replace(/\.\d+$/, '.0') : null,
+          ua: req.headers.get('user-agent')?.slice(0, 300) || null,
+          brandName: brandName?.slice(0, 100) || null,
+          sellingPoint: sellingPoint?.slice(0, 200) || null,
+          platform: forcePlatform || platformLabel(ratio, scene.platform),
+          aspectRatio: ratio,
+          provider: providerUsed,
+          success: false,
+          error: result.err?.slice(0, 200) || 'unknown',
+        }}).catch(() => {});
+      }
+    } catch {}
     return NextResponse.json({ error: `生成失败: ${result.err || 'unknown'}`, provider: providerUsed }, { status: 500 });
   }
   console.log(`[ADFORGE] Done ${Date.now()-t0}ms via ${providerUsed}, ${result.buf.length}b`);
@@ -381,6 +399,21 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
           });
         } catch {}
       }
+    } else {
+      // ── 未登录用户：记录游客使用 ──
+      const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '';
+      const ip = rawIp ? rawIp.replace(/\.\d+$/, '.0') : null; // 截断 /24 隐私保护
+      const ua = req.headers.get('user-agent')?.slice(0, 300) || null;
+      await prisma.guestLog.create({ data: {
+        ip, ua,
+        brandName: brandName?.slice(0, 100) || null,
+        sellingPoint: sellingPoint?.slice(0, 200) || null,
+        platform: forcePlatform || platformLabel(ratio, scene.platform),
+        aspectRatio: ratio,
+        imageUrl: persistentUrl,
+        provider: providerUsed,
+        success: true,
+      }}).catch(() => {});
     }
   } catch (e) { console.error('[ADFORGE] DB:', e); }
 

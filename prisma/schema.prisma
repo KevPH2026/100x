@@ -105,3 +105,22 @@ model AppConfig {
 
   @@map("app_config")
 }
+
+// ─── 游客使用记录 ──────────────────────────────────────────
+model GuestLog {
+  id          String   @id @default(cuid())
+  ip          String?                // IP地址（截断 /24）
+  ua          String?                // User-Agent
+  fingerprint String?                // 浏览器指纹（如可用）
+  brandName   String?                // 输入的品牌名
+  sellingPoint String?               // 输入的卖点
+  platform    String?                // IG Feed / TikTok / FB
+  aspectRatio String?                // 1:1, 9:16...
+  imageUrl    String?                // 生成的图片URL
+  provider    String?                // novart / tokenrouter
+  success     Boolean  @default(true)
+  error       String?                // 失败原因
+  createdAt   DateTime @default(now())
+
+  @@map("guest_logs")
+}
