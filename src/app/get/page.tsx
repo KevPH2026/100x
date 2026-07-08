@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Fragment } from 'react';
-import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors, ArrowRight } from 'lucide-react';
+import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors, ArrowRight, Bell } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
 function UserMenu() {
@@ -230,6 +230,7 @@ export default function GeneratePage() {
   const [progress, setProgress] = useState(0);
   const [currentScene, setCurrentScene] = useState('');
   const [toast, setToast] = useState<{ msg: string; sub?: string } | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   // 从localStorage恢复历史记录
   useEffect(() => {
@@ -596,6 +597,52 @@ export default function GeneratePage() {
               <button onClick={() => setStep('form')} className="text-xs text-white/30 hover:text-white/60 transition-all">← 重新生成</button>
               <button onClick={() => { localStorage.removeItem(LS_KEY); setGeneratedImages([]); setStep('form'); }}
                 className="text-xs text-red-400/40 hover:text-red-400/70 transition-all">清空历史</button>
+              {/* 迭代通知 */}
+              <div className="relative">
+                <button onClick={() => setShowHistory(s => !s)} className="relative p-1.5 rounded-lg hover:bg-white/5 transition-all">
+                  <Bell className="w-4 h-4 text-white/40" />
+                  {generatedImages.some(i => i.refineHistory && i.refineHistory.length > 0) && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-violet-500" />
+                  )}
+                </button>
+                {showHistory && (
+                  <div className="absolute right-0 top-full mt-2 w-80 rounded-xl overflow-hidden z-50"
+                    style={{ background: 'rgba(15,15,20,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.5)' }}>
+                    <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <span className="text-xs font-bold text-white/70">迭代记录</span>
+                      <button onClick={() => setShowHistory(false)}><X className="w-3.5 h-3.5 text-white/30" /></button>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto p-2 space-y-1.5 scrollbar-hide">
+                      {generatedImages.filter(i => i.refineHistory && i.refineHistory.length > 0).length === 0 ? (
+                        <div className="text-center py-8 text-xs text-white/20">暂无迭代记录</div>
+                      ) : generatedImages.map((img, i) => (img.refineHistory && img.refineHistory.length > 0) ? (
+                        <div key={i} className="rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <img src={img.url} alt="" className="w-8 h-8 rounded object-cover" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[10px] font-medium text-white/60 truncate">{img.scene}</div>
+                              <div className="text-[9px] text-white/30">{img.platform} · {img.ratio}</div>
+                            </div>
+                            <span className="text-[10px] font-bold text-violet-300/70">v{img.refineHistory.length + 1}</span>
+                          </div>
+                          <div className="px-3 py-1.5 space-y-1">
+                            <div className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(139,92,246,0.06)' }}>
+                              <span className="text-[9px] text-violet-300/50 font-mono">v1</span>
+                              <span className="text-[9px] text-white/40">原始生成</span>
+                            </div>
+                            {img.refineHistory.map((h, hi) => (
+                              <div key={hi} className="flex items-center gap-2 px-2 py-1 rounded" style={{ background: 'rgba(139,92,246,0.06)' }}>
+                                <span className="text-[9px] text-violet-300/50 font-mono">v{hi + 2}</span>
+                                <span className="text-[9px] text-white/40">{h.instruction}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null)}
+                    </div>
+                  </div>
+                )}
+              </div>
               <UserMenu />
             </div>
           </div>
@@ -1215,9 +1262,17 @@ function ImageCard({ img, index, brandName, onRefine }: {
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <span className="text-[10px] font-medium text-white/70">{img.platform}</span>
         </div>
-        <div className="absolute top-3 right-3 px-1.5 py-0.5 rounded text-[9px] font-bold text-white/50"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-          {img.ratio}
+        <div className="absolute top-3 right-3 flex items-center gap-1">
+          <div className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white/50"
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+            {img.ratio}
+          </div>
+          {img.refineHistory && img.refineHistory.length > 0 && (
+            <div className="px-1.5 py-0.5 rounded text-[9px] font-bold text-violet-200"
+              style={{ background: 'rgba(139,92,246,0.4)', backdropFilter: 'blur(4px)' }}>
+              v{img.refineHistory.length + 1}
+            </div>
+          )}
         </div>
         {img.refining && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
