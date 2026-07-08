@@ -150,7 +150,7 @@ export default function GeneratePage() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [selectedScenes, setSelectedScenes] = useState<number[]>([0]);
   const [customScene, setCustomScene] = useState(''); // 用户自定义场景描述
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['IG Feed']);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['IG Feed', 'IG Story', 'FB', 'TikTok', 'TikTok Video', 'Pinterest', 'Google', 'YouTube']);
 
   // 抠图（浏览器端 @imgly/background-removal）
   const [cutoutImage, setCutoutImage] = useState<string | null>(null);
@@ -764,6 +764,7 @@ export default function GeneratePage() {
           </a>
           <div className="flex items-center gap-3">
             <a href="/" className="text-xs text-white/30 hover:text-white/60 transition-all">← 返回首页</a>
+            <FeedbackButton />
             <UserMenu />
           </div>
         </div>

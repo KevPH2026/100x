@@ -6,7 +6,7 @@ import {
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
   Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText,
-  Activity
+  Activity, MessageSquare
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ const TABS = [
   { key: 'invites', label: '邀请码', icon: Ticket },
   { key: 'workflows', label: '工作流', icon: GitBranch },
   { key: 'health', label: '模型监测', icon: Activity },
+  { key: 'feedbacks', label: '用户反馈', icon: MessageSquare },
   { key: 'settings', label: '配置', icon: Settings },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -139,6 +140,7 @@ export default function AdminPage() {
           {tab === 'invites' && <InvitesTab />}
           {tab === 'workflows' && <WorkflowsTab />}
           {tab === 'health' && <ModelHealthTab />}
+          {tab === 'feedbacks' && <FeedbacksTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -1399,6 +1401,90 @@ function WorkflowsTab() {
 }
 
 // ─── Settings (API keys remain here — runtime config moved to WorkflowsTab) ────
+// ─── FeedbacksTab ──────────────────────────────────────────────────
+function FeedbacksTab() {
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`/api/admin/feedbacks?page=${page}&limit=20`);
+    const data = await res.json();
+    setFeedbacks(data.feedbacks || []);
+    setTotal(data.total || 0);
+    setLoading(false);
+  }, [page]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateStatus = async (id: string, status: string) => {
+    await fetch('/api/admin/feedbacks', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    load();
+  };
+
+  const statusColors: Record<string, string> = {
+    pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+    resolved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    ignored: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold">用户反馈</h2>
+          <p className="text-xs text-zinc-500 mt-1">共 {total} 条反馈</p>
+        </div>
+        <button onClick={load} className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-all">
+          <RefreshCw className="w-3 h-3 inline mr-1" />刷新
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-zinc-500 text-sm">加载中...</div>
+      ) : feedbacks.length === 0 ? (
+        <div className="text-center py-12 text-zinc-600 text-sm">暂无反馈</div>
+      ) : (
+        <div className="space-y-3">
+          {feedbacks.map((fb: any) => (
+            <div key={fb.id} className="rounded-xl p-4 border border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-zinc-200 whitespace-pre-wrap">{fb.content}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
+                    <span>{fb.page || '/'}</span>
+                    <span>·</span>
+                    <span>{fb.userId || fb.ip || '?'}</span>
+                    <span>·</span>
+                    <span>{new Date(fb.createdAt).toLocaleString('zh-CN')}</span>
+                    {fb.contact && (<><span>·</span><span className="text-violet-400">{fb.contact}</span></>)}
+                  </div>
+                </div>
+                <select
+                  value={fb.status}
+                  onChange={e => updateStatus(fb.id, e.target.value)}
+                  className={`shrink-0 px-2 py-1 rounded-lg text-[10px] font-medium border ${statusColors[fb.status] || statusColors.pending}`}
+                >
+                  <option value="pending">待处理</option>
+                  <option value="resolved">已解决</option>
+                  <option value="ignored">已忽略</option>
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SettingsTab ──────────────────────────────────────────────────
 function SettingsTab() {
   const [config, setConfig] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
