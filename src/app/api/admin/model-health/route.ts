@@ -35,10 +35,12 @@ export async function POST(req: NextRequest) {
 
   // ── 2. Novart Image ──
   const novartKey = process.env.NOVART_API_KEY;
+  const novartBase = process.env.NOVART_BASE_URL || 'https://www.novartspace.art';
+  const novartModel = process.env.NOVART_IMAGE_MODEL || 'nova-image-pro';
   if (novartKey) {
     const t0 = Date.now();
     try {
-      const res = await fetch('https://www.novartspace.art/v1beta/models/nova-g-image-2:generateContent', {
+      const res = await fetch(`${novartBase}/v1beta/models/${novartModel}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': novartKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -49,13 +51,13 @@ export async function POST(req: NextRequest) {
       });
       const data = await res.json();
       if (data.error) throw new Error(`${data.error.code}: ${data.error.message}`);
-      if (!data.candidates?.[0]?.content?.parts?.some((p: any) => p.inlineData)) throw new Error('No image in response');
-      results.push({ name: 'nova-g-image-2 (Novart)', ok: true, latencyMs: Date.now() - t0, detail: 'Image generated OK', type: 'Image', usage: '广告素材生成（主）' });
+      if (!data.candidates?.[0]?.content?.parts?.some((p: any) => p.inlineData || p.fileData)) throw new Error('No image in response');
+      results.push({ name: `${novartModel} (Novart)`, ok: true, latencyMs: Date.now() - t0, detail: 'Image generated OK', type: 'Image', usage: '广告素材生成（主）' });
     } catch (e: any) {
-      results.push({ name: 'nova-g-image-2 (Novart)', ok: false, latencyMs: Date.now() - t0, detail: e.message || String(e), type: 'Image', usage: '广告素材生成（主）' });
+      results.push({ name: `${novartModel} (Novart)`, ok: false, latencyMs: Date.now() - t0, detail: e.message || String(e), type: 'Image', usage: '广告素材生成（主）' });
     }
   } else {
-    results.push({ name: 'nova-g-image-2 (Novart)', ok: false, latencyMs: 0, detail: 'NOVART_API_KEY 未配置', type: 'Image', usage: '广告素材生成（主）' });
+    results.push({ name: `${novartModel} (Novart)`, ok: false, latencyMs: 0, detail: 'NOVART_API_KEY 未配置', type: 'Image', usage: '广告素材生成（主）' });
   }
 
   // ── 3. Neon DB ──

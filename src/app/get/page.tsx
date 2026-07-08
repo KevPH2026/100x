@@ -438,14 +438,16 @@ export default function GeneratePage() {
     }
 
     const total = tasks.length;
+
+    // ── 并发生成（批次3） ──
+    const BATCH = 3;
     let done = 0;
     let failed = 0;
     const results: GeneratedImage[] = [];
     const failedTasks: string[] = [];
 
-    for (const task of tasks) {
+    const processTask = async (task: typeof tasks[0]) => {
       setCurrentScene(task.scene.label + ' · ' + task.platformKey);
-      let success = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const controller = new AbortController();
@@ -479,7 +481,7 @@ export default function GeneratePage() {
             console.error(`Generate failed (${attempt}/2) for ${task.scene.label}:`, err.error);
             if (attempt === 2) {
               failedTasks.push(`${task.scene.label}: ${err.error || '生成失败'}`);
-              failed++;
+              return false;
             }
           } else {
             const data = await res.json();
@@ -493,19 +495,26 @@ export default function GeneratePage() {
                 refineHistory: [],
               });
               setGeneratedImages([...results]);
-              success = true;
-              break; // 成功，退出重试
+              return true;
             }
           }
         } catch (err) {
           console.error(`Generate error (${attempt}/2):`, err);
           if (attempt === 2) {
             failedTasks.push(`${task.scene.label}: ${err?.toString?.() || '请求异常'}`);
-            failed++;
+            return false;
           }
         }
       }
-      done++;
+      return false;
+    };
+
+    // 分批并发
+    for (let i = 0; i < tasks.length; i += BATCH) {
+      const batch = tasks.slice(i, i + BATCH);
+      const batchResults = await Promise.all(batch.map(t => processTask(t)));
+      done += batch.length;
+      failed += batchResults.filter(r => !r).length;
       setProgress(Math.round((done / total) * 100));
     }
 
