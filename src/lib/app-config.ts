@@ -5,6 +5,8 @@
 import { prisma } from "@/lib/prisma";
 
 const CONFIG_KEY = "global";
+let _cache: AppConfig | null = null;
+let _cacheTs = 0;
 
 export type AppConfig = {
   openrouter?: {
@@ -112,13 +114,17 @@ export type AppConfig = {
 };
 
 export async function readAppConfig(): Promise<AppConfig> {
+  const now = Date.now();
+  if (_cache && now - _cacheTs < 30_000) return _cache;
   try {
     const row = await prisma.appConfig.findUnique({ where: { key: CONFIG_KEY } });
     if (!row) return {};
-    return (row.value as AppConfig) || {};
+    _cache = (row.value as AppConfig) || {};
+    _cacheTs = now;
+    return _cache;
   } catch (err) {
     console.error("[app-config] read error", err);
-    return {};
+    return _cache || {};
   }
 }
 
