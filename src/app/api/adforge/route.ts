@@ -344,21 +344,37 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   }
 
   if (!result.buf) {
-    // 记录失败
+    // 记录失败（GenerationLog + GuestLog）
+    const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+    const ip = rawIp ? rawIp.replace(/\.\d+$/, '.0') : null;
+    const latencyMs = Date.now() - t0;
     try {
       const session = await auth();
-      if (!session?.user?.id) {
-        const rawIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+      const userId = session?.user?.id;
+      // GenerationLog — always write
+      await prisma.generationLog.create({ data: {
+        userId: userId || null,
+        ip,
+        brandName: brandName?.slice(0, 100) || 'unknown',
+        prompt: prompt?.slice(0, 2000) || '',
+        sceneLabel: scene.label?.slice(0, 50),
+        sceneDesc: sceneDesc?.slice(0, 300),
+        aspectRatio: ratio,
+        platform: forcePlatform || platformLabel(ratio, scene.platform),
+        imageModel: providerUsed,
+        success: false,
+        error: result.err?.slice(0, 200) || 'unknown',
+        latencyMs,
+        workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel } : undefined,
+      }}).catch(() => {});
+      if (!userId) {
         await prisma.guestLog.create({ data: {
-          ip: rawIp ? rawIp.replace(/\.\d+$/, '.0') : null,
-          ua: req.headers.get('user-agent')?.slice(0, 300) || null,
+          ip, ua: req.headers.get('user-agent')?.slice(0, 300) || null,
           brandName: brandName?.slice(0, 100) || null,
           sellingPoint: sellingPoint?.slice(0, 200) || null,
           platform: forcePlatform || platformLabel(ratio, scene.platform),
-          aspectRatio: ratio,
-          provider: providerUsed,
-          success: false,
-          error: result.err?.slice(0, 200) || 'unknown',
+          aspectRatio: ratio, provider: providerUsed,
+          success: false, error: result.err?.slice(0, 200) || 'unknown',
         }}).catch(() => {});
       }
     } catch {}
@@ -416,6 +432,31 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
       }}).catch(() => {});
     }
   } catch (e) { console.error('[ADFORGE] DB:', e); }
+
+  // ── 写 GenerationLog（始终记录完整上下文）──
+  try {
+    const sess = await auth();
+    const rawIp2 = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+    const ip2 = rawIp2 ? rawIp2.replace(/\.\d+$/, '.0') : null;
+    await prisma.generationLog.create({ data: {
+      userId: sess?.user?.id || null,
+      ip: ip2,
+      brandName: brandName?.slice(0, 100) || 'unknown',
+      prompt: prompt?.slice(0, 2000) || '',
+      sceneLabel: scene.label?.slice(0, 50),
+      sceneDesc: sceneDesc?.slice(0, 300),
+      aspectRatio: ratio,
+      platform: forcePlatform || platformLabel(ratio, scene.platform),
+      style: body.style || null,
+      mood: mood || null,
+      targetCountry: targetCountry || null,
+      imageModel: providerUsed,
+      imageUrl: persistentUrl,
+      success: true,
+      latencyMs: Date.now() - t0,
+      workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel, imageTimeoutMs: rt.imageTimeoutMs } : undefined,
+    }}).catch(() => {});
+  } catch {}
 
   return NextResponse.json({
     image: { url: persistentUrl, platform: platformLabel(ratio, scene.platform), scene: customSceneDesc?.trim() || scene.label, ratio },

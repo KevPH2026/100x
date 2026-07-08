@@ -124,3 +124,32 @@ model GuestLog {
 
   @@map("guest_logs")
 }
+
+// ─── 完整生成日志（注册用户+游客通用）─────────────────────
+model GenerationLog {
+  id          String   @id @default(cuid())
+  userId      String?                // 注册用户ID（null=游客）
+  ip          String?                // IP（截断 /24）
+  brandName   String                 // 品牌名
+  prompt      String                 // 实际发给模型的完整prompt
+  sceneLabel  String?                // 场景标签
+  sceneDesc   String?                // 场景描述（用户提供的）
+  aspectRatio String?                // 宽高比
+  platform    String?                // 投放平台
+  style       String?                // 风格
+  mood        String?                // 氛围
+  targetCountry String?             // 目标国家
+  imageModel  String?                // 使用的生图模型
+  imageUrl    String?                // 生成的图片URL
+  imagePrompt String?                // 用户的原始输入消息
+  workflow    Json?                  // 完整工作流快照 { llmModel, imageProvider, novartImageModel, ... }
+  success     Boolean  @default(true)
+  error       String?                // 失败原因
+  latencyMs   Int?                   // 耗时(毫秒)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([brandName])
+  @@index([createdAt])
+  @@map("generation_logs")
+}

@@ -5,7 +5,7 @@ import {
   BarChart3, Users, Image as ImageIcon, Ticket, Settings,
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
-  Save, RotateCcw, ChevronDown, ChevronUp, Ghost
+  Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ const TABS = [
   { key: 'dashboard', label: '概览', icon: BarChart3 },
   { key: 'users', label: '用户', icon: Users },
   { key: 'guests', label: '游客', icon: Ghost },
+  { key: 'generations', label: '生成日志', icon: FileText },
   { key: 'assets', label: '素材库', icon: ImageIcon },
   { key: 'invites', label: '邀请码', icon: Ticket },
   { key: 'workflows', label: '工作流', icon: GitBranch },
@@ -131,6 +132,7 @@ export default function AdminPage() {
           {tab === 'dashboard' && <DashboardTab />}
           {tab === 'users' && <UsersTab />}
           {tab === 'guests' && <GuestsTab />}
+          {tab === 'generations' && <GenerationsTab />}
           {tab === 'assets' && <AssetsTab />}
           {tab === 'invites' && <InvitesTab />}
           {tab === 'workflows' && <WorkflowsTab />}
@@ -533,6 +535,145 @@ function GuestsTab() {
           )}
           <Pagination page={page} totalPages={totalPages} setPage={setPage} />
         </>
+      )}
+    </div>
+  );
+}
+
+// ─── Generations (完整生成日志) ─────────────────────────────────
+function GenerationsTab() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [filterBrand, setFilterBrand] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const limit = 20;
+
+  useEffect(() => { fetchLogs(); }, [page, filterBrand]);
+
+  async function fetchLogs() {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filterBrand) params.set('brandName', filterBrand);
+    try {
+      const r = await fetch(`/api/admin/generations?${params}`);
+      const d = await r.json();
+      setLogs(d.logs || []);
+      setTotal(d.total || 0);
+    } catch {}
+    setLoading(false);
+  }
+
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <input
+          type="text" placeholder="品牌名筛选..." value={filterBrand}
+          onChange={e => { setFilterBrand(e.target.value); setPage(1); }}
+          className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        />
+        <button onClick={fetchLogs} className="p-1.5 hover:bg-zinc-700 rounded-lg">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+        <span className="text-xs text-zinc-500 ml-auto">共 {total} 条记录</span>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8 text-zinc-500">加载中...</div>
+      ) : logs.length === 0 ? (
+        <div className="text-center py-8 text-zinc-500">暂无记录</div>
+      ) : (
+        <div className="space-y-2">
+          {logs.map((log: any) => (
+            <div key={log.id} className="bg-zinc-800/50 rounded-lg border border-zinc-700/50 overflow-hidden">
+              <button
+                onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
+                className="w-full text-left p-3 flex items-center gap-3 hover:bg-zinc-700/30"
+              >
+                {log.imageUrl && (
+                  <img src={log.imageUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-white">{log.brandName}</span>
+                    <span className="text-zinc-500">{log.sceneLabel || '-'}</span>
+                    <span className="text-zinc-600">{log.aspectRatio || '-'}</span>
+                    <span className="text-zinc-600">{log.platform || '-'}</span>
+                    {log.success ? (
+                      <Check className="w-3.5 h-3.5 text-green-500" />
+                    ) : (
+                      <X className="w-3.5 h-3.5 text-red-500" />
+                    )}
+                  </div>
+                  <div className="text-xs text-zinc-500 truncate">
+                    {log.userId ? `👤 ${log.userId.slice(0, 8)}...` : '🌐 游客'}
+                    {log.ip && ` · ${log.ip}`}
+                    {' · '}{new Date(log.createdAt).toLocaleString('zh-CN')}
+                    {log.latencyMs && ` · ${Math.round(log.latencyMs/1000)}s`}
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${expandedId === log.id ? 'rotate-180' : ''}`} />
+              </button>
+
+              {expandedId === log.id && (
+                <div className="px-3 pb-3 space-y-2 border-t border-zinc-700/50 pt-2">
+                  {log.prompt && (
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">Prompt</div>
+                      <div className="text-xs text-zinc-300 bg-zinc-900 rounded p-2 whitespace-pre-wrap max-h-40 overflow-y-auto">{log.prompt}</div>
+                    </div>
+                  )}
+                  {log.sceneDesc && (
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">场景描述</div>
+                      <div className="text-xs text-zinc-300">{log.sceneDesc}</div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    {log.style && <div><span className="text-zinc-500">风格:</span> {log.style}</div>}
+                    {log.mood && <div><span className="text-zinc-500">氛围:</span> {log.mood}</div>}
+                    {log.targetCountry && <div><span className="text-zinc-500">国家:</span> {log.targetCountry}</div>}
+                    {log.imageModel && <div><span className="text-zinc-500">模型:</span> {log.imageModel}</div>}
+                  </div>
+                  {log.workflow && (
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">工作流</div>
+                      <pre className="text-xs text-zinc-400 bg-zinc-900 rounded p-2">{JSON.stringify(log.workflow, null, 2)}</pre>
+                    </div>
+                  )}
+                  {log.error && (
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">错误</div>
+                      <div className="text-xs text-red-400">{log.error}</div>
+                    </div>
+                  )}
+                  {log.imageUrl && (
+                    <div>
+                      <img src={log.imageUrl} alt="" className="max-h-60 rounded" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
+            className="p-1.5 bg-zinc-800 rounded disabled:opacity-30">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs text-zinc-500">{page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}
+            className="p-1.5 bg-zinc-800 rounded disabled:opacity-30">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       )}
     </div>
   );
