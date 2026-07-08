@@ -752,8 +752,9 @@ export default function GeneratePage() {
       <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
         style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
-      <nav className="fixed top-0 inset-x-0 z-50"
-        style={{ background: 'rgba(5,5,7,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <nav
+        className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-zinc-950/80"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 1px 20px rgba(139,92,246,0.08)' }}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center"
@@ -794,8 +795,8 @@ export default function GeneratePage() {
                 <button onClick={() => { if (s.n < formStep) setFormStep(s.n); }}
                   className="flex items-center gap-1.5 transition-all">
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                    formStep === s.n ? 'bg-violet-500 text-white' :
-                    formStep > s.n ? 'bg-violet-500/30 text-violet-300' : 'bg-white/5 text-white/30'
+                    formStep === s.n ? 'bg-violet-500 text-white ring-2 ring-violet-500/30 ring-offset-2 ring-offset-zinc-950' :
+                    formStep > s.n ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white/30'
                   }`}>
                     {formStep > s.n ? <Check className="w-3 h-3" /> : s.n}
                   </span>
@@ -820,7 +821,7 @@ export default function GeneratePage() {
           {formStep === 1 && (
           <div className="space-y-6">
             {/* URL 解析 */}
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(139,92,246,0.25)', background: 'rgba(139,92,246,0.04)' }}>
+            <div className="rounded-2xl overflow-hidden hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(139,92,246,0.25)', background: 'rgba(139,92,246,0.04)' }}>
               <div className="px-5 pt-5 pb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Globe className="w-4 h-4 text-violet-400" />
@@ -893,7 +894,7 @@ export default function GeneratePage() {
 
             {/* 品牌DNA */}
             {(brandDNA || isExtractingDNA) && (
-              <div className="rounded-2xl overflow-hidden p-5" style={{ border: '1px solid rgba(244,114,182,0.25)', background: 'rgba(244,114,182,0.04)' }}>
+              <div className="rounded-2xl overflow-hidden p-5 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(244,114,182,0.25)', background: 'rgba(244,114,182,0.04)' }}>
                 <div className="flex items-center gap-2 mb-4">
                   <Wand2 className="w-4 h-4 text-pink-400" />
                   <span className="text-sm font-semibold text-white/80">品牌 DNA</span>
@@ -934,7 +935,7 @@ export default function GeneratePage() {
             )}
 
             {/* 产品基础信息 */}
-            <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="rounded-2xl p-5 space-y-4 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-semibold text-white/80">产品信息</span>
               </div>
@@ -1022,7 +1023,7 @@ export default function GeneratePage() {
           {/* ── Step 2: 营销活动 ─────────────────────────────────── */}
           {formStep === 2 && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-5 space-y-4" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.03)' }}>
+            <div className="rounded-2xl p-5 space-y-4 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.03)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-green-400" />
                 <span className="text-sm font-semibold text-white/80">营销活动</span>
@@ -1089,7 +1090,7 @@ export default function GeneratePage() {
           {/* ── Step 3: 使用场景（多选） ──────────────────────────── */}
           {formStep === 3 && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="rounded-2xl p-5 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span className="text-sm font-semibold text-white/80">使用场景</span>
                 <span className="text-[11px] text-white/30">（可多选，AI推荐产品可能的使用场景）</span>
@@ -1174,7 +1175,7 @@ export default function GeneratePage() {
           {/* ── Step 4: 投放平台（多选） ──────────────────────────── */}
           {formStep === 4 && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="rounded-2xl p-5 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-semibold text-white/80">投放平台 / 媒体</span>
                 <span className="text-[11px] text-white/30">（可多选）</span>
@@ -1193,11 +1194,12 @@ export default function GeneratePage() {
                   const isSelected = selectedPlatforms.includes(p.key);
                   return (
                     <button key={p.key} onClick={() => togglePlatform(p.key)}
-                      className="relative p-3 rounded-xl text-xs text-left transition-all"
+                      className={`relative p-3 rounded-xl text-xs text-left transition-all duration-200 ${isSelected ? '' : 'hover:border-zinc-600 hover:bg-white/[0.06]'}`}
                       style={{
                         background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
                         border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
                         color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
+                        boxShadow: isSelected ? '0 0 12px rgba(139,92,246,0.15)' : 'none',
                       }}>
                       {isSelected && (
                         <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
@@ -1217,7 +1219,7 @@ export default function GeneratePage() {
                 ← 上一步
               </button>
               <button onClick={generate}
-                className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
+                className="flex-[2] py-4 rounded-xl text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
                 <span className="flex items-center justify-center gap-2">
                   <Zap className="w-4 h-4" />
@@ -1300,7 +1302,7 @@ function ImageCard({ img, index, brandName, onRefine }: {
   };
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-violet-500/5 transition-shadow duration-300 hover:border-violet-500/30" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="relative">
         <img src={img.url} alt={img.scene} className="w-full object-cover"
           style={{ aspectRatio: img.ratio.replace(':', '/') }} />
