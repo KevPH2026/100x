@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Eye, EyeOff, AlertCircle, Check, Loader2 } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Check, Loader2, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 
 function LoginForm({ mode }: { mode: "login" | "register" }) {
@@ -133,8 +133,65 @@ function LoginForm({ mode }: { mode: "login" | "register" }) {
   );
 }
 
+// ─── 忘记密码 ─────────────────────────────────────────────
+function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+
+  const handleSubmit = async () => {
+    if (!email) return;
+    setLoading(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setMsg({ type: "success", text: data.msg || "如果该邮箱已注册，重置链接已发送" });
+    } catch {
+      setMsg({ type: "error", text: "网络错误，请重试" });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
+        <ArrowLeft className="w-3.5 h-3.5" />返回登录
+      </button>
+
+      <div className="text-center mb-6">
+        <h2 className="text-lg font-bold text-gray-900">忘记密码？</h2>
+        <p className="text-gray-500 text-sm mt-1">输入注册邮箱，发送重置链接</p>
+      </div>
+
+      {msg && (
+        <div className={`mb-4 flex items-center gap-2 text-sm rounded-xl p-3 ${msg.type === "error" ? "text-red-500 bg-red-50" : "text-green-600 bg-green-50"}`}>
+          {msg.type === "error" ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <Check className="w-4 h-4 flex-shrink-0" />}
+          {msg.text}
+        </div>
+      )}
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">邮箱</label>
+        <Input type="email" value={email} onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          placeholder="your@email.com" className="h-11 text-gray-900 placeholder:text-gray-400" autoFocus />
+      </div>
+
+      <Button onClick={handleSubmit} disabled={loading || !email}
+        className="w-full h-11 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl font-medium">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "发送重置链接"}
+      </Button>
+    </>
+  );
+}
+
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
 
   return (
     <div className="min-h-screen bg-[#f8f7ff] flex items-center justify-center px-4">
@@ -155,6 +212,7 @@ export default function LoginPage() {
 
         <Card className="p-8 bg-white shadow-xl border-0 rounded-3xl">
           {/* Mode Tabs */}
+          {mode !== "forgot" && (
           <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
             <button onClick={() => { setMode("login"); }} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === "login" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}>
               登录
@@ -163,10 +221,21 @@ export default function LoginPage() {
               注册
             </button>
           </div>
+          )}
 
           <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>}>
-            <LoginForm key={mode} mode={mode} />
+            {mode === "forgot" ? (
+              <ForgotPasswordForm onBack={() => setMode("login")} />
+            ) : (
+              <LoginForm key={mode} mode={mode} />
+            )}
           </Suspense>
+
+          {mode === "login" && (
+            <button onClick={() => setMode("forgot")} className="w-full mt-3 text-sm text-gray-400 hover:text-violet-500 text-center">
+              忘记密码？
+            </button>
+          )}
         </Card>
 
         {/* 微信咨询 */}

@@ -17,6 +17,8 @@ model User {
   quotaTotal   Int      @default(10) // 免费用户默认10张
   quotaUsed    Int      @default(0) // 已用张数
   disabled     Boolean  @default(false)
+  resetToken   String?  // 密码重置token
+  resetExpAt   DateTime? // 重置token过期时间
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
