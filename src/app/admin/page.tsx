@@ -148,7 +148,7 @@ export default function AdminPage() {
 
 // ─── Dashboard ──────────────────────────────────────────────────
 function DashboardTab() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -157,50 +157,158 @@ function DashboardTab() {
 
   if (loading) return <Loading />;
 
-  const cards = [
-    { label: '总用户', value: stats?.totalUsers ?? 0 },
-    { label: '活跃用户(7d)', value: stats?.activeUsers ?? 0 },
-    { label: '总素材', value: stats?.totalAssets ?? 0 },
-    { label: '今日生成', value: stats?.todayAssets ?? 0 },
+  const gradCards = [
+    { label: '总用户', value: stats?.totalUsers ?? 0, sub: `今日活跃 ${(stats?.activeUsers ?? 0)}`, gradient: 'from-violet-600 to-purple-700' },
+    { label: '今日生成', value: stats?.todayGenLogs ?? 0, sub: `总素材 ${stats?.totalAssets ?? 0}`, gradient: 'from-blue-600 to-indigo-700' },
+    { label: '今日访客', value: stats?.todayGuests ?? 0, sub: `累计 ${stats?.totalGuests ?? 0}`, gradient: 'from-emerald-600 to-teal-700' },
+    { label: '成功率', value: `${stats?.successRate ?? 100}%`, sub: `近7天共 ${stats?.totalGen ?? 0} 次`, gradient: 'from-amber-500 to-orange-600' },
   ];
 
+  // 模型状态
+  const models = stats?.modelStats ? Object.entries(stats.modelStats as Record<string, any>) : [];
+
+  // 平台分布
+  const platforms = stats?.platformDist || [];
+  const totalPlat = platforms.reduce((s: number, p: any) => s + p.count, 0) || 1;
+
+  // 最近活动
+  const recentLogs = stats?.recentLogs || [];
+  const topBrands = stats?.topBrands || [];
+
   return (
-    <div className="space-y-8">
-      <h2 className="text-lg font-semibold text-white">概览</h2>
-      <div className="grid grid-cols-4 gap-4">
-        {cards.map(c => (
-          <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <p className="text-xs text-zinc-500 mb-1">{c.label}</p>
-            <p className="text-2xl font-bold text-white">{c.value}</p>
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold text-white">驾驶舱</h2>
+
+      {/* ── 渐变Stat Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {gradCards.map(c => (
+          <div key={c.label} className={`bg-gradient-to-br ${c.gradient} rounded-2xl p-5 text-white shadow-lg`}>
+            <p className="text-xs text-white/70 mb-1">{c.label}</p>
+            <p className="text-3xl font-bold">{c.value}</p>
+            <p className="text-[11px] text-white/60 mt-1">{c.sub}</p>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <p className="text-xs text-zinc-500 mb-1">平均生成/用户</p>
-          <p className="text-xl font-bold text-white">{stats?.avgPerUser?.toFixed(1) ?? '—'}</p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* ── 模型实时状态 ── */}
+        <div className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+            模型状态
+          </h3>
+          <div className="space-y-3">
+            {models.length === 0 && <p className="text-xs text-zinc-600">暂无数据</p>}
+            {models.map(([name, m]: [string, any]) => (
+              <div key={name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${m.lastOk ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <span className="text-xs text-zinc-300 truncate">{name}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-[10px] font-mono ${m.lastLatency < 2000 ? 'text-emerald-400' : m.lastLatency < 8000 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {m.lastLatency < 1000 ? `${m.lastLatency}ms` : `${(m.lastLatency/1000).toFixed(1)}s`}
+                  </span>
+                  <span className="text-[10px] text-zinc-500">{m.ok}/{m.ok + m.fail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <p className="text-xs text-zinc-500 mb-1">配额使用率</p>
-          <p className="text-xl font-bold text-white">{(stats?.quotaUsageRate ?? 0).toFixed(1)}%</p>
+
+        {/* ── 近7天生成量 + 平台分布 ── */}
+        <div className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-4">近7天生成量</h3>
+          <div className="flex items-end gap-2 h-28 mb-6">
+            {(stats?.dailyGenerations ?? []).map((d: any) => {
+              const max = Math.max(...(stats?.dailyGenerations?.map((x: any) => x.count) || [1]), 1);
+              const h = Math.max(4, (d.count / max) * 100);
+              return (
+                <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-zinc-500">{d.count}</span>
+                  <div className="w-full bg-violet-600/80 rounded-t" style={{ height: `${h}%` }} />
+                  <span className="text-[10px] text-zinc-600">{d.date.slice(5,10)}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <h3 className="text-xs font-semibold text-zinc-400 mb-3">平台分布</h3>
+          {platforms.length === 0 ? (
+            <p className="text-xs text-zinc-600">暂无数据</p>
+          ) : (
+            <div className="space-y-2">
+              {platforms.slice(0, 6).map((p: any) => {
+                const pct = Math.round((p.count / totalPlat) * 100);
+                return (
+                  <div key={p.platform}>
+                    <div className="flex justify-between text-[10px] mb-0.5">
+                      <span className="text-zinc-400">{p.platform || 'unknown'}</span>
+                      <span className="text-zinc-500">{p.count} ({pct}%)</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-zinc-800">
+                      <div className="h-full rounded-full bg-violet-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── 最近生成 + Top品牌 ── */}
+        <div className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            最近生成
+          </h3>
+          {recentLogs.length === 0 ? (
+            <p className="text-xs text-zinc-600">暂无记录</p>
+          ) : (
+            <div className="space-y-2">
+              {recentLogs.map((log: any) => (
+                <div key={log.id} className="flex items-center justify-between py-1.5 border-b border-zinc-800/50 last:border-0">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${log.success ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                      <span className="text-[11px] text-zinc-300 truncate">{log.brandName}</span>
+                    </div>
+                    <p className="text-[9px] text-zinc-600 mt-0.5">{log.platform} · {log.imageModel || '—'} · {log.latencyMs < 1000 ? `${log.latencyMs}ms` : `${(log.latencyMs/1000).toFixed(1)}s`}</p>
+                  </div>
+                  <span className="text-[9px] text-zinc-600 shrink-0 ml-2">{new Date(log.createdAt).toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {topBrands.length > 0 && (
+            <>
+              <h3 className="text-xs font-semibold text-zinc-400 mb-3 mt-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                热门品牌
+              </h3>
+              <div className="space-y-1.5">
+                {topBrands.map((b: any, i: number) => (
+                  <div key={b.brand} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[9px] text-zinc-500 font-bold">{i+1}</span>
+                      <span className="text-[11px] text-zinc-300">{b.brand}</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500">{b.count}次</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
-      {/* Daily chart */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <p className="text-xs text-zinc-500 mb-4">近7天每日生成量</p>
-        <div className="flex items-end gap-2 h-32">
-          {(stats?.dailyGenerations ?? []).map(d => {
-            const max = Math.max(...(stats?.dailyGenerations?.map(x => x.count) || [1]), 1);
-            const h = Math.max(4, (d.count / max) * 100);
-            return (
-              <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] text-zinc-500">{d.count}</span>
-                <div className="w-full bg-violet-600/80 rounded-t" style={{ height: `${h}%` }} />
-                <span className="text-[10px] text-zinc-600">{d.date.slice(5,10)}</span>
-              </div>
-            );
-          })}
-        </div>
+
+      {/* ── 底部汇总条 ── */}
+      <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50 text-xs text-zinc-500">
+        <span>配额使用率 {(stats?.quotaUsageRate ?? 0).toFixed(1)}%</span>
+        <span>平均生成/用户 {(stats?.avgPerUser ?? 0).toFixed(1)}</span>
+        <span>数据更新于 {new Date().toLocaleTimeString('zh-CN')}</span>
       </div>
     </div>
   );
