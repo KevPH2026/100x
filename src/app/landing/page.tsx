@@ -441,6 +441,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white selection:bg-violet-500/30 overflow-x-hidden">
+      <style>{`@keyframes heroFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50">
@@ -474,16 +475,16 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-32 pb-20 px-6 relative" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-violet-400 border border-violet-500/20 bg-violet-500/5 mb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-violet-400 border border-violet-500/20 bg-violet-500/5 mb-10 shadow-[0_0_20px_rgba(139,92,246,0.15)]">
             <Sparkles className="w-3.5 h-3.5" />
             {t.badge}
           </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[0.95] mb-8">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[0.95] mb-8" style={{ animation: 'heroFadeIn 0.6s ease-out forwards' }}>
             <span className="text-white">{t.heroLine1}</span>
-            <br />
-            <span className="text-violet-400">
+              <br />
+              <span className="text-violet-400">
               {t.heroLine2}
             </span>
           </h1>
@@ -533,7 +534,7 @@ export default function LandingPage() {
               { icon: '🎨', title: lang === 'zh' ? '模板工具千篇一律' : 'Templates Look Generic', desc: lang === 'zh' ? 'Canva生成的素材没有品牌感，用户一眼看出是模板' : 'Canva outputs lack brand soul. Customers spot templates instantly.' },
               { icon: '📱', title: lang === 'zh' ? '多平台尺寸改到崩溃' : '8 Versions Per Image', desc: lang === 'zh' ? 'IG要1:1，Story要9:16，FB要16:9，一张图改8个版本' : 'IG needs 1:1, Story 9:16, FB 16:9... one image, eight versions.' },
             ].map((p, i) => (
-              <div key={i} className="p-5 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 transition-colors">
+              <div key={i} className="p-5 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300">
                 <div className="flex items-start gap-3">
                   <span className="text-xl leading-none mt-0.5">{p.icon}</span>
                   <div>
@@ -565,7 +566,7 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-5">
             {/* 被动 */}
-            <div className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30">
+            <div className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-red-500/20 transition-colors">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm">😴</div>
                 <div>
@@ -595,7 +596,7 @@ export default function LandingPage() {
               </ul>
             </div>
             {/* 主动 */}
-            <div className="p-6 rounded-xl border border-violet-500/30 bg-violet-500/5">
+            <div className="p-6 rounded-xl border border-violet-500/30 bg-violet-500/5 shadow-[0_0_30px_rgba(139,92,246,0.08)]">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-sm">⚡</div>
                 <div>
@@ -697,7 +698,7 @@ export default function LandingPage() {
                 metric: lang === 'zh' ? '每周节省 15+ 小时' : '15+ hours saved per week'
               },
             ].map((t, i) => (
-              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30">
+              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:-translate-y-0.5 hover:border-zinc-700 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-zinc-800">
                     {t.avatar}
@@ -727,7 +728,7 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {t.steps.map((s, i) => (
-              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 transition-colors">
+              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-zinc-900/50 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl bg-zinc-800 border border-zinc-700">
                     {s.icon}
@@ -755,12 +756,12 @@ export default function LandingPage() {
               <div key={i}
                 className={`relative rounded-xl p-7 flex flex-col border transition-colors ${
                   plan.highlight
-                    ? 'border-violet-500/40 bg-violet-500/5'
+                    ? 'border-violet-500/40 bg-violet-500/5 shadow-[0_0_40px_rgba(139,92,246,0.15)] hover:shadow-[0_0_60px_rgba(139,92,246,0.2)] transition-shadow duration-500'
                     : 'border-zinc-800 bg-zinc-900/30'
                 }`}>
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-violet-600 text-white">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-violet-600 text-white shadow-lg shadow-violet-500/30">
                       <Crown className="w-3 h-3" /> {plan.badge}
                     </span>
                   </div>
@@ -817,7 +818,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6" style={{ background: 'radial-gradient(ellipse at center, rgba(139,92,246,0.1) 0%, transparent 70%)' }}>
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
             <span className="text-white">{t.heroLine1}</span>
@@ -845,8 +846,8 @@ export default function LandingPage() {
             <button onClick={() => setFbOpen(!fbOpen)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />反馈
             </button>
-            <a href="https://dtclab.org/" target="__blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTCLab</a>
-            <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTC Doctor</a>
+            <a href="https://dtclab.org/" target="__blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 hover:underline underline-offset-2 transition-colors">DTCLab</a>
+            <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 hover:underline underline-offset-2 transition-colors">DTC Doctor</a>
             <p className="text-xs text-zinc-700">{t.footer}</p>
           </div>
         </div>

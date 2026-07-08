@@ -240,7 +240,7 @@ export default function DashboardPage() {
       })()}
 
       {/* Nav */}
-      <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 bg-[#09090b]/95 backdrop-blur-sm z-40">
+      <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 bg-[#09090b]/80 backdrop-blur-xl z-40">
         <a href="/" className="flex items-center gap-2.5">
           <img src="/logo.svg" alt="100x" className="w-6 h-6" />
           <span className="font-bold text-lg tracking-tight">100x</span>
@@ -278,8 +278,8 @@ export default function DashboardPage() {
                   <span className="text-zinc-600"> / {userData?.quotaTotal ?? 0}</span>
                 </span>
               </div>
-              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-all duration-700" style={{ width: `${Math.min(quotaPercent, 100)}%` }} />
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 transition-all duration-700 shadow-[0_0_8px_rgba(139,92,246,0.4)]" style={{ width: `${Math.min(quotaPercent, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -287,19 +287,19 @@ export default function DashboardPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-6">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-center">
+          <div className="bg-zinc-900/50 border border-zinc-800 border-t-2 border-t-violet-500 rounded-xl p-4 text-center hover:-translate-y-0.5 transition-all duration-300">
             <div className="text-2xl font-bold">{userData?.assets?.length ?? 0}</div>
             <div className="text-xs text-zinc-500 mt-1">素材</div>
           </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-center">
+          <div className="bg-zinc-900/50 border border-zinc-800 border-t-2 border-t-blue-500 rounded-xl p-4 text-center hover:-translate-y-0.5 transition-all duration-300">
             <div className="text-2xl font-bold">{brands.length}</div>
             <div className="text-xs text-zinc-500 mt-1">品牌</div>
           </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-center">
+          <div className="bg-zinc-900/50 border border-zinc-800 border-t-2 border-t-emerald-500 rounded-xl p-4 text-center hover:-translate-y-0.5 transition-all duration-300">
             <div className="text-2xl font-bold">{insights.filter(i => i.type === 'pattern').length}</div>
             <div className="text-xs text-zinc-500 mt-1">AI 识别偏好</div>
           </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 text-center">
+          <div className="bg-zinc-900/50 border border-zinc-800 border-t-2 border-t-amber-500 rounded-xl p-4 text-center hover:-translate-y-0.5 transition-all duration-300">
             <div className="text-2xl font-bold">{userData?.quotaRemaining ?? 0}</div>
             <div className="text-xs text-zinc-500 mt-1">剩余配额</div>
           </div>
@@ -311,9 +311,9 @@ export default function DashboardPage() {
             const Icon = tab.icon;
             return (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 ${
                   activeTab === tab.key
-                    ? 'border-violet-500 text-violet-400'
+                    ? 'border-violet-500 text-violet-400 bg-violet-500/10 rounded-t-lg'
                     : 'border-transparent text-zinc-500 hover:text-zinc-300'
                 }`}>
                 <Icon className="w-4 h-4" />{tab.label}
@@ -330,7 +330,7 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-1.5">
                 {PLATFORM_FILTERS.map(f => (
                   <button key={f.key} onClick={() => setPlatformFilter(f.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${platformFilter === f.key ? 'bg-violet-600 text-white' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${platformFilter === f.key ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/20' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'}`}>
                     {f.label}{f.short && <span className="ml-1 text-zinc-500 font-mono">{f.short}</span>}
                   </button>
                 ))}
@@ -346,7 +346,7 @@ export default function DashboardPage() {
 
             {!userData?.assets || userData.assets.length === 0 ? (
               <div className="border border-dashed border-zinc-800 rounded-xl p-16 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-5"><Sparkles className="w-7 h-7 text-violet-400" /></div>
+                <div className="w-16 h-16 rounded-2xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-violet-500/20"><Sparkles className="w-7 h-7 text-violet-400" /></div>
                 <p className="text-zinc-400 text-sm mb-2 font-medium">还没有素材</p>
                 <p className="text-zinc-600 text-xs mb-6">上传产品图，AI 主动为你生成全套广告创意</p>
                 <a href="/get" className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm px-6 py-2.5 rounded-lg font-medium transition"><Sparkles className="w-4 h-4" />开始生成</a>
@@ -354,10 +354,10 @@ export default function DashboardPage() {
             ) : filteredAssets.length === 0 ? (
               <div className="text-center py-12 text-zinc-500 text-sm">该筛选条件下没有素材</div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {filteredAssets.map((asset, idx) => (
                   <div key={asset.id} onClick={() => setPreviewIndex(idx)}
-                    className="group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-violet-500/40 transition-all cursor-pointer">
+                    className="group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-violet-500/40 transition-all cursor-pointer hover:shadow-xl hover:shadow-violet-500/5">
                     <div className="aspect-square bg-zinc-800 relative overflow-hidden">
                       <img src={asset.imageUrl} alt={asset.sceneLabel} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                       <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none">
