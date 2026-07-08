@@ -108,6 +108,15 @@ interface GeneratedImage {
   refineHistory?: Array<{ url: string; instruction: string }>;
 }
 
+// ── localStorage persistence ──────────────────────────────────
+const LS_KEY = '100x_generated_images';
+function saveToLS(images: GeneratedImage[]) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(images)); } catch {}
+}
+function loadFromLS(): GeneratedImage[] {
+  try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : []; } catch { return []; }
+}
+
 export default function GeneratePage() {
   const { status } = useSession();
   const [step, setStep] = useState<'form' | 'generating' | 'result'>('form');
@@ -220,6 +229,22 @@ export default function GeneratePage() {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
   const [currentScene, setCurrentScene] = useState('');
+
+  // 从localStorage恢复历史记录
+  useEffect(() => {
+    const saved = loadFromLS();
+    if (saved.length > 0) {
+      setGeneratedImages(saved);
+      setStep('result');
+    }
+  }, []);
+
+  // generatedImages变化时同步localStorage
+  useEffect(() => {
+    if (generatedImages.length > 0) {
+      saveToLS(generatedImages);
+    }
+  }, [generatedImages]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -554,6 +579,8 @@ export default function GeneratePage() {
             </a>
             <div className="flex items-center gap-3">
               <button onClick={() => setStep('form')} className="text-xs text-white/30 hover:text-white/60 transition-all">← 重新生成</button>
+              <button onClick={() => { localStorage.removeItem(LS_KEY); setGeneratedImages([]); setStep('form'); }}
+                className="text-xs text-red-400/40 hover:text-red-400/70 transition-all">清空历史</button>
               <UserMenu />
             </div>
           </div>
@@ -1190,10 +1217,30 @@ function ImageCard({ img, index, brandName, onRefine }: {
         </div>
       </div>
 
-      {/* refine history 提示 */}
+      {/* refine history — 迭代记录 */}
       {img.refineHistory && img.refineHistory.length > 0 && (
-        <div className="px-3 py-1.5 text-[10px] text-white/40" style={{ background: 'rgba(139,92,246,0.05)', borderTop: '1px solid rgba(139,92,246,0.1)' }}>
-          已编辑 {img.refineHistory.length} 次 · {img.refineHistory[img.refineHistory.length - 1].instruction.slice(0, 30)}
+        <div className="px-3 py-2" style={{ background: 'rgba(139,92,246,0.04)', borderTop: '1px solid rgba(139,92,246,0.1)' }}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[10px] font-medium text-violet-300/70">迭代记录</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full text-violet-200/60"
+              style={{ background: 'rgba(139,92,246,0.15)' }}>{img.refineHistory.length} 步</span>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+            {img.refineHistory.map((h, hi) => (
+              <div key={hi} className="flex-shrink-0 group cursor-pointer" title={h.instruction}>
+                <div className="w-14 h-14 rounded-lg overflow-hidden border border-white/5 group-hover:border-violet-500/30 transition-all">
+                  <img src={h.url} alt={`v${hi}`} className="w-full h-full object-cover" />
+                </div>
+                <p className="text-[8px] text-white/30 mt-0.5 truncate w-14 text-center">{h.instruction.slice(0, 6)}</p>
+              </div>
+            ))}
+            <div className="flex-shrink-0">
+              <div className="w-14 h-14 rounded-lg overflow-hidden border border-violet-500/30">
+                <img src={img.url} alt="current" className="w-full h-full object-cover" />
+              </div>
+              <p className="text-[8px] text-violet-300/50 mt-0.5 w-14 text-center">当前</p>
+            </div>
+          </div>
         </div>
       )}
 
