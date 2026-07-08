@@ -457,6 +457,10 @@ export default function LandingPage() {
             <a href="#pricing" className="hover:text-white transition-colors">定价</a>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={() => setFbOpen(true)} title="反馈"
+              className="text-zinc-500 hover:text-zinc-300 p-1.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors">
+              <MessageSquare className="w-4 h-4" />
+            </button>
             <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
               className="text-xs text-zinc-500 hover:text-zinc-300 px-2.5 py-1.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors">
               {lang === 'zh' ? 'EN' : '中文'}

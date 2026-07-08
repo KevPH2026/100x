@@ -842,6 +842,7 @@ export default function GeneratePage() {
                   <button
                     onClick={handleScrape}
                     disabled={isScraping || !urlInput.trim()}
+                    title={!urlInput.trim() ? '请先输入产品网址' : isScraping ? '正在解析...' : '解析产品信息'}
                     className="px-5 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                     style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
                     {isScraping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
