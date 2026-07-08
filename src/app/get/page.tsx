@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Fragment } from 'react';
-import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors } from 'lucide-react';
+import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors, ArrowRight } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
 function UserMenu() {
@@ -229,6 +229,7 @@ export default function GeneratePage() {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
   const [currentScene, setCurrentScene] = useState('');
+  const [toast, setToast] = useState<{ msg: string; sub?: string } | null>(null);
 
   // 从localStorage恢复历史记录
   useEffect(() => {
@@ -530,6 +531,8 @@ export default function GeneratePage() {
         url: json.image.url,
         refineHistory: [...(p.refineHistory || []), { url: img.url, instruction }],
       } : p));
+      setToast({ msg: 'v' + ((img.refineHistory?.length || 0) + 1) + ' → v' + ((img.refineHistory?.length || 0) + 2), sub: instruction.trim().slice(0, 30) });
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       console.error('refine err', err);
       setError('再编辑出错');
@@ -566,6 +569,18 @@ export default function GeneratePage() {
       <div className="min-h-screen bg-[#050507] text-white">
         <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
           style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+        {/* 版本迭代通知 toast */}
+        {toast && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
+              style={{ background: 'rgba(139,92,246,0.15)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.25)', boxShadow: '0 8px 32px rgba(139,92,246,0.2)' }}>
+              <Sparkles className="w-4 h-4 text-violet-400" />
+              <span className="text-sm font-bold text-violet-200">{toast.msg}</span>
+              <span className="text-xs text-violet-300/50">· {toast.sub}</span>
+            </div>
+          </div>
+        )}
 
         <nav className="fixed top-0 inset-x-0 z-50"
           style={{ background: 'rgba(5,5,7,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
