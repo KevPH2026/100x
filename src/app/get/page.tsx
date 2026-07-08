@@ -680,13 +680,22 @@ export default function GeneratePage() {
         <main className="pt-20 pb-16 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-4"
-                style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: 'rgba(74,222,128,0.9)' }}>
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-4`}
+                style={error
+                  ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(248,113,113,0.9)' }
+                  : { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: 'rgba(74,222,128,0.9)' }}>
                 <Check className="w-3 h-3" />
-                生成完成
+                {error ? '部分失败' : '生成完成'}
               </div>
               <h2 className="text-3xl font-black mb-2">{brandName} 的素材矩阵</h2>
               <p className="text-white/30">{generatedImages.length} 张素材 · 每张可自然语言再编辑</p>
+              {error && (
+                <div className="mt-3 mx-auto max-w-lg p-3 rounded-xl flex items-start gap-2"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-300/80 text-left whitespace-pre-line">{error}</p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
