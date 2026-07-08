@@ -10,7 +10,7 @@ function UserMenu() {
 
   if (!session?.user) {
     return (
-      <a href="/login" className="text-xs text-white/40 hover:text-white/70 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20">
+      <a href="/login" className="text-xs text-[rgba(250,250,250,0.35)] hover:text-[rgba(250,250,250,0.6)] transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)]">
         <User className="w-3 h-3" />登录
       </a>
     );
@@ -582,20 +582,20 @@ export default function GeneratePage() {
   // ── 生成中 ────────────────────────────────────────────────────────
   if (step === 'generating') {
     return (
-      <div className="min-h-screen bg-[#050507] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
         <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
           style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="relative text-center max-w-md mx-auto px-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-6"
-            style={{ boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center mx-auto mb-6"
+            style={{ boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
           <h2 className="text-2xl font-bold mb-2">AI 正在生成素材...</h2>
-          <p className="text-white/40 mb-1">场景：{currentScene}</p>
-          <p className="text-white/20 text-sm mb-8">约30-60秒，请耐心等待</p>
-          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4">
-            <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 animate-pulse"
-              style={{ width: '100%' }} />
+          <p className="text-[rgba(250,250,250,0.6)] mb-1">场景：{currentScene}</p>
+          <p className="text-[rgba(250,250,250,0.35)] text-sm mb-8">约30-60秒，请耐心等待</p>
+          <div className="w-full h-1.5 rounded-full overflow-hidden mb-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-full animate-pulse"
+              style={{ width: '100%', background: 'linear-gradient(90deg, #f97316, #ec4899, #8b5cf6, #06b6d4)' }} />
           </div>
         </div>
       </div>
@@ -605,7 +605,7 @@ export default function GeneratePage() {
   // ── 结果页 ────────────────────────────────────────────────────────
   if (step === 'result') {
     return (
-      <div className="min-h-screen bg-[#050507] text-white">
+      <div className="min-h-screen bg-[#09090b] text-white">
         <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
           style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -613,20 +613,20 @@ export default function GeneratePage() {
         {toast && (
           <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-              style={{ background: 'rgba(139,92,246,0.15)', backdropFilter: 'blur(20px)', border: '1px solid rgba(139,92,246,0.25)', boxShadow: '0 8px 32px rgba(139,92,246,0.2)' }}>
-              <Sparkles className="w-4 h-4 text-violet-400" />
-              <span className="text-sm font-bold text-violet-200">{toast.msg}</span>
-              <span className="text-xs text-violet-300/50">· {toast.sub}</span>
+              style={{ background: 'rgba(249,115,22,0.12)', backdropFilter: 'blur(20px)', border: '1px solid rgba(249,115,22,0.2)', boxShadow: '0 8px 32px rgba(249,115,22,0.15)' }}>
+              <Sparkles className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-bold text-orange-200">{toast.msg}</span>
+              <span className="text-xs text-orange-300/50">· {toast.sub}</span>
             </div>
           </div>
         )}
 
         <nav className="fixed top-0 inset-x-0 z-50"
-          style={{ background: 'rgba(5,5,7,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: 'rgba(9,9,11,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center"
-                style={{ boxShadow: '0 0 20px rgba(139,92,246,0.3)' }}>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center"
+                style={{ boxShadow: '0 0 20px rgba(249,115,22,0.25)' }}>
                 <span className="text-[9px] font-black text-white">100x</span>
               </div>
               <span className="text-sm font-bold tracking-tight text-white/90">100x</span>
@@ -735,7 +735,7 @@ export default function GeneratePage() {
               <button
                 onClick={() => setStep('form')}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white transition-all"
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)', boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
                 <Zap className="w-4 h-4" />
                 再生成一套
               </button>
@@ -748,17 +748,17 @@ export default function GeneratePage() {
 
   // ── 表单页 ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#050507] text-white">
+    <div className="min-h-screen bg-[#09090b] text-white">
       <div className="fixed inset-0 pointer-events-none opacity-[0.12]"
         style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
       <nav
         className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-zinc-950/80"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 1px 20px rgba(139,92,246,0.08)' }}>
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 1px 20px rgba(249,115,22,0.06)' }}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center"
-              style={{ boxShadow: '0 0 20px rgba(139,92,246,0.3)' }}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 flex items-center justify-center"
+              style={{ boxShadow: '0 0 20px rgba(249,115,22,0.25)' }}>
               <span className="text-[9px] font-black text-white">100x</span>
             </div>
             <span className="text-sm font-bold tracking-tight text-white/90">100x</span>
@@ -775,7 +775,7 @@ export default function GeneratePage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-4"
-              style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: 'rgba(196,181,253,0.9)' }}>
+              style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', color: 'rgba(251,191,36,0.9)' }}>
               <Sparkles className="w-3 h-3" />
               AI生成广告素材
             </div>
@@ -785,24 +785,29 @@ export default function GeneratePage() {
           {/* ── 步骤指示器 ─────────────────────────────────── */}
           <div className="flex items-center justify-center gap-0 mb-8">
             {[
-              { n: 1, label: '产品信息' },
-              { n: 2, label: '营销活动' },
-              { n: 3, label: '使用场景' },
-              { n: 4, label: '投放平台' },
+              { n: 1, label: '产品信息', gradient: 'linear-gradient(135deg, #f97316, #ec4899)', activeBorder: '#ec4899' },
+              { n: 2, label: '营销活动', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', activeBorder: '#8b5cf6' },
+              { n: 3, label: '使用场景', gradient: 'linear-gradient(135deg, #8b5cf6, #06b6d4)', activeBorder: '#06b6d4' },
+              { n: 4, label: '投放平台', gradient: 'linear-gradient(135deg, #06b6d4, #f97316)', activeBorder: '#06b6d4' },
             ].map((s, i) => (
               <Fragment key={s.n}>
-                {i > 0 && <div className="w-8 h-px mx-1" style={{ background: formStep > s.n ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)' }} />}
+                {i > 0 && <div className="w-8 h-px mx-1" style={{ background: formStep > s.n ? 'rgba(249,115,22,0.5)' : 'rgba(255,255,255,0.06)' }} />}
                 <button onClick={() => { if (s.n < formStep) setFormStep(s.n); }}
                   className="flex items-center gap-1.5 transition-all">
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                    formStep === s.n ? 'bg-violet-500 text-white ring-2 ring-violet-500/30 ring-offset-2 ring-offset-zinc-950' :
-                    formStep > s.n ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white/30'
-                  }`}>
+                    formStep === s.n ? '' :
+                    formStep > s.n ? 'bg-[rgba(249,115,22,0.2)] text-white' : 'bg-[rgba(255,255,255,0.03)] text-[rgba(250,250,250,0.35)]'
+                  }`}
+                    style={formStep === s.n ? {
+                      background: s.gradient,
+                      color: '#fff',
+                      boxShadow: `0 0 12px ${s.activeBorder}40, 0 0 0 2px ${s.activeBorder}60`,
+                    } : undefined}>
                     {formStep > s.n ? <Check className="w-3 h-3" /> : s.n}
                   </span>
                   <span className={`text-xs font-medium hidden sm:inline ${
-                    formStep === s.n ? 'text-white/80' :
-                    formStep > s.n ? 'text-violet-300/70' : 'text-white/20'
+                    formStep === s.n ? 'text-[rgba(250,250,250,0.6)]' :
+                    formStep > s.n ? 'text-orange-300/70' : 'text-[rgba(250,250,250,0.35)]'
                   }`}>{s.label}</span>
                 </button>
               </Fragment>
@@ -821,11 +826,11 @@ export default function GeneratePage() {
           {formStep === 1 && (
           <div className="space-y-6">
             {/* URL 解析 */}
-            <div className="rounded-2xl overflow-hidden hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(139,92,246,0.25)', background: 'rgba(139,92,246,0.04)' }}>
+            <div className="rounded-2xl overflow-hidden hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(249,115,22,0.25)', background: 'rgba(249,115,22,0.03)' }}>
               <div className="px-5 pt-5 pb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Globe className="w-4 h-4 text-violet-400" />
-                  <span className="text-sm font-semibold text-white/80">从产品网址解析（可选）</span>
+                  <Globe className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm font-semibold text-[rgba(250,250,250,0.6)]">从产品网址解析（可选）</span>
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
@@ -836,8 +841,8 @@ export default function GeneratePage() {
                       onChange={e => setUrlInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleScrape()}
                       placeholder="粘贴产品页网址，例如 allbirds.com/products/..."
-                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-all"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl text-sm text-[#fafafa] placeholder:text-[rgba(250,250,250,0.35)] outline-none transition-all focus:border-[rgba(249,115,22,0.4)]"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                     />
                   </div>
                   <button
@@ -845,7 +850,7 @@ export default function GeneratePage() {
                     disabled={isScraping || !urlInput.trim()}
                     title={!urlInput.trim() ? '请先输入产品网址' : isScraping ? '正在解析...' : '解析产品信息'}
                     className="px-5 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
+                    style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
                     {isScraping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                     {isScraping ? '解析中...' : '解析'}
                   </button>
@@ -875,11 +880,11 @@ export default function GeneratePage() {
                           <button key={idx} onClick={() => handleSelectRefImage(idx, img)}
                             className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all"
                             style={{
-                              border: selectedRefImageIdx === idx ? '2px solid rgba(139,92,246,0.8)' : '2px solid rgba(255,255,255,0.08)',
+                              border: selectedRefImageIdx === idx ? '2px solid rgba(236,72,153,0.8)' : '2px solid rgba(255,255,255,0.06)',
                             }}>
                             <img src={img} alt={`参考图${idx + 1}`} className="w-full h-full object-cover" />
                             {selectedRefImageIdx === idx && (
-                              <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.3)' }}>
+                              <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(249,115,22,0.3)' }}>
                                 <Check className="w-5 h-5 text-white" />
                               </div>
                             )}
@@ -894,11 +899,11 @@ export default function GeneratePage() {
 
             {/* 品牌DNA */}
             {(brandDNA || isExtractingDNA) && (
-              <div className="rounded-2xl overflow-hidden p-5 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(244,114,182,0.25)', background: 'rgba(244,114,182,0.04)' }}>
+              <div className="rounded-2xl overflow-hidden p-5 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(139,92,246,0.25)', background: 'rgba(139,92,246,0.03)' }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <Wand2 className="w-4 h-4 text-pink-400" />
-                  <span className="text-sm font-semibold text-white/80">品牌 DNA</span>
-                  {isExtractingDNA && <Loader2 className="w-3 h-3 animate-spin text-pink-400" />}
+                  <Wand2 className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-semibold text-[rgba(250,250,250,0.6)]">品牌 DNA</span>
+                  {isExtractingDNA && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
                   <span className="ml-auto text-[10px] text-white/30">AI 自动提取，可手动调整</span>
                 </div>
                 {brandDNA && (
@@ -937,27 +942,27 @@ export default function GeneratePage() {
             {/* 产品基础信息 */}
             <div className="rounded-2xl p-5 space-y-4 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-white/80">产品信息</span>
+                <span className="text-sm font-semibold text-[rgba(250,250,250,0.6)]">产品信息</span>
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">品牌名称 *</label>
                 <input type="text" value={brandName} onChange={e => setBrandName(e.target.value)}
                   placeholder="例如：GlowSkin"
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#fafafa] placeholder:text-[rgba(250,250,250,0.35)] outline-none transition-all focus:border-[rgba(249,115,22,0.4)]"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">产品卖点 *</label>
                 <textarea value={sellingPoint} onChange={e => setSellingPoint(e.target.value)}
                   placeholder="例如：72小时持妆气垫粉底，轻薄透气不脱妆" rows={2}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-all resize-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#fafafa] placeholder:text-[rgba(250,250,250,0.35)] outline-none transition-all resize-none focus:border-[rgba(249,115,22,0.4)]"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">目标市场</label>
                 <select value={targetCountry} onChange={e => setTargetCountry(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-white outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#fafafa] outline-none transition-all focus:border-[rgba(249,115,22,0.4)]"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <option value="US">🇺🇸 美国</option>
                   <option value="EU">🇪🇺 欧洲</option>
                   <option value="JP">🇯🇵 日本</option>
@@ -1012,7 +1017,7 @@ export default function GeneratePage() {
               setError(''); setFormStep(2);
             }}
               className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)', boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
               <span className="flex items-center justify-center gap-2">
                 下一步：营销活动
               </span>
@@ -1023,42 +1028,42 @@ export default function GeneratePage() {
           {/* ── Step 2: 营销活动 ─────────────────────────────────── */}
           {formStep === 2 && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-5 space-y-4 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.03)' }}>
+            <div className="rounded-2xl p-5 space-y-4 hover:border-opacity-50 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)]" style={{ border: '1px solid rgba(236,72,153,0.2)', background: 'rgba(236,72,153,0.03)' }}>
               <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-green-400" />
-                <span className="text-sm font-semibold text-white/80">营销活动</span>
+                <Target className="w-4 h-4 text-pink-400" />
+                <span className="text-sm font-semibold text-[rgba(250,250,250,0.6)]">营销活动</span>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-white/50 mb-1.5">活动主题 (可选)</label>
                 <input type="text" value={campaignTheme} onChange={e => setCampaignTheme(e.target.value)}
                   placeholder="例如：周末八折促销 / 新品发布 / 母亲节献礼"
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#fafafa] placeholder:text-[rgba(250,250,250,0.35)] outline-none transition-all focus:border-[rgba(249,115,22,0.4)]"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5 flex items-center gap-1"><Target className="w-3 h-3" />营销目标</label>
                   <select value={marketingGoal} onChange={e => setMarketingGoal(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-[#fafafa] outline-none focus:border-[rgba(249,115,22,0.4)]"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     {goals.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5 flex items-center gap-1"><Heart className="w-3 h-3" />情绪基调</label>
                   <select value={mood} onChange={e => setMood(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-[#fafafa] outline-none focus:border-[rgba(249,115,22,0.4)]"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     {moods.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" />紧迫感</label>
                   <select value={urgency} onChange={e => setUrgency(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-[#fafafa] outline-none focus:border-[rgba(249,115,22,0.4)]"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     {urgencies.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
                   </select>
                 </div>
@@ -1066,8 +1071,8 @@ export default function GeneratePage() {
                   <label className="block text-xs font-medium text-white/50 mb-1.5 flex items-center gap-1"><MousePointerClick className="w-3 h-3" />行动号召</label>
                   <input type="text" value={cta} onChange={e => setCta(e.target.value)}
                     placeholder="立即购买 / Shop Now"
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 outline-none"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-[#fafafa] placeholder:text-[rgba(250,250,250,0.35)] outline-none focus:border-[rgba(249,115,22,0.4)]"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
                 </div>
               </div>
             </div>
@@ -1080,7 +1085,7 @@ export default function GeneratePage() {
               </button>
               <button onClick={() => { setError(''); setFormStep(3); }}
                 className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)', boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
                 下一步：使用场景
               </button>
             </div>
@@ -1127,9 +1132,10 @@ export default function GeneratePage() {
                     <button key={i} onClick={() => toggleScene(i)}
                       className="relative p-3 rounded-xl text-xs text-center transition-all"
                       style={{
-                        background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
-                        border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                        color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
+                        background: isSelected ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1px solid rgba(139,92,246,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                        color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(250,250,250,0.35)',
+                        boxShadow: isSelected ? '0 0 12px rgba(139,92,246,0.12)' : 'none',
                       }}>
                       {isSelected && (
                         <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
@@ -1165,7 +1171,7 @@ export default function GeneratePage() {
               </button>
               <button onClick={() => setFormStep(4)}
                 className="flex-[2] py-4 rounded-xl text-sm font-bold text-white transition-all"
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)', boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
                 下一步：投放平台
               </button>
             </div>
@@ -1194,12 +1200,12 @@ export default function GeneratePage() {
                   const isSelected = selectedPlatforms.includes(p.key);
                   return (
                     <button key={p.key} onClick={() => togglePlatform(p.key)}
-                      className={`relative p-3 rounded-xl text-xs text-left transition-all duration-200 ${isSelected ? '' : 'hover:border-zinc-600 hover:bg-white/[0.06]'}`}
+                      className={`relative p-3 rounded-xl text-xs text-left transition-all duration-200 ${isSelected ? '' : 'hover:bg-[rgba(255,255,255,0.05)]'}`}
                       style={{
-                        background: isSelected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
-                        border: isSelected ? '1px solid rgba(139,92,246,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                        color: isSelected ? 'rgba(196,181,253,0.9)' : 'rgba(255,255,255,0.3)',
-                        boxShadow: isSelected ? '0 0 12px rgba(139,92,246,0.15)' : 'none',
+                        background: isSelected ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)',
+                        border: isSelected ? '1px solid rgba(249,115,22,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                        color: isSelected ? 'rgba(251,191,36,0.9)' : 'rgba(250,250,250,0.35)',
+                        boxShadow: isSelected ? '0 0 12px rgba(249,115,22,0.12)' : 'none',
                       }}>
                       {isSelected && (
                         <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-violet-400" /></div>
@@ -1220,7 +1226,7 @@ export default function GeneratePage() {
               </button>
               <button onClick={generate}
                 className="flex-[2] py-4 rounded-xl text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 0 30px rgba(139,92,246,0.3)' }}>
+                style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)', boxShadow: '0 0 30px rgba(249,115,22,0.25)' }}>
                 <span className="flex items-center justify-center gap-2">
                   <Zap className="w-4 h-4" />
                   生成 {selectedScenes.length * selectedPlatforms.length} 张素材
@@ -1399,7 +1405,7 @@ function ImageCard({ img, index, brandName, onRefine }: {
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
             <button onClick={() => submitRefine()} disabled={!refineInput.trim()}
               className="px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-30 transition-all"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
               <RefreshCw className="w-3 h-3" />
             </button>
           </div>
@@ -1471,7 +1477,7 @@ function FeedbackButton() {
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 <button onClick={handleSubmit} disabled={!content.trim() || sending}
                   className="w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-30 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+                  style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
                   {sending ? '提交中...' : '提交反馈'}
                 </button>
               </>

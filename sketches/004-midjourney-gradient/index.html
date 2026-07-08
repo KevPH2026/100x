@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x.pics — Midjourney | AI广告素材生成</title>
+<style>
+:root{
+  --bg:#09090b;--card:rgba(255,255,255,.03);
+  --grd1:#f97316;--grd2:#ec4899;--grd3:#8b5cf6;--grd4:#06b6d4;
+  --text:#fafafa;--text2:rgba(250,250,250,.6);--text3:rgba(250,250,250,.35);
+  --border:rgba(255,255,255,.06);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+
+@keyframes meshMove{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,15px) scale(.97)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(9,9,11,.7);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:24px;font-weight:700;background:linear-gradient(135deg,var(--grd1),var(--grd2),var(--grd3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:28px}
+.nav-links a{color:var(--text3);text-decoration:none;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-acts{display:flex;gap:10px;align-items:center}
+.nav-pill{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:7px 16px;border-radius:40px;font-size:13px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.nav-pill:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.nav-go{background:linear-gradient(135deg,var(--grd2),var(--grd3));border:none;color:#fff;padding:7px 20px;border-radius:40px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)}
+
+/* HERO MESH */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 80px;position:relative;overflow:hidden}
+.mesh{position:absolute;inset:0;overflow:hidden}
+.mesh-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4;animation:meshMove 12s ease-in-out infinite}
+.mesh-orb:nth-child(1){width:500px;height:500px;background:radial-gradient(circle,var(--grd1),transparent 70%);top:-10%;left:-5%;animation-delay:0s}
+.mesh-orb:nth-child(2){width:400px;height:400px;background:radial-gradient(circle,var(--grd2),transparent 70%);top:20%;right:-5%;animation-delay:-4s}
+.mesh-orb:nth-child(3){width:350px;height:350px;background:radial-gradient(circle,var(--grd3),transparent 70%);bottom:-10%;left:30%;animation-delay:-8s}
+.mesh-orb:nth-child(4){width:300px;height:300px;background:radial-gradient(circle,var(--grd4),transparent 70%);bottom:20%;right:20%;animation-delay:-2s}
+.hero-badge{position:relative;z-index:2;display:inline-flex;padding:6px 18px;border-radius:40px;border:1px solid rgba(249,115,22,.3);background:rgba(249,115,22,.08);font-size:13px;color:var(--grd1);margin-bottom:32px;animation:fadeUp .8s ease-out both}
+.hero h1{position:relative;z-index:2;font-size:68px;font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;animation:fadeUp .8s ease-out .1s both}
+.hero h1 .line2{background:linear-gradient(90deg,var(--grd1),var(--grd2),var(--grd3),var(--grd4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:300% 100%;animation:meshMove 6s ease-in-out infinite}
+.hero-sub{position:relative;z-index:2;font-size:18px;color:var(--text2);max-width:500px;margin-bottom:40px;animation:fadeUp .8s ease-out .2s both}
+.hero-actions{position:relative;z-index:2;display:flex;gap:14px;margin-bottom:48px;animation:fadeUp .8s ease-out .3s both}
+.btn-go{background:linear-gradient(135deg,var(--grd1),var(--grd2));border:none;color:#fff;padding:14px 36px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s;font-family:var(--font);box-shadow:0 4px 30px rgba(249,115,22,.3)}
+.btn-go:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 8px 40px rgba(249,115,22,.4)}
+.btn-o{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text2);padding:14px 36px;border-radius:12px;font-size:16px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.btn-o:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.avatar-row{position:relative;z-index:2;display:flex;align-items:center;gap:12px;animation:fadeUp .8s ease-out .4s both}
+.avatars{display:flex}
+.av{width:32px;height:32px;border-radius:50%;margin-left:-8px;border:2px solid var(--bg)}
+.av:first-child{margin-left:0}
+.av:nth-child(1){background:linear-gradient(135deg,var(--grd1),var(--grd2))}
+.av:nth-child(2){background:linear-gradient(135deg,var(--grd2),var(--grd3))}
+.av:nth-child(3){background:linear-gradient(135deg,var(--grd3),var(--grd4))}
+.av:nth-child(4){background:linear-gradient(135deg,var(--grd4),var(--grd1))}
+.avatar-row span{font-size:13px;color:var(--text3)}
+
+/* SECTIONS */
+.sec{padding:100px 40px;max-width:1200px;margin:0 auto;position:relative}
+.sec-label{font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px}
+.sec-label.c1{color:var(--grd1)}.sec-label.c2{color:var(--grd2)}.sec-label.c3{color:var(--grd3)}.sec-label.c4{color:var(--grd4)}
+.sec-title{font-size:40px;font-weight:700;letter-spacing:-1px;margin-bottom:16px;line-height:1.1}
+.sec-desc{font-size:16px;color:var(--text2);max-width:500px;line-height:1.7;margin-bottom:48px}
+
+/* PAIN */
+.pain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.pain-c{border-radius:16px;padding:32px 24px;background:var(--card);border:1px solid var(--border);transition:all .4s;position:relative;overflow:hidden}
+.pain-c::after{content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .4s;pointer-events:none}
+.pain-c:nth-child(1)::after{background:radial-gradient(ellipse at top left,rgba(249,115,22,.06),transparent 70%)}
+.pain-c:nth-child(2)::after{background:radial-gradient(ellipse at top left,rgba(236,72,153,.06),transparent 70%)}
+.pain-c:nth-child(3)::after{background:radial-gradient(ellipse at top left,rgba(139,92,246,.06),transparent 70%)}
+.pain-c:nth-child(4)::after{background:radial-gradient(ellipse at top left,rgba(6,182,212,.06),transparent 70%)}
+.pain-c:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.12)}
+.pain-c:hover::after{opacity:1}
+.pain-icon{font-size:32px;margin-bottom:16px;display:block}
+.pain-c h3{font-size:18px;font-weight:600;margin-bottom:8px}
+.pain-c p{font-size:14px;color:var(--text2);line-height:1.6}
+
+/* COMPARE */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cmp-card{border-radius:20px;padding:40px 32px;background:var(--card);border:1px solid var(--border);transition:all .4s;position:relative;overflow:hidden}
+.cmp-card.hi{border-color:rgba(139,92,246,.25);background:rgba(139,92,246,.04)}
+.cmp-card.hi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--grd2),var(--grd3),var(--grd4))}
+.cmp-card:hover{transform:translateY(-3px)}
+.cmp-card h3{font-size:20px;font-weight:600;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.cmp-card.hi h3{color:var(--grd3)}
+.cmp-card ul{list-style:none}
+.cmp-card li{padding:8px 0;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.cmp-card li::before{content:'→';color:var(--text3);font-size:14px}
+.cmp-card.hi li{color:var(--text)}
+.cmp-card.hi li::before{color:var(--grd3)}
+
+/* DEMO */
+.pills{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.pill{background:var(--card);border:1px solid var(--border);color:var(--text3);padding:8px 18px;border-radius:40px;font-size:13px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.pill.on{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(236,72,153,.2));border-color:rgba(236,72,153,.4);color:var(--text)}
+.pill:hover{background:rgba(255,255,255,.06)}
+.d-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.d-card{aspect-ratio:1;border-radius:14px;overflow:hidden;position:relative;cursor:pointer;transition:all .4s;border:1px solid var(--border)}
+.d-card:hover{transform:scale(1.04);border-color:rgba(255,255,255,.15);box-shadow:0 20px 60px -15px rgba(0,0,0,.5)}
+.d-bg{width:100%;height:100%;transition:transform .6s}
+.d-card:hover .d-bg{transform:scale(1.1)}
+.d-card:nth-child(1) .d-bg{background:linear-gradient(135deg,#f97316,#fbbf24,#f59e0b)}
+.d-card:nth-child(2) .d-bg{background:linear-gradient(135deg,#ec4899,#f472b6,#fb7185)}
+.d-card:nth-child(3) .d-bg{background:linear-gradient(135deg,#8b5cf6,#a78bfa,#c4b5fd)}
+.d-card:nth-child(4) .d-bg{background:linear-gradient(135deg,#06b6d4,#22d3ee,#67e8f9)}
+.d-card:nth-child(5) .d-bg{background:linear-gradient(135deg,#fbbf24,#f97316,#ef4444)}
+.d-card:nth-child(6) .d-bg{background:linear-gradient(135deg,#a78bfa,#ec4899,#f472b6)}
+.d-card:nth-child(7) .d-bg{background:linear-gradient(135deg,#22d3ee,#8b5cf6,#a78bfa)}
+.d-card:nth-child(8) .d-bg{background:linear-gradient(135deg,#fb7185,#f97316,#fbbf24)}
+.d-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);opacity:0;transition:opacity .3s;backdrop-filter:blur(4px)}
+.d-card:hover .d-overlay{opacity:1}
+.d-overlay span{font-size:12px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--grd2),var(--grd3));padding:6px 16px;border-radius:40px}
+
+/* TESTIMONIALS */
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.t-card{border-radius:16px;padding:32px;background:var(--card);border:1px solid var(--border);transition:all .4s}
+.t-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.12)}
+.t-card p{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:20px}
+.t-card p::before{content:'"';color:var(--grd2);font-size:24px;line-height:1;margin-right:4px}
+.t-author{display:flex;align-items:center;gap:12px}
+.t-av{width:36px;height:36px;border-radius:50%;flex-shrink:0}
+.t-av:nth-child(1){background:linear-gradient(135deg,var(--grd1),var(--grd2))}
+.t-info{font-size:13px}
+.t-info strong{display:block;color:var(--text);font-weight:600}
+.t-info span{color:var(--text3)}
+
+/* STEPS */
+.st-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.st-card{text-align:center;padding:40px 24px}
+.st-num{width:60px;height:60px;border-radius:16px;margin:0 auto 24px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;transition:all .4s}
+.st-card:nth-child(1) .st-num{background:linear-gradient(135deg,var(--grd1),var(--grd2))}
+.st-card:nth-child(2) .st-num{background:linear-gradient(135deg,var(--grd2),var(--grd3))}
+.st-card:nth-child(3) .st-num{background:linear-gradient(135deg,var(--grd3),var(--grd4))}
+.st-card:hover .st-num{transform:scale(1.1) rotate(5deg)}
+.st-card h3{font-size:18px;font-weight:600;margin-bottom:10px}
+.st-card p{font-size:14px;color:var(--text2);max-width:260px;margin:0 auto;line-height:1.6}
+
+/* PRICING */
+.pr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+.pr-card{border-radius:20px;padding:40px 32px;background:var(--card);border:1px solid var(--border);transition:all .4s;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.pr-card.pop{border-color:rgba(236,72,153,.25);background:rgba(236,72,153,.03)}
+.pr-card.pop::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--grd1),var(--grd2),var(--grd3))}
+.pr-card:hover{transform:translateY(-4px)}
+.pr-card.pop:hover{box-shadow:0 30px 80px -20px rgba(236,72,153,.2)}
+.pr-name{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px}
+.pr-price{font-size:52px;font-weight:800;letter-spacing:-2px;margin-bottom:4px}
+.pr-price span{font-size:16px;font-weight:400;color:var(--text3);letter-spacing:0}
+.pr-desc{font-size:14px;color:var(--text2);margin-bottom:24px}
+.pr-feat{list-style:none;margin-bottom:32px;flex:1}
+.pr-feat li{padding:6px 0;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.pr-feat li::before{content:'✦';color:var(--grd2);font-size:12px}
+.pr-card .btn-go,.pr-card .btn-o{width:100%;text-align:center}
+
+/* FINAL CTA */
+.f-cta{text-align:center;padding:120px 40px;position:relative;overflow:hidden}
+.f-cta .mesh-orb{opacity:.25}
+.f-cta h2{font-size:52px;font-weight:800;letter-spacing:-1.5px;margin-bottom:16px;position:relative;z-index:2}
+.f-cta h2 em{font-style:normal;background:linear-gradient(90deg,var(--grd1),var(--grd2),var(--grd3),var(--grd4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:300% 100%;animation:meshMove 6s ease-in-out infinite}
+.f-cta p{font-size:16px;color:var(--text2);margin-bottom:36px;position:relative;z-index:2}
+
+/* FOOTER */
+.ft{padding:48px 40px;max-width:1200px;margin:0 auto;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.ft-l{display:flex;gap:24px}
+.ft-l a{font-size:13px;color:var(--text3);text-decoration:none;transition:color .2s}
+.ft-l a:hover{color:var(--text)}
+.ft-c{font-size:12px;color:var(--text3)}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">100x</div>
+  <div class="nav-links"><a href="#demo">演示</a><a href="#how">使用方法</a><a href="#pricing">定价</a></div>
+  <div class="nav-acts"><button class="nav-pill">EN / 中文</button><button class="nav-pill">💬</button><button class="nav-go">开始使用</button></div>
+</nav>
+
+<section class="hero">
+  <div class="mesh">
+    <div class="mesh-orb"></div><div class="mesh-orb"></div><div class="mesh-orb"></div><div class="mesh-orb"></div>
+  </div>
+  <div class="hero-badge">✦ 全球首个主动创意引擎</div>
+  <h1>你的广告素材<br><span class="line2">我们包了</span></h1>
+  <p class="hero-sub">上传产品图片，AI解码品牌DNA，5分钟生成多平台广告素材。</p>
+  <div class="hero-actions"><button class="btn-go">免费生成</button><button class="btn-o">观看演示</button></div>
+  <div class="avatar-row"><div class="avatars"><div class="av"></div><div class="av"></div><div class="av"></div><div class="av"></div></div><span>2,400+ 品牌在使用</span></div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c1">痛点</div>
+  <h2 class="sec-title">广告创意的四大痛点</h2>
+  <p class="sec-desc">每一个做营销的人，都在这些事上浪费了大量时间。</p>
+  <div class="pain-grid">
+    <div class="pain-c"><span class="pain-icon">🎨</span><h3>素材做3天</h3><p>从构思到出图，一张素材耗时3天起步，错过了最佳投放窗口。</p></div>
+    <div class="pain-c"><span class="pain-icon">💰</span><h3>外包¥300起</h3><p>一张广告图外包费用300+，月均8张就是2400，年年如此。</p></div>
+    <div class="pain-c"><span class="pain-icon">📋</span><h3>模板千篇一律</h3><p>用模板？你的竞争对手也在用。同样的模板毫无差异化。</p></div>
+    <div class="pain-c"><span class="pain-icon">🤯</span><h3>多平台改到崩溃</h3><p>IG 1:1、FB 16:9、TikTok 9:16……每个平台裁一次改到怀疑人生。</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c3">方式</div>
+  <h2 class="sec-title">别再追着素材跑了</h2>
+  <p class="sec-desc">从被动响应到主动创造，一个平台的效率革命。</p>
+  <div class="cmp-grid">
+    <div class="cmp-card"><h3>被动响应式</h3><ul><li>收到需求 → 找设计师 → 等排期</li><li>一稿二稿三稿，来回修改5次+</li><li>一个尺寸做完，还要改其他尺寸</li><li>品牌调性全靠设计师个人感觉</li><li>单张素材成本¥300-800</li><li>从需求到上线：3-7天</li></ul></div>
+    <div class="cmp-card hi"><h3>主动创意引擎</h3><ul><li>上传产品 → AI自动生成 → 即刻可用</li><li>8张多尺寸素材一次批量产出</li><li>覆盖IG/FB/TikTok/Pinterest等8大平台</li><li>品牌DNA深度解析，风格统一可控</li><li>单次生成成本接近¥0</li><li>从上传到下载：5分钟</li></ul></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c2">效果</div>
+  <h2 class="sec-title">AI生成的真实素材</h2>
+  <p class="sec-desc">不同品类，同样专业级的广告创意输出。</p>
+  <div class="pills"><button class="pill on">全部</button><button class="pill">护肤品</button><button class="pill">食品饮料</button><button class="pill">服饰鞋包</button><button class="pill">家居好物</button><button class="pill">数码配件</button></div>
+  <div class="d-grid">
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+    <div class="d-card"><div class="d-bg"></div><div class="d-overlay"><span>AI Generated</span></div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c4">评价</div>
+  <h2 class="sec-title">他们都在用100x</h2>
+  <div class="t-grid">
+    <div class="t-card"><p>以前一张素材要等3天，现在5分钟搞定8张。投放频率从一周1次变成了一天3次，ROI直接翻倍。</p><div class="t-author"><div class="t-av"></div><div class="t-info"><strong>陈思远</strong><span>DTC品牌创始人</span></div></div></div>
+    <div class="t-card"><p>最震惊的是品牌一致性的把控。AI能理解我们的设计语言，每次出的图都像同一个设计师做的。</p><div class="t-author"><div class="t-av"></div><div class="t-info"><strong>林小禾</strong><span>美妆品牌市场总监</span></div></div></div>
+    <div class="t-card"><p>省下来的不只是钱，是团队的心力。设计师不再做苦力活，而是专注在真正有创意的事情上。</p><div class="t-author"><div class="t-av"></div><div class="t-info"><strong>张凯文</strong><span>跨境电商运营负责人</span></div></div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c1">流程</div>
+  <h2 class="sec-title">三步搞定素材</h2>
+  <p class="sec-desc">零设计门槛，5分钟从上传到下载。</p>
+  <div class="st-grid">
+    <div class="st-card"><div class="st-num">1</div><h3>上传品牌资料</h3><p>上传产品图或品牌参考，AI自动分析品牌DNA、色调、调性。</p></div>
+    <div class="st-card"><div class="st-num">2</div><h3>选择创意方向</h3><p>告诉AI你想传达的核心卖点、目标受众和使用场景。</p></div>
+    <div class="st-card"><div class="st-num">3</div><h3>一键批量出图</h3><p>8张多平台素材同时生成，覆盖IG/FB/TikTok等全部主流尺寸。</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label c2">定价</div>
+  <h2 class="sec-title">简单透明的价格</h2>
+  <p class="sec-desc">先体验，再决定。免费使用，下载才扣点。</p>
+  <div class="pr-grid">
+    <div class="pr-card"><div class="pr-name">体验</div><div class="pr-price">¥0</div><div class="pr-desc">快速感受AI创意能力</div><ul class="pr-feat"><li>体验2次生成</li><li>每次4张素材</li><li>预览低清版本</li><li>基础平台尺寸</li></ul><button class="btn-o">免费开始</button></div>
+    <div class="pr-card pop"><div class="pr-name">免费</div><div class="pr-price">¥0</div><div class="pr-desc">个人和小团队首选</div><ul class="pr-feat"><li>每月50次生成</li><li>每次8张素材</li><li>高清原图下载</li><li>全部8个平台尺寸</li><li>品牌DNA记忆</li><li>迭代优化</li></ul><button class="btn-go">立即体验</button></div>
+    <div class="pr-card"><div class="pr-name">Pro</div><div class="pr-price">即将上线</div><div class="pr-desc">团队和企业级需求</div><ul class="pr-feat"><li>无限次生成</li><li>品牌专属模型</li><li>团队协作空间</li><li>API接入</li><li>优先支持</li></ul><button class="btn-o">联系我们</button></div>
+  </div>
+</section>
+
+<section class="f-cta">
+  <div class="mesh"><div class="mesh-orb"></div><div class="mesh-orb"></div><div class="mesh-orb"></div></div>
+  <h2>让AI替你<em>包办所有素材</em></h2>
+  <p>从今天开始，不再为广告素材发愁。</p>
+  <button class="btn-go">免费生成</button>
+</section>
+
+<footer class="ft">
+  <div class="ft-l"><a href="#">关于我们</a><a href="#">博客</a><a href="#">联系我们</a><a href="#">隐私政策</a><a href="#">服务条款</a></div>
+  <div class="ft-c">© 2025 100x.pics</div>
+</footer>
+</body>
+</html>

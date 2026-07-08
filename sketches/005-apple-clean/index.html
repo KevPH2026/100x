@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x.pics — Apple Clean | AI广告素材生成</title>
+<style>
+:root{
+  --bg:#000;--card:rgba(255,255,255,.04);
+  --accent:#fff;--accent2:rgba(255,255,255,.5);
+  --text:#fff;--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.3);
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.04);
+  --glow:rgba(255,255,255,.03);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:#000;color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
+@keyframes breathe{0%,100%{opacity:.3}50%{opacity:.7}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(0,0,0,.8);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border-bottom:1px solid var(--border2)}
+.nav-logo{font-size:20px;font-weight:600;letter-spacing:-.5px;color:var(--text)}
+.nav-links{display:flex;gap:32px}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:13px;transition:color .3s}
+.nav-links a:hover{color:var(--text)}
+.nav-acts{display:flex;gap:16px;align-items:center}
+.nav-text{font-size:13px;color:var(--text2);cursor:pointer;transition:color .2s}
+.nav-text:hover{color:var(--text)}
+.nav-cta{font-size:13px;color:var(--accent);cursor:pointer;padding:6px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.2);transition:all .2s;background:transparent;font-family:var(--font)}
+.nav-cta:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 100px;position:relative}
+.hero::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:1px;height:120px;background:linear-gradient(to bottom,rgba(255,255,255,.15),transparent)}
+.hero-eyebrow{font-size:14px;color:var(--text2);font-weight:400;margin-bottom:24px;letter-spacing:.5px;animation:fadeUp 1s ease-out both}
+.hero h1{font-size:72px;font-weight:700;line-height:1.05;letter-spacing:-2.5px;margin-bottom:28px;max-width:800px;animation:fadeUp 1s ease-out .15s both}
+.hero h1 .accent{background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.6) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:20px;color:var(--text2);font-weight:300;max-width:520px;margin-bottom:48px;line-height:1.6;animation:fadeUp 1s ease-out .3s both}
+.hero-btn{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:var(--accent);cursor:pointer;padding:10px 28px;border-radius:40px;border:1px solid rgba(255,255,255,.2);background:transparent;transition:all .3s;font-family:var(--font);animation:fadeUp 1s ease-out .45s both}
+.hero-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.35)}
+.hero-btn .arrow{transition:transform .3s;display:inline-block}
+.hero-btn:hover .arrow{transform:translateX(4px)}
+.hero-scroll{position:absolute;bottom:40px;font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;animation:breathe 3s ease-in-out infinite}
+
+/* SECTIONS */
+.sec{padding:120px 40px;max-width:980px;margin:0 auto}
+.sec-header{text-align:center;margin-bottom:64px}
+.sec-eyebrow{font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:3px;margin-bottom:16px;font-weight:500}
+.sec-title{font-size:48px;font-weight:700;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.sec-desc{font-size:17px;color:var(--text2);font-weight:300;max-width:480px;margin:0 auto;line-height:1.6}
+
+/* PAIN */
+.pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border)}
+.pain-cell{background:#000;padding:48px 40px;transition:background .4s}
+.pain-cell:hover{background:rgba(255,255,255,.02)}
+.pain-num{font-size:11px;color:var(--text3);letter-spacing:2px;margin-bottom:16px;font-weight:500}
+.pain-cell h3{font-size:24px;font-weight:600;letter-spacing:-.5px;margin-bottom:12px;line-height:1.2}
+.pain-cell p{font-size:15px;color:var(--text2);line-height:1.6;font-weight:300}
+
+/* COMPARE */
+.cmp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
+.cmp-side{background:#000;padding:56px 48px}
+.cmp-side.hi{background:rgba(255,255,255,.02)}
+.cmp-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:24px;font-weight:500}
+.cmp-side.hi .cmp-label{color:rgba(255,255,255,.5)}
+.cmp-list{list-style:none}
+.cmp-list li{padding:12px 0;font-size:15px;color:var(--text2);border-bottom:1px solid var(--border2);font-weight:300;line-height:1.5}
+.cmp-list li:last-child{border-bottom:none}
+.cmp-side.hi .cmp-list li{color:var(--text)}
+
+/* DEMO */
+.demo-head{text-align:center;margin-bottom:32px}
+.pills{display:inline-flex;gap:1px;background:var(--border);border-radius:8px;overflow:hidden}
+.pill{padding:10px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;background:#000;border:none;font-family:var(--font)}
+.pill.on{background:rgba(255,255,255,.1);color:var(--text)}
+.pill:hover{color:var(--text)}
+.demo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.demo-item{aspect-ratio:1;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;transition:all .5s}
+.demo-item:hover{transform:scale(1.02)}
+.demo-bg{width:100%;height:100%}
+.demo-item:nth-child(1) .demo-bg{background:linear-gradient(160deg,#1a1a2e,#16213e)}
+.demo-item:nth-child(2) .demo-bg{background:linear-gradient(160deg,#1a1a2e,#0f3460)}
+.demo-item:nth-child(3) .demo-bg{background:linear-gradient(160deg,#0f0f1a,#1a1a2e)}
+.demo-item:nth-child(4) .demo-bg{background:linear-gradient(160deg,#1a1a1a,#2d1b4e)}
+.demo-item:nth-child(5) .demo-bg{background:linear-gradient(160deg,#0f2027,#203a43)}
+.demo-item:nth-child(6) .demo-bg{background:linear-gradient(160deg,#1a1a2e,#2d1b4e)}
+.demo-item:nth-child(7) .demo-bg{background:linear-gradient(160deg,#16213e,#1a1a2e)}
+.demo-item:nth-child(8) .demo-bg{background:linear-gradient(160deg,#2d1b4e,#1a1a2e)}
+.demo-label{position:absolute;bottom:12px;left:12px;font-size:10px;color:var(--text2);background:rgba(0,0,0,.6);padding:3px 8px;border-radius:4px;backdrop-filter:blur(8px);opacity:0;transition:opacity .3s}
+.demo-item:hover .demo-label{opacity:1}
+
+/* TESTIMONIALS */
+.t-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.t-cell{background:#000;padding:48px 36px;transition:background .4s}
+.t-cell:hover{background:rgba(255,255,255,.02)}
+.t-cell p{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:24px;font-weight:300;font-style:italic}
+.t-cell .t-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.t-cell .t-role{font-size:13px;color:var(--text3)}
+
+/* STEPS */
+.st-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;text-align:center}
+.st-card{padding:0 16px}
+.st-line{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin-bottom:40px}
+.st-num{font-size:72px;font-weight:700;color:rgba(255,255,255,.04);line-height:1;margin-bottom:-20px;position:relative;z-index:0}
+.st-num span{background:#000;position:relative;z-index:1;padding:0 12px;font-variant-numeric:tabular-nums}
+.st-card h3{font-size:22px;font-weight:600;letter-spacing:-.3px;margin-bottom:12px}
+.st-card p{font-size:14px;color:var(--text2);line-height:1.7;max-width:240px;margin:0 auto;font-weight:300}
+
+/* PRICING */
+.pr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.pr-cell{background:#000;padding:56px 40px;transition:background .4s;display:flex;flex-direction:column}
+.pr-cell:hover{background:rgba(255,255,255,.02)}
+.pr-cell.pop{background:rgba(255,255,255,.02)}
+.pr-name{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;font-weight:500}
+.pr-price{font-size:56px;font-weight:700;letter-spacing:-2px;margin-bottom:8px;line-height:1}
+.pr-price span{font-size:16px;font-weight:400;color:var(--text3);letter-spacing:0}
+.pr-desc{font-size:14px;color:var(--text2);margin-bottom:32px;font-weight:300}
+.pr-feat{list-style:none;margin-bottom:40px;flex:1}
+.pr-feat li{padding:8px 0;font-size:14px;color:var(--text2);border-bottom:1px solid var(--border2);font-weight:300}
+.pr-feat li:last-child{border-bottom:none}
+.pr-btn{display:block;text-align:center;padding:14px;border-radius:40px;font-size:14px;cursor:pointer;transition:all .3s;font-family:var(--font);text-decoration:none;font-weight:400}
+.pr-btn.o{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text2)}
+.pr-btn.o:hover{background:rgba(255,255,255,.06);color:var(--text);border-color:rgba(255,255,255,.25)}
+.pr-btn.f{background:var(--text);border:1px solid var(--text);color:#000}
+.pr-btn.f:hover{background:rgba(255,255,255,.9)}
+
+/* FINAL CTA */
+.f-cta{text-align:center;padding:160px 40px 120px;position:relative}
+.f-cta h2{font-size:56px;font-weight:700;letter-spacing:-2px;margin-bottom:20px}
+.f-cta p{font-size:18px;color:var(--text2);font-weight:300;margin-bottom:48px}
+.f-cta .hero-btn{animation:none}
+
+/* FOOTER */
+.ft{padding:32px 40px;max-width:980px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.ft-l{display:flex;gap:24px}
+.ft-l a{font-size:12px;color:var(--text3);text-decoration:none;transition:color .2s}
+.ft-l a:hover{color:var(--text2)}
+.ft-c{font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">100x</div>
+  <div class="nav-links"><a href="#demo">演示</a><a href="#how">使用方法</a><a href="#pricing">定价</a></div>
+  <div class="nav-acts"><span class="nav-text">EN / 中文</span><span class="nav-text">💬</span><button class="nav-cta">开始使用</button></div>
+</nav>
+
+<section class="hero">
+  <p class="hero-eyebrow">全球首个主动创意引擎</p>
+  <h1 class="accent">你的广告素材<br>我们包了</h1>
+  <p class="hero-sub">上传产品图片，AI解码品牌DNA，5分钟生成多平台广告素材。</p>
+  <div class="hero-btn">免费生成 <span class="arrow">→</span></div>
+  <div class="hero-scroll">向下滚动</div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">痛点</p>
+    <h2 class="sec-title">做广告素材<br>为什么这么痛苦</h2>
+    <p class="sec-desc">每一个做营销的人，都在这些事上浪费了大量时间。</p>
+  </div>
+  <div class="pain-grid">
+    <div class="pain-cell"><div class="pain-num">01</div><h3>素材做3天</h3><p>从构思到出图，一张素材耗时3天起步，错过了最佳投放窗口。</p></div>
+    <div class="pain-cell"><div class="pain-num">02</div><h3>外包¥300起</h3><p>一张广告图外包费用300+，月均8张就是2400，年年如此。</p></div>
+    <div class="pain-cell"><div class="pain-num">03</div><h3>模板千篇一律</h3><p>用模板？你的竞争对手也在用。同样的模板，毫无差异化。</p></div>
+    <div class="pain-cell"><div class="pain-num">04</div><h3>多平台改到崩溃</h3><p>IG 1:1、FB 16:9、TikTok 9:16……每个平台裁一次，改到怀疑人生。</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">方式</p>
+    <h2 class="sec-title">主动创造<br>vs 被动响应</h2>
+  </div>
+  <div class="cmp-wrap">
+    <div class="cmp-side"><p class="cmp-label">传统方式</p><ul class="cmp-list"><li>收到需求 → 找设计师 → 等排期</li><li>一稿二稿三稿，来回修改5次+</li><li>一个尺寸做完，还要改其他尺寸</li><li>品牌调性全靠设计师个人感觉</li><li>单张素材成本¥300-800</li><li>从需求到上线：3-7天</li></ul></div>
+    <div class="cmp-side hi"><p class="cmp-label">100x 方式</p><ul class="cmp-list"><li>上传产品 → AI自动生成 → 即刻可用</li><li>8张多尺寸素材一次批量产出</li><li>覆盖IG/FB/TikTok/Pinterest等8大平台</li><li>品牌DNA深度解析，风格统一可控</li><li>单次生成成本接近¥0</li><li>从上传到下载：5分钟</li></ul></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">效果</p>
+    <h2 class="sec-title">AI生成的<br>真实素材</h2>
+  </div>
+  <div class="demo-head">
+    <div class="pills"><button class="pill on">全部</button><button class="pill">护肤品</button><button class="pill">食品饮料</button><button class="pill">服饰鞋包</button><button class="pill">家居好物</button><button class="pill">数码配件</button></div>
+  </div>
+  <div class="demo-grid">
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+    <div class="demo-item"><div class="demo-bg"></div><span class="demo-label">AI Generated</span></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">评价</p>
+    <h2 class="sec-title">他们都在用<br>100x</h2>
+  </div>
+  <div class="t-grid">
+    <div class="t-cell"><p>「以前一张素材要等3天，现在5分钟搞定8张。投放频率从一周1次变成了一天3次，ROI直接翻倍。」</p><div class="t-name">陈思远</div><div class="t-role">DTC品牌创始人</div></div>
+    <div class="t-cell"><p>「最震惊的是品牌一致性的把控。AI能理解我们的设计语言，每次出的图都像同一个设计师做的。」</p><div class="t-name">林小禾</div><div class="t-role">美妆品牌市场总监</div></div>
+    <div class="t-cell"><p>「省下来的不只是钱，是团队的心力。设计师不再做苦力活，而是专注在真正有创意的事情上。」</p><div class="t-name">张凯文</div><div class="t-role">跨境电商运营负责人</div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">流程</p>
+    <h2 class="sec-title">三步搞定素材</h2>
+    <p class="sec-desc">零设计门槛，5分钟从上传到下载。</p>
+  </div>
+  <div class="st-grid">
+    <div class="st-card"><div class="st-num"><span>01</span></div><div class="st-line"></div><h3>上传品牌资料</h3><p>上传产品图或品牌参考，AI自动分析品牌DNA、色调、调性。</p></div>
+    <div class="st-card"><div class="st-num"><span>02</span></div><div class="st-line"></div><h3>选择创意方向</h3><p>告诉AI你想传达的核心卖点、目标受众和使用场景。</p></div>
+    <div class="st-card"><div class="st-num"><span>03</span></div><div class="st-line"></div><h3>一键批量出图</h3><p>8张多平台素材同时生成，覆盖IG/FB/TikTok等全部主流尺寸。</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-header">
+    <p class="sec-eyebrow">定价</p>
+    <h2 class="sec-title">简单透明<br>的价格</h2>
+  </div>
+  <div class="pr-grid">
+    <div class="pr-cell"><div class="pr-name">体验</div><div class="pr-price">¥0</div><div class="pr-desc">快速感受AI创意能力</div><ul class="pr-feat"><li>体验2次生成</li><li>每次4张素材</li><li>预览低清版本</li><li>基础平台尺寸</li></ul><a class="pr-btn o">免费开始</a></div>
+    <div class="pr-cell pop"><div class="pr-name">免费</div><div class="pr-price">¥0</div><div class="pr-desc">个人和小团队首选</div><ul class="pr-feat"><li>每月50次生成</li><li>每次8张素材</li><li>高清原图下载</li><li>全部8个平台尺寸</li><li>品牌DNA记忆</li><li>迭代优化</li></ul><a class="pr-btn f">立即体验</a></div>
+    <div class="pr-cell"><div class="pr-name">Pro</div><div class="pr-price">即将上线</div><div class="pr-desc">团队和企业级需求</div><ul class="pr-feat"><li>无限次生成</li><li>品牌专属模型</li><li>团队协作空间</li><li>API接入</li><li>优先支持</li></ul><a class="pr-btn o">联系我们</a></div>
+  </div>
+</section>
+
+<section class="f-cta">
+  <h2>让AI替你<br>包办所有素材</h2>
+  <p>从今天开始，不再为广告素材发愁。</p>
+  <div class="hero-btn">免费生成 <span class="arrow">→</span></div>
+</section>
+
+<footer class="ft">
+  <div class="ft-l"><a href="#">关于我们</a><a href="#">博客</a><a href="#">联系我们</a><a href="#">隐私政策</a><a href="#">服务条款</a></div>
+  <div class="ft-c">© 2025 100x.pics</div>
+</footer>
+</body>
+</html>

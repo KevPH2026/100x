@@ -132,28 +132,33 @@ function CTASection({ lang }: { lang: Lang }) {
   const t = T[lang];
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 md:p-12 text-center">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-violet-400 border border-violet-500/20 bg-violet-500/5 mb-6">
-        <Zap className="w-3.5 h-3.5" />
-        {t.ctaSub2}
+    <div className="rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] p-8 md:p-12 text-center relative overflow-hidden">
+      <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-[#f97316] opacity-10 blur-[80px]" />
+      <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-[#8b5cf6] opacity-10 blur-[80px]" />
+      <div className="relative z-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-[#f97316] border border-[#f97316]/30 bg-[#f97316]/10 mb-6">
+          <Zap className="w-3.5 h-3.5" />
+          {t.ctaSub2}
+        </div>
+
+        <h2 className="text-2xl md:text-3xl font-bold text-[#fafafa] mb-3">
+          {lang === 'zh' ? '现在就开始生成' : 'Start Generating Now'}
+        </h2>
+
+        <p className="text-sm text-[rgba(250,250,250,.6)] mb-8 max-w-md mx-auto">
+          {lang === 'zh'
+            ? '无需等待，立即体验AI生成品牌素材'
+            : 'No waiting. Experience AI-powered brand creatives now.'}
+        </p>
+
+        <a href="/chat"
+          className="group inline-flex items-center gap-2 text-sm font-semibold text-white px-8 py-3.5 rounded-lg transition-all hover:shadow-[0_0_30px_rgba(249,115,22,.3)]"
+          style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
+          <Sparkles className="w-4 h-4" />
+          {t.ctaMain}
+          <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+        </a>
       </div>
-
-      <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-        {lang === 'zh' ? '现在就开始生成' : 'Start Generating Now'}
-      </h2>
-
-      <p className="text-sm text-zinc-500 mb-8 max-w-md mx-auto">
-        {lang === 'zh'
-          ? '无需等待，立即体验AI生成品牌素材'
-          : 'No waiting. Experience AI-powered brand creatives now.'}
-      </p>
-
-      <a href="/chat"
-        className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-8 py-3.5 rounded-lg transition-colors">
-        <Sparkles className="w-4 h-4" />
-        {t.ctaMain}
-        <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
-      </a>
     </div>
   );
 }
@@ -297,6 +302,15 @@ const AD_COPY: Record<string, { headline: string; sub: string; cta: string }[]> 
   ],
 };
 
+const demoCardGradients = [
+  'linear-gradient(135deg, #f97316, #fbbf24)',
+  'linear-gradient(135deg, #ec4899, #f472b6)',
+  'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+  'linear-gradient(135deg, #06b6d4, #67e8f9)',
+  'linear-gradient(135deg, #f97316, #ec4899)',
+  'linear-gradient(135deg, #8b5cf6, #06b6d4)',
+];
+
 function AdTextOverlay({ copy }: { copy: { headline: string; sub: string; cta: string } }) {
   return (
     <div className="absolute inset-0 flex flex-col justify-end p-3 md:p-4"
@@ -305,10 +319,11 @@ function AdTextOverlay({ copy }: { copy: { headline: string; sub: string; cta: s
         <p className="text-white font-bold text-sm md:text-base leading-tight">
           {copy.headline}
         </p>
-        <p className="text-zinc-400 text-[10px] md:text-xs">
+        <p className="text-[rgba(250,250,250,.6)] text-[10px] md:text-xs">
           {copy.sub}
         </p>
-        <span className="inline-block mt-1 px-2.5 py-1 rounded text-[9px] md:text-[10px] font-semibold text-white bg-violet-600/80">
+        <span className="inline-block mt-1 px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-semibold text-white"
+          style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
           {copy.cta}
         </span>
       </div>
@@ -316,16 +331,17 @@ function AdTextOverlay({ copy }: { copy: { headline: string; sub: string; cta: s
   );
 }
 
-function CarouselGrid({ series }: { series: DemoSeries }) {
+function CarouselGrid({ series, seriesIndex }: { series: DemoSeries; seriesIndex: number }) {
   const copies = AD_COPY[series.name] || [];
+  const accentColor = ['#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#8b5cf6'][seriesIndex % 6] || '#f97316';
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+    <div className="rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-zinc-800">
-        <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+      <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-[rgba(255,255,255,.06)]">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
         <span className="text-sm">{series.emoji}</span>
-        <span className="text-sm text-zinc-400 font-medium">{series.category}</span>
-        <span className="text-[10px] text-zinc-600 font-mono ml-auto">{series.name}</span>
+        <span className="text-sm text-[rgba(250,250,250,.6)] font-medium">{series.category}</span>
+        <span className="text-[10px] text-[rgba(250,250,250,.35)] font-mono ml-auto">{series.name}</span>
       </div>
 
       {/* Grid */}
@@ -342,7 +358,7 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
             const copy = copies[series.images.indexOf(img!)];
             if (!img) return null;
             return (
-              <div className="group relative rounded-lg overflow-hidden cursor-pointer border border-zinc-800 hover:border-zinc-700 transition-colors"
+              <div className="group relative rounded-lg overflow-hidden cursor-pointer border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-all duration-300 hover:scale-[1.04]"
                 style={{ gridArea: 'sq' }}>
                 <div className="aspect-square">
                   <img src={img.src} alt={`${series.name} ${img.label}`} className="w-full h-full object-cover" loading="lazy" />
@@ -357,7 +373,7 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
             const copy = copies[series.images.indexOf(img!)];
             if (!img) return null;
             return (
-              <div className="group relative rounded-lg overflow-hidden cursor-pointer border border-zinc-800 hover:border-zinc-700 transition-colors"
+              <div className="group relative rounded-lg overflow-hidden cursor-pointer border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-all duration-300 hover:scale-[1.04]"
                 style={{ gridArea: 'tall' }}>
                 <div className="aspect-[9/16] h-full">
                   <img src={img.src} alt={`${series.name} ${img.label}`} className="w-full h-full object-cover" loading="lazy" />
@@ -371,7 +387,7 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
             const area = `wide${idx + 1}`;
             const copy = copies[series.images.indexOf(img)];
             return (
-              <div key={area} className="group relative rounded-lg overflow-hidden cursor-pointer border border-zinc-800 hover:border-zinc-700 transition-colors"
+              <div key={area} className="group relative rounded-lg overflow-hidden cursor-pointer border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-all duration-300 hover:scale-[1.04]"
                 style={{ gridArea: area }}>
                 <div className="aspect-video">
                   <img src={img.src} alt={`${series.name} ${img.label}`} className="w-full h-full object-cover" loading="lazy" />
@@ -381,16 +397,16 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
             );
           })}
           {/* Info cell */}
-          <div className="rounded-lg p-4 flex flex-col justify-between bg-zinc-900/60 border border-zinc-800"
+          <div className="rounded-lg p-4 flex flex-col justify-between bg-[rgba(255,255,255,.02)] border border-[rgba(255,255,255,.06)]"
             style={{ gridArea: 'info' }}>
             <div>
-              <p className="text-[11px] font-mono tracking-[3px] text-violet-500 mb-2">{series.name.toUpperCase()}</p>
-              <p className="text-sm font-semibold text-zinc-300 leading-snug mb-1">{series.tagline}</p>
-              <p className="text-[11px] text-zinc-600">{series.category}</p>
+              <p className="text-[11px] font-semibold tracking-[3px] uppercase mb-2" style={{ color: accentColor }}>{series.name.toUpperCase()}</p>
+              <p className="text-sm font-semibold text-[rgba(250,250,250,.85)] leading-snug mb-1">{series.tagline}</p>
+              <p className="text-[11px] text-[rgba(250,250,250,.35)]">{series.category}</p>
             </div>
-            <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-zinc-800">
+            <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-[rgba(255,255,255,.06)]">
               {['1:1', '9:16', '16:9'].map((s, i) => (
-                <span key={i} className="text-[9px] px-2 py-0.5 rounded text-zinc-500 font-medium bg-zinc-800/50 border border-zinc-700/50">
+                <span key={i} className="text-[9px] px-2 py-0.5 rounded text-[rgba(250,250,250,.6)] font-medium bg-[rgba(255,255,255,.03)] border border-[rgba(255,255,255,.06)]">
                   {s}
                 </span>
               ))}
@@ -440,33 +456,55 @@ export default function LandingPage() {
   const series = DEMO_SERIES[activeSeries];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white selection:bg-violet-500/30 overflow-x-hidden">
-      <style>{`@keyframes heroFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+    <div className="min-h-screen text-[#fafafa] selection:bg-[rgba(249,115,22,.25)] overflow-x-hidden"
+      style={{ background: '#09090b', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+
+      {/* ─── Global Keyframes ─── */}
+      <style>{`
+        @keyframes meshMove {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(30px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(50px, 30px) scale(1.05); }
+        }
+        @keyframes heroFadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
 
       {/* ─── Nav ─── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-800/50">
+      <nav className="fixed top-0 inset-x-0 z-50 border-b border-[rgba(255,255,255,.06)]"
+        style={{ background: 'rgba(9,9,11,.8)', backdropFilter: 'blur(24px)' }}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-violet-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
               <span className="text-[8px] font-black text-white tracking-tight">100x</span>
             </div>
-            <span className="text-sm font-semibold text-white">100x</span>
+            <span className="text-sm font-semibold text-[#fafafa]">100x</span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-            <a href="#demo" className="hover:text-white transition-colors">演示</a>
-            <a href="#how" className="hover:text-white transition-colors">{t.navHow}</a>
-            <a href="#pricing" className="hover:text-white transition-colors">定价</a>
+          <div className="hidden md:flex items-center gap-8 text-sm text-[rgba(250,250,250,.6)]">
+            <a href="#demo" className="hover:text-[#fafafa] transition-colors">演示</a>
+            <a href="#how" className="hover:text-[#fafafa] transition-colors">{t.navHow}</a>
+            <a href="#pricing" className="hover:text-[#fafafa] transition-colors">定价</a>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setFbOpen(true)} title="反馈"
-              className="text-zinc-500 hover:text-zinc-300 p-1.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors">
+              className="text-[rgba(250,250,250,.35)] hover:text-[rgba(250,250,250,.6)] p-1.5 rounded-md border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-colors">
               <MessageSquare className="w-4 h-4" />
             </button>
             <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-              className="text-xs text-zinc-500 hover:text-zinc-300 px-2.5 py-1.5 rounded-md border border-zinc-800 hover:border-zinc-700 transition-colors">
+              className="text-xs text-[rgba(250,250,250,.35)] hover:text-[rgba(250,250,250,.6)] px-2.5 py-1.5 rounded-md border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-colors">
               {lang === 'zh' ? 'EN' : '中文'}
             </button>
-            <a href="/chat" className="h-8 px-4 rounded-md text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 flex items-center gap-1.5 transition-colors">
+            <a href="/chat" className="h-8 px-4 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-all hover:shadow-[0_0_20px_rgba(249,115,22,.25)]"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
               {t.getStarted}
               <ArrowRight className="w-3 h-3" />
             </a>
@@ -475,34 +513,56 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="pt-32 pb-20 px-6 relative" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-violet-400 border border-violet-500/20 bg-violet-500/5 mb-10 shadow-[0_0_20px_rgba(139,92,246,0.15)]">
+      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
+        {/* Mesh Orbs */}
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full blur-[80px] opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #f97316, transparent 70%)', animation: 'meshMove 12s infinite' }} />
+        <div className="absolute top-[20%] right-[-5%] w-[400px] h-[400px] rounded-full blur-[80px] opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #ec4899, transparent 70%)', animation: 'meshMove 12s infinite -4s' }} />
+        <div className="absolute bottom-[-10%] left-[30%] w-[350px] h-[350px] rounded-full blur-[80px] opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)', animation: 'meshMove 12s infinite -8s' }} />
+        <div className="absolute bottom-[20%] right-[20%] w-[300px] h-[300px] rounded-full blur-[80px] opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #06b6d4, transparent 70%)', animation: 'meshMove 12s infinite -2s' }} />
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#f97316] border border-[#f97316]/30 bg-[#f97316]/10 mb-10 shadow-[0_0_20px_rgba(249,115,22,.12)]">
             <Sparkles className="w-3.5 h-3.5" />
             {t.badge}
           </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[0.95] mb-8" style={{ animation: 'heroFadeIn 0.6s ease-out forwards' }}>
-            <span className="text-white">{t.heroLine1}</span>
+          <h1 className="text-[68px] font-extrabold leading-[0.95] mb-8"
+            style={{ letterSpacing: '-2px', animation: 'heroFadeIn 0.6s ease-out forwards' }}>
+            <span className="text-[#fafafa]">{t.heroLine1}</span>
               <br />
-              <span className="text-violet-400">
+              <span className="inline-block bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #f97316, #ec4899, #8b5cf6, #06b6d4, #f97316)',
+                  backgroundSize: '300% 100%',
+                  animation: 'gradientShift 6s ease infinite',
+                }}>
               {t.heroLine2}
             </span>
           </h1>
-          <p className="text-lg text-zinc-400 max-w-lg mx-auto leading-relaxed mb-3">
+          <p className="text-lg text-[rgba(250,250,250,.6)] max-w-lg mx-auto leading-relaxed mb-3">
             {t.heroSub}
           </p>
-          <p className="text-sm text-zinc-600 mb-12">
+          <p className="text-sm text-[rgba(250,250,250,.35)] mb-12">
             {t.heroNote}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-8 py-3.5 rounded-lg transition-colors">
+            <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white px-8 py-3.5 rounded-lg transition-all hover:shadow-[0_0_40px_rgba(249,115,22,.35)]"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
               {t.cta}
               <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
             </a>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 text-xs text-[rgba(250,250,250,.35)]">
               <div className="flex -space-x-1.5">
-                {['bg-violet-500', 'bg-cyan-500', 'bg-amber-500', 'bg-emerald-500'].map((c, i) => (
-                  <div key={i} className={`w-5 h-5 rounded-full ${c} border-2 border-zinc-950`} />
+                {[
+                  'linear-gradient(135deg, #f97316, #fbbf24)',
+                  'linear-gradient(135deg, #ec4899, #f472b6)',
+                  'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+                  'linear-gradient(135deg, #06b6d4, #67e8f9)',
+                ].map((g, i) => (
+                  <div key={i} className="w-5 h-5 rounded-full border-2 border-[#09090b]" style={{ background: g }} />
                 ))}
               </div>
               {t.ctaSub}
@@ -512,16 +572,16 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pain Points ─── */}
-      <section className="py-20 px-6 border-t border-zinc-800/50">
+      <section className="py-20 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-[#f97316] mb-4">
               {lang === 'zh' ? 'DTC卖家的真实困境' : 'THE REAL STRUGGLE'}
             </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#fafafa] mb-4">
               {lang === 'zh' ? '品味和效率，真的只能二选一？' : 'Taste or Speed? Why Not Both.'}
             </h2>
-            <p className="text-sm text-zinc-500 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm text-[rgba(250,250,250,.6)] max-w-lg mx-auto leading-relaxed">
               {lang === 'zh'
                 ? '你花三个月打磨产品，花一周调品牌调性，最后却在素材上妥协——因为好设计太慢，快设计太丑'
                 : 'You spend months perfecting the product, weeks nailing the brand vibe — then compromise on creatives because good design is too slow and fast design is too ugly.'}
@@ -529,17 +589,21 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { icon: '⏰', title: lang === 'zh' ? '一张素材做3天' : '3 Days Per Creative', desc: lang === 'zh' ? '找参考、写brief、等设计、改稿...上新节奏被素材拖垮' : 'Reference hunting, brief writing, waiting for designers, revisions... launch speed killed by creative bottleneck' },
-              { icon: '💸', title: lang === 'zh' ? '外包一张¥300起' : '$40+ Per Asset', desc: lang === 'zh' ? '按月结算动辄上万，旺季加急还要翻倍' : 'Monthly bills hit thousands. Rush fees double in peak season.' },
-              { icon: '🎨', title: lang === 'zh' ? '模板工具千篇一律' : 'Templates Look Generic', desc: lang === 'zh' ? 'Canva生成的素材没有品牌感，用户一眼看出是模板' : 'Canva outputs lack brand soul. Customers spot templates instantly.' },
-              { icon: '📱', title: lang === 'zh' ? '多平台尺寸改到崩溃' : '8 Versions Per Image', desc: lang === 'zh' ? 'IG要1:1，Story要9:16，FB要16:9，一张图改8个版本' : 'IG needs 1:1, Story 9:16, FB 16:9... one image, eight versions.' },
+              { icon: '⏰', title: lang === 'zh' ? '一张素材做3天' : '3 Days Per Creative', desc: lang === 'zh' ? '找参考、写brief、等设计、改稿...上新节奏被素材拖垮' : 'Reference hunting, brief writing, waiting for designers, revisions... launch speed killed by creative bottleneck', color: '#f97316' },
+              { icon: '💸', title: lang === 'zh' ? '外包一张¥300起' : '$40+ Per Asset', desc: lang === 'zh' ? '按月结算动辄上万，旺季加急还要翻倍' : 'Monthly bills hit thousands. Rush fees double in peak season.', color: '#ec4899' },
+              { icon: '🎨', title: lang === 'zh' ? '模板工具千篇一律' : 'Templates Look Generic', desc: lang === 'zh' ? 'Canva生成的素材没有品牌感，用户一眼看出是模板' : 'Canva outputs lack brand soul. Customers spot templates instantly.', color: '#8b5cf6' },
+              { icon: '📱', title: lang === 'zh' ? '多平台尺寸改到崩溃' : '8 Versions Per Image', desc: lang === 'zh' ? 'IG要1:1，Story要9:16，FB要16:9，一张图改8个版本' : 'IG needs 1:1, Story 9:16, FB 16:9... one image, eight versions.', color: '#06b6d4' },
             ].map((p, i) => (
-              <div key={i} className="p-5 rounded-lg border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300">
-                <div className="flex items-start gap-3">
+              <div key={i} className="group relative p-5 rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] hover:border-[rgba(255,255,255,.12)] hover:-translate-y-[6px] transition-all duration-300 overflow-hidden"
+                style={{ boxShadow: `inset 0 0 0 0 transparent` }}>
+                {/* Hover radial gradient effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
+                  style={{ background: `radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${p.color}10, transparent 60%)` }} />
+                <div className="relative z-10 flex items-start gap-3">
                   <span className="text-xl leading-none mt-0.5">{p.icon}</span>
                   <div>
-                    <h3 className="text-sm font-semibold text-white mb-1.5">{p.title}</h3>
-                    <p className="text-sm text-zinc-500 leading-relaxed">{p.desc}</p>
+                    <h3 className="text-sm font-semibold text-[#fafafa] mb-1.5">{p.title}</h3>
+                    <p className="text-sm text-[rgba(250,250,250,.6)] leading-relaxed">{p.desc}</p>
                   </div>
                 </div>
               </div>
@@ -548,17 +612,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Proactive vs Reactive ─── */}
-      <section className="py-20 px-6 border-t border-zinc-800/50">
+      {/* ─── Proactive vs Reactive (Compare) ─── */}
+      <section className="py-20 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-[#ec4899] mb-4">
               {lang === 'zh' ? '为什么是「主动」' : 'WHY PROACTIVE'}
             </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#fafafa] mb-4">
               {lang === 'zh' ? '传统工具等你下指令，100x 主动为你创造' : 'Other tools wait for orders. 100x creates for you.'}
             </h2>
-            <p className="text-sm text-zinc-500 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm text-[rgba(250,250,250,.6)] max-w-lg mx-auto leading-relaxed">
               {lang === 'zh'
                 ? '传统设计工具是「你描述，它执行」。100x 是「它理解，它创造，它推荐」'
                 : 'Traditional tools: you describe, they execute. 100x: it understands, it creates, it recommends.'}
@@ -566,12 +630,12 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-2 gap-5">
             {/* 被动 */}
-            <div className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-red-500/20 transition-colors">
+            <div className="p-6 rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] hover:border-[rgba(255,255,255,.12)] transition-all duration-300 hover:-translate-y-[6px]">
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm">😴</div>
+                <div className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,.05)] border border-[rgba(255,255,255,.06)] flex items-center justify-center text-sm">😴</div>
                 <div>
-                  <p className="text-sm font-semibold text-zinc-300">{lang === 'zh' ? '传统方式' : 'Traditional'}</p>
-                  <p className="text-[11px] text-zinc-600">{lang === 'zh' ? '被动执行' : 'Reactive'}</p>
+                  <p className="text-sm font-semibold text-[rgba(250,250,250,.85)]">{lang === 'zh' ? '传统方式' : 'Traditional'}</p>
+                  <p className="text-[11px] text-[rgba(250,250,250,.35)]">{lang === 'zh' ? '被动执行' : 'Reactive'}</p>
                 </div>
               </div>
               <ul className="space-y-3">
@@ -588,20 +652,23 @@ export default function LandingPage() {
                   'You judge which creative works',
                   'You iterate repeatedly before it\'s usable',
                 ]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-500">
-                    <span className="text-zinc-700 mt-0.5">✕</span>
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-[rgba(250,250,250,.35)]">
+                    <span className="text-[rgba(250,250,250,.2)] mt-0.5">✕</span>
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
-            {/* 主动 */}
-            <div className="p-6 rounded-xl border border-violet-500/30 bg-violet-500/5 shadow-[0_0_30px_rgba(139,92,246,0.08)]">
+            {/* 主动 — highlighted card */}
+            <div className="relative p-6 rounded-2xl border-2 border-[#8b5cf6]/40 bg-[#8b5cf6]/5 hover:-translate-y-[6px] transition-all duration-300 overflow-hidden shadow-[0_0_40px_rgba(139,92,246,.08)]">
+              {/* Gradient top bar */}
+              <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4)' }} />
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-sm">⚡</div>
+                <div className="w-8 h-8 rounded-lg border border-[#8b5cf6]/30 flex items-center justify-center text-sm"
+                  style={{ background: 'linear-gradient(135deg, rgba(139,92,246,.2), rgba(6,182,212,.1))' }}>⚡</div>
                 <div>
-                  <p className="text-sm font-semibold text-violet-300">{lang === 'zh' ? '100x 方式' : '100x'}</p>
-                  <p className="text-[11px] text-violet-500">{lang === 'zh' ? '主动创造' : 'Proactive'}</p>
+                  <p className="text-sm font-semibold text-[#c4b5fd]">{lang === 'zh' ? '100x 方式' : '100x'}</p>
+                  <p className="text-[11px] text-[#8b5cf6]">{lang === 'zh' ? '主动创造' : 'Proactive'}</p>
                 </div>
               </div>
               <ul className="space-y-3">
@@ -618,8 +685,8 @@ export default function LandingPage() {
                   'AI evaluates quality and picks the best',
                   'Ready to use — no revision needed',
                 ]).map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-zinc-300">
-                    <span className="text-violet-400 mt-0.5">✓</span>
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-[rgba(250,250,250,.85)]">
+                    <span className="text-[#8b5cf6] mt-0.5">✓</span>
                     {item}
                   </li>
                 ))}
@@ -632,45 +699,55 @@ export default function LandingPage() {
       {/* ─── Demo Carousel ─── */}
       <section id="demo" className="px-6 pb-20">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[10px] text-zinc-600 uppercase tracking-[5px] mb-1">Generated by 100x</p>
-          <p className="text-center text-xs text-zinc-500 mb-8">{t.demoCaption}</p>
+          <p className="text-center text-[10px] text-[rgba(250,250,250,.35)] uppercase tracking-[5px] mb-1">Generated by 100x</p>
+          <p className="text-center text-xs text-[rgba(250,250,250,.6)] mb-8">{t.demoCaption}</p>
 
           <div className="relative">
-            <CarouselGrid series={series} />
+            <CarouselGrid series={series} seriesIndex={activeSeries} />
             <button onClick={prev}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 md:-translate-x-5 w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-700 hover:border-zinc-600 transition-colors">
-              <ChevronLeft className="w-4 h-4 text-zinc-400" />
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 md:-translate-x-5 w-9 h-9 rounded-full flex items-center justify-center border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-colors"
+              style={{ background: 'rgba(9,9,11,.9)' }}>
+              <ChevronLeft className="w-4 h-4 text-[rgba(250,250,250,.6)]" />
             </button>
             <button onClick={next}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 md:translate-x-5 w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 border border-zinc-700 hover:border-zinc-600 transition-colors">
-              <ChevronRight className="w-4 h-4 text-zinc-400" />
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 md:translate-x-5 w-9 h-9 rounded-full flex items-center justify-center border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)] transition-colors"
+              style={{ background: 'rgba(9,9,11,.9)' }}>
+              <ChevronRight className="w-4 h-4 text-[rgba(250,250,250,.6)]" />
             </button>
           </div>
 
           <div className="flex items-center justify-center gap-2 mt-6">
-            {DEMO_SERIES.map((s, i) => (
-              <button key={i} onClick={() => setActiveSeries(i)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  i === activeSeries
-                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/30'
-                    : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:border-zinc-700'
-                }`}>
-                <span className="text-[11px]">{s.emoji}</span>
-                <span className="hidden sm:inline text-[11px]">{s.category}</span>
-              </button>
-            ))}
+            {DEMO_SERIES.map((s, i) => {
+              const accentColors = ['#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#8b5cf6'];
+              return (
+                <button key={i} onClick={() => setActiveSeries(i)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                    i === activeSeries
+                      ? 'text-white border'
+                      : 'text-[rgba(250,250,250,.35)] border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)]'
+                  }`}
+                  style={i === activeSeries ? {
+                    background: `${accentColors[i]}15`,
+                    borderColor: `${accentColors[i]}40`,
+                    color: accentColors[i],
+                  } : { background: 'rgba(255,255,255,.03)' }}>
+                  <span className="text-[11px]">{s.emoji}</span>
+                  <span className="hidden sm:inline text-[11px]">{s.category}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ─── Testimonials ─── */}
-      <section className="py-20 px-6 border-t border-zinc-800/50">
+      <section className="py-20 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-[#8b5cf6] mb-4">
               {lang === 'zh' ? '真实卖家反馈' : 'SELLER STORIES'}
             </p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#fafafa]">
               {lang === 'zh' ? '素材质量，他们说了算' : 'Quality Speaks for Itself'}
             </h2>
           </div>
@@ -681,37 +758,40 @@ export default function LandingPage() {
                 content: lang === 'zh'
                   ? '以前上新前一周就开始焦虑素材，现在30分钟搞定一整套。最惊喜的是AI真的懂我们的品牌调性，不是套模板。'
                   : 'I used to stress about creatives a week before every launch. Now I get a full set in 30 minutes. The AI actually understands our brand vibe — not just templates.',
-                metric: lang === 'zh' ? '素材产出速度提升 20x' : '20x faster creative output'
+                metric: lang === 'zh' ? '素材产出速度提升 20x' : '20x faster creative output',
+                gradient: 'linear-gradient(135deg, #ec4899, #f472b6)',
               },
               {
                 name: 'Mark Chen', role: lang === 'zh' ? '跨境电商运营总监' : 'Cross-border Ops Director', brand: 'SoundWave', avatar: '👨‍💻',
                 content: lang === 'zh'
                   ? '我们测试过5个AI生图工具，100x是唯一一个能稳定输出商用级质量的。欧洲市场的素材直接能用，不需要二次修图。'
                   : 'We tested 5 AI image tools. 100x is the only one that consistently delivers commercial-grade quality. European market assets are ready to use — no retouching needed.',
-                metric: lang === 'zh' ? '外包成本降低 85%' : '85% reduction in outsourcing costs'
+                metric: lang === 'zh' ? '外包成本降低 85%' : '85% reduction in outsourcing costs',
+                gradient: 'linear-gradient(135deg, #f97316, #fbbf24)',
               },
               {
                 name: 'Sarah Zhang', role: lang === 'zh' ? '独立站卖家' : 'Solo Store Owner', brand: 'BeanCraft', avatar: '☕',
                 content: lang === 'zh'
                   ? '一个人管产品、运营、客服，根本没有时间做素材。100x让我终于可以把精力放回产品和用户上。'
                   : 'I handle product, ops, and customer service alone — no time for creatives. 100x lets me focus back on product and customers.',
-                metric: lang === 'zh' ? '每周节省 15+ 小时' : '15+ hours saved per week'
+                metric: lang === 'zh' ? '每周节省 15+ 小时' : '15+ hours saved per week',
+                gradient: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
               },
             ].map((t, i) => (
-              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:-translate-y-0.5 hover:border-zinc-700 transition-all duration-300">
+              <div key={i} className="p-6 rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] hover:-translate-y-[6px] hover:border-[rgba(255,255,255,.12)] transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-zinc-800">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: t.gradient }}>
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-zinc-500">{t.role} · {t.brand}</p>
+                    <p className="text-sm font-semibold text-[#fafafa]">{t.name}</p>
+                    <p className="text-xs text-[rgba(250,250,250,.35)]">{t.role} · {t.brand}</p>
                   </div>
                 </div>
-                <p className="text-sm text-zinc-400 leading-relaxed mb-5">"{t.content}"</p>
-                <div className="flex items-center gap-1.5 pt-4 border-t border-zinc-800">
-                  <Zap className="w-3.5 h-3.5 text-violet-500" />
-                  <span className="text-xs font-medium text-violet-400">{t.metric}</span>
+                <p className="text-sm text-[rgba(250,250,250,.6)] leading-relaxed mb-5">&ldquo;{t.content}&rdquo;</p>
+                <div className="flex items-center gap-1.5 pt-4 border-t border-[rgba(255,255,255,.06)]">
+                  <Zap className="w-3.5 h-3.5 text-[#ec4899]" />
+                  <span className="text-xs font-medium text-[#ec4899]">{t.metric}</span>
                 </div>
               </div>
             ))}
@@ -720,48 +800,62 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How it works ─── */}
-      <section id="how" className="py-24 px-6 border-t border-zinc-800/50">
+      <section id="how" className="py-24 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">{t.howLabel}</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white">{t.howTitle}</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-[#06b6d4] mb-4">{t.howLabel}</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#fafafa]">{t.howTitle}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {t.steps.map((s, i) => (
-              <div key={i} className="p-6 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-zinc-900/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl bg-zinc-800 border border-zinc-700">
-                    {s.icon}
+            {t.steps.map((s, i) => {
+              const stepGradients = [
+                'linear-gradient(135deg, #f97316, #ec4899)',
+                'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                'linear-gradient(135deg, #8b5cf6, #06b6d4)',
+              ];
+              return (
+                <div key={i} className="group p-6 rounded-2xl border border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] hover:border-[rgba(255,255,255,.12)] hover:-translate-y-[6px] hover:scale-[1.02] hover:rotate-[1deg] transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl"
+                      style={{ background: stepGradients[i] }}>
+                      {s.icon}
+                    </div>
+                    <span className="text-xs font-mono text-[rgba(250,250,250,.35)]">{String(i + 1).padStart(2, '0')}</span>
                   </div>
-                  <span className="text-xs font-mono text-zinc-600">{String(i + 1).padStart(2, '0')}</span>
+                  <h3 className="text-lg font-semibold text-[#fafafa] mb-2">{s.title}</h3>
+                  <p className="text-sm text-[rgba(250,250,250,.6)] mb-1.5">{s.desc}</p>
+                  <p className="text-xs text-[rgba(250,250,250,.35)]">{s.detail}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{s.title}</h3>
-                <p className="text-sm text-zinc-400 mb-1.5">{s.desc}</p>
-                <p className="text-xs text-zinc-600">{s.detail}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-24 px-6 border-t border-zinc-800/50">
+      <section id="pricing" className="py-24 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs text-violet-400 font-medium uppercase tracking-[4px] mb-4">{t.planLabel}</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white">{t.planTitle}</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-[#ec4899] mb-4">{t.planLabel}</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#fafafa]">{t.planTitle}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5 items-stretch">
             {t.plans.map((plan, i) => (
               <div key={i}
-                className={`relative rounded-xl p-7 flex flex-col border transition-colors ${
+                className={`relative rounded-2xl p-7 flex flex-col border transition-all duration-300 ${
                   plan.highlight
-                    ? 'border-violet-500/40 bg-violet-500/5 shadow-[0_0_40px_rgba(139,92,246,0.15)] hover:shadow-[0_0_60px_rgba(139,92,246,0.2)] transition-shadow duration-500'
-                    : 'border-zinc-800 bg-zinc-900/30'
-                }`}>
+                    ? 'border-[#ec4899]/30 hover:shadow-[0_0_60px_rgba(236,72,153,.15)]'
+                    : 'border-[rgba(255,255,255,.06)] bg-[rgba(255,255,255,.03)] hover:border-[rgba(255,255,255,.12)] hover:-translate-y-[6px]'
+                }`}
+                style={plan.highlight ? { background: 'rgba(236,72,153,.03)' } : undefined}>
+                {/* Popular gradient top bar */}
+                {plan.highlight && (
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg, #ec4899, #8b5cf6, #f97316)' }} />
+                )}
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-violet-600 text-white shadow-lg shadow-violet-500/30">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold text-white shadow-lg shadow-[#ec4899]/30"
+                      style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' }}>
                       <Crown className="w-3 h-3" /> {plan.badge}
                     </span>
                   </div>
@@ -769,45 +863,50 @@ export default function LandingPage() {
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     {plan.highlight
-                      ? <Zap className="w-5 h-5 text-violet-400" />
-                      : <div className="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700" />
+                      ? <Zap className="w-5 h-5 text-[#ec4899]" />
+                      : <div className="w-5 h-5 rounded-full bg-[rgba(255,255,255,.05)] border border-[rgba(255,255,255,.06)]" />
                     }
-                    <span className="text-lg font-semibold text-white">{plan.name}</span>
+                    <span className="text-lg font-semibold text-[#fafafa]">{plan.name}</span>
                     {!plan.highlight && (
-                      <span className="text-[10px] text-zinc-500 px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700">
+                      <span className="text-[10px] text-[rgba(250,250,250,.35)] px-2 py-0.5 rounded-full bg-[rgba(255,255,255,.03)] border border-[rgba(255,255,255,.06)]">
                         {plan.badge}
                       </span>
                     )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-2">
                     {plan.price ? (
-                      <span className={`text-4xl md:text-5xl font-bold ${plan.highlight ? 'text-violet-300' : 'text-white'}`}>
+                      <span className={`text-4xl md:text-5xl font-bold ${plan.highlight ? 'text-[#f9a8d4]' : 'text-[#fafafa]'}`}>
                         {plan.price}
                       </span>
                     ) : (
-                      <span className="text-2xl md:text-3xl font-bold text-zinc-600">
+                      <span className="text-2xl md:text-3xl font-bold text-[rgba(250,250,250,.35)]">
                         {lang === 'zh' ? '敬请期待' : 'Coming Soon'}
                       </span>
                     )}
-                    <span className="text-sm text-zinc-500">{plan.period}</span>
+                    <span className="text-sm text-[rgba(250,250,250,.35)]">{plan.period}</span>
                   </div>
-                  <p className="text-sm text-zinc-500">{plan.desc}</p>
+                  <p className="text-sm text-[rgba(250,250,250,.6)]">{plan.desc}</p>
                 </div>
-                <div className="border-t border-zinc-800 mb-6" />
+                <div className="border-t border-[rgba(255,255,255,.06)] mb-6" />
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((f, fi) => (
-                    <li key={fi} className="flex items-start gap-2.5 text-sm text-zinc-400">
-                      <Check className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlight ? 'text-violet-400' : 'text-zinc-600'}`} />
+                    <li key={fi} className="flex items-start gap-2.5 text-sm text-[rgba(250,250,250,.6)]">
+                      {plan.highlight ? (
+                        <span className="text-[#ec4899] mt-0.5 shrink-0 text-xs">✦</span>
+                      ) : (
+                        <Check className="w-4 h-4 mt-0.5 shrink-0 text-[rgba(250,250,250,.2)]" />
+                      )}
                       {f}
                     </li>
                   ))}
                 </ul>
                 <a href="/chat"
-                  className={`group inline-flex items-center justify-center gap-2 w-full text-sm font-semibold rounded-lg px-6 py-3 transition-colors ${
+                  className={`group inline-flex items-center justify-center gap-2 w-full text-sm font-semibold rounded-lg px-6 py-3 transition-all ${
                     plan.highlight
-                      ? 'bg-violet-600 text-white hover:bg-violet-500'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700'
-                  }`}>
+                      ? 'text-white hover:shadow-[0_0_30px_rgba(236,72,153,.3)]'
+                      : 'text-[rgba(250,250,250,.6)] border border-[rgba(255,255,255,.06)] hover:border-[rgba(255,255,255,.12)]'
+                  }`}
+                  style={plan.highlight ? { background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' } : { background: 'rgba(255,255,255,.03)' }}>
                   {plan.cta}
                   <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
                 </a>
@@ -818,15 +917,29 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="py-24 px-6" style={{ background: 'radial-gradient(ellipse at center, rgba(139,92,246,0.1) 0%, transparent 70%)' }}>
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-            <span className="text-white">{t.heroLine1}</span>
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Mesh orbs repeated with reduced opacity */}
+        <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full blur-[80px] opacity-20 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #f97316, transparent 70%)', animation: 'meshMove 12s infinite' }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[350px] h-[350px] rounded-full blur-[80px] opacity-20 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)', animation: 'meshMove 12s infinite -6s' }} />
+
+        <div className="max-w-2xl mx-auto text-center relative z-10">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <span className="text-[#fafafa]">{t.heroLine1}</span>
             <br />
-            <span className="text-violet-400">{t.heroLine2}</span>
+            <span className="inline-block bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #f97316, #ec4899, #8b5cf6, #06b6d4, #f97316)',
+                backgroundSize: '300% 100%',
+                animation: 'gradientShift 6s ease infinite',
+              }}>
+              {t.heroLine2}
+            </span>
           </h2>
-          <p className="text-zinc-500 mb-10">{t.heroSub}</p>
-          <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 px-10 py-4 rounded-lg transition-colors">
+          <p className="text-[rgba(250,250,250,.6)] mb-10">{t.heroSub}</p>
+          <a href="/chat" className="group inline-flex items-center gap-2 text-sm font-semibold text-white px-10 py-4 rounded-lg transition-all hover:shadow-[0_0_40px_rgba(249,115,22,.35)]"
+            style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
             {t.cta}
             <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
           </a>
@@ -834,21 +947,22 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="py-8 px-6 border-t border-zinc-800/50">
+      <footer className="py-8 px-6 border-t border-[rgba(255,255,255,.06)]">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-violet-600 flex items-center justify-center">
+            <div className="w-4 h-4 rounded flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }}>
               <span className="text-[4px] font-black text-white">100x</span>
             </div>
-            <span className="text-xs text-zinc-600">100pics.today</span>
+            <span className="text-xs text-[rgba(250,250,250,.35)]">100pics.today</span>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => setFbOpen(!fbOpen)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1">
+            <button onClick={() => setFbOpen(!fbOpen)} className="text-xs text-[rgba(250,250,250,.35)] hover:text-[rgba(250,250,250,.6)] transition-colors flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />反馈
             </button>
-            <a href="https://dtclab.org/" target="__blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 hover:underline underline-offset-2 transition-colors">DTCLab</a>
-            <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 hover:underline underline-offset-2 transition-colors">DTC Doctor</a>
-            <p className="text-xs text-zinc-700">{t.footer}</p>
+            <a href="https://dtclab.org/" target="__blank" rel="noopener noreferrer" className="text-xs text-[rgba(250,250,250,.35)] hover:text-[rgba(250,250,250,.6)] hover:underline underline-offset-2 transition-colors">DTCLab</a>
+            <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-[rgba(250,250,250,.35)] hover:text-[rgba(250,250,250,.6)] hover:underline underline-offset-2 transition-colors">DTC Doctor</a>
+            <p className="text-xs text-[rgba(250,250,250,.2)]">{t.footer}</p>
           </div>
         </div>
       </footer>
@@ -856,7 +970,7 @@ export default function LandingPage() {
       {/* ── 反馈浮窗 ── */}
       {fbOpen && (
         <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl overflow-hidden"
-          style={{ background: 'rgba(15,15,20,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.5)' }}>
+          style={{ background: 'rgba(9,9,11,.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.5)' }}>
           <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <span className="text-xs font-bold text-white/70">反馈问题</span>
             <button onClick={() => setFbOpen(false)}><X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" /></button>
@@ -877,7 +991,7 @@ export default function LandingPage() {
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 <button onClick={submitFb} disabled={!fbContent.trim() || fbSending}
                   className="w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-30 transition-all"
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+                  style={{ background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' }}>
                   {fbSending ? '提交中...' : '提交反馈'}
                 </button>
               </>

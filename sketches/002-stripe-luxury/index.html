@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100x.pics — AI广告素材生成</title>
+<style>
+:root {
+  --bg-deep:#0a0a0f; --bg-brand:#110f1e; --bg-card:rgba(17,15,30,.8);
+  --purple:#8b5cf6; --purple-lt:#a78bfa; --purple-dk:#6d28d9;
+  --text:#fff; --text2:#a78bfa; --text3:#7c73e6; --text4:rgba(167,139,250,.5);
+  --border:rgba(139,92,246,.12); --border-h:rgba(139,92,246,.3);
+  --shadow:0 20px 60px -15px rgba(80,60,140,.25),0 8px 20px -8px rgba(0,0,0,.2);
+  --shadow-h:0 30px 80px -15px rgba(80,60,140,.35),0 12px 30px -8px rgba(0,0,0,.3);
+  --glow:0 0 40px rgba(139,92,246,.15); --r:12px; --pill:50px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg-deep);color:var(--text);line-height:1.6;overflow-x:hidden}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:22px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,var(--purple-lt),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{color:var(--text4);text-decoration:none;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-actions{display:flex;gap:12px;align-items:center}
+.nav-btn{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.15);color:var(--text2);padding:8px 16px;border-radius:var(--pill);font-size:13px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.nav-btn:hover{background:rgba(139,92,246,.15);border-color:var(--border-h);color:var(--text)}
+.nav-cta{background:linear-gradient(135deg,var(--purple),var(--purple-dk));border:none;color:#fff;padding:8px 20px;border-radius:var(--pill);font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.4);transition:all .3s;font-family:var(--font)}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 30px rgba(139,92,246,.5)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 20% 50%,rgba(139,92,246,.08) 0%,transparent 70%),radial-gradient(ellipse 50% 60% at 80% 50%,rgba(109,40,217,.06) 0%,transparent 70%),radial-gradient(ellipse 80% 40% at 50% 100%,rgba(139,92,246,.04) 0%,transparent 60%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);padding:6px 16px;border-radius:var(--pill);font-size:13px;color:var(--purple-lt);margin-bottom:32px;animation:fadeUp .6s ease-out both}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--purple);animation:pulse 2s ease-in-out infinite}
+.hero h1{font-size:64px;font-weight:300;line-height:1.1;letter-spacing:-1px;margin-bottom:24px;animation:fadeUp .6s ease-out .1s both}
+.hero h1 span{display:block;background:linear-gradient(135deg,#fff 0%,var(--purple-lt) 50%,var(--purple) 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease-in-out infinite}
+.hero-sub{font-size:18px;font-weight:300;color:var(--text4);max-width:540px;margin-bottom:40px;line-height:1.7;animation:fadeUp .6s ease-out .2s both}
+.hero-actions{display:flex;gap:16px;margin-bottom:48px;animation:fadeUp .6s ease-out .3s both}
+.btn-p{background:linear-gradient(135deg,var(--purple),var(--purple-dk));border:none;color:#fff;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,.4);transition:all .3s;font-family:var(--font)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(139,92,246,.5)}
+.btn-g{background:transparent;border:1px solid rgba(139,92,246,.15);color:var(--text2);padding:14px 32px;border-radius:8px;font-size:16px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.btn-g:hover{background:rgba(139,92,246,.08);border-color:var(--border-h);color:#fff}
+.avatar-group{display:flex;align-items:center;animation:fadeUp .6s ease-out .4s both}
+.avatar-group .avs{display:flex;margin-right:12px}
+.avatar-group .av{width:32px;height:32px;border-radius:50%;border:2px solid var(--bg-deep);margin-left:-8px;background:linear-gradient(135deg,var(--purple),var(--purple-dk))}
+.avatar-group .av:first-child{margin-left:0}
+.avatar-group .av:nth-child(2){background:linear-gradient(135deg,var(--purple-dk),#4c1d95)}
+.avatar-group .av:nth-child(3){background:linear-gradient(135deg,#4c1d95,#2e1065)}
+.avatar-group .av:nth-child(4){background:linear-gradient(135deg,#2e1065,#1e1b4b)}
+.avatar-group span{font-size:13px;color:var(--text4)}
+
+/* SECTIONS */
+.s{padding:100px 40px;max-width:1200px;margin:0 auto}
+.s-brand{background:var(--bg-brand);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.s-label{font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--purple);margin-bottom:12px}
+.s-title{font-size:36px;font-weight:300;letter-spacing:-.5px;margin-bottom:16px;line-height:1.2}
+.s-desc{font-size:16px;color:var(--text4);max-width:520px;line-height:1.7;margin-bottom:48px}
+
+/* PAIN */
+.pain-g{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.pain{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:32px 24px;transition:all .3s;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.pain::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--purple),transparent);opacity:0;transition:opacity .3s}
+.pain:hover{border-color:var(--border-h);transform:translateY(-4px);box-shadow:var(--shadow-h)}
+.pain:hover::before{opacity:1}
+.pain-icon{width:48px;height:48px;border-radius:8px;background:rgba(139,92,246,.1);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.pain h3{font-size:18px;font-weight:400;letter-spacing:-.3px;margin-bottom:8px}
+.pain p{font-size:14px;color:var(--text4);line-height:1.6}
+
+/* COMPARE */
+.cmp-g{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cmp{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:40px 32px;transition:all .3s;box-shadow:var(--shadow)}
+.cmp.hi{border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.08);box-shadow:var(--glow),var(--shadow)}
+.cmp:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+.cmp h3{font-size:20px;font-weight:400;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.cmp.hi h3{color:var(--purple-lt)}
+.cmp ul{list-style:none}
+.cmp li{padding:8px 0;font-size:14px;color:var(--text4);border-bottom:1px solid rgba(139,92,246,.05);display:flex;align-items:center;gap:10px}
+.cmp li:last-child{border-bottom:none}
+.cmp li::before{content:'•';color:var(--text3);font-size:18px}
+.cmp.hi li{color:var(--text2)}
+.cmp.hi li::before{color:var(--purple)}
+
+/* DEMO */
+.demo-pills{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.dp{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.15);color:var(--text4);padding:8px 18px;border-radius:var(--pill);font-size:13px;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.dp.on,.dp:hover{background:rgba(139,92,246,.2);border-color:var(--purple);color:var(--purple-lt)}
+.demo-g{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.di{aspect-ratio:1;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);position:relative;cursor:pointer;transition:all .3s}
+.di:hover{transform:scale(1.03);border-color:var(--border-h);box-shadow:var(--glow)}
+.di-b{width:100%;height:100%}
+.di:nth-child(1) .di-b{background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+.di:nth-child(2) .di-b{background:linear-gradient(135deg,#6d28d9,#a78bfa)}
+.di:nth-child(3) .di-b{background:linear-gradient(135deg,#8b5cf6,#c4b5fd)}
+.di:nth-child(4) .di-b{background:linear-gradient(135deg,#4c1d95,#7c3aed)}
+.di:nth-child(5) .di-b{background:linear-gradient(135deg,#5b21b6,#8b5cf6)}
+.di:nth-child(6) .di-b{background:linear-gradient(135deg,#a78bfa,#7c3aed)}
+.di:nth-child(7) .di-b{background:linear-gradient(135deg,#6d28d9,#4f46e5)}
+.di:nth-child(8) .di-b{background:linear-gradient(135deg,#c4b5fd,#8b5cf6)}
+.di-ov{position:absolute;inset:0;background:rgba(10,10,15,.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+.di:hover .di-ov{opacity:1}
+.di-ov span{font-size:11px;font-weight:500;color:#fff;background:rgba(139,92,246,.8);padding:4px 12px;border-radius:var(--pill)}
+
+/* TESTIMONIALS */
+.t-g{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.tc{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:32px;transition:all .3s;box-shadow:var(--shadow)}
+.tc:hover{border-color:var(--border-h);box-shadow:var(--shadow-h)}
+.tc p{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:20px;font-style:italic;font-weight:300}
+.tc-a{display:flex;align-items:center;gap:12px}
+.tc-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple-dk))}
+.tc-i{font-size:13px}
+.tc-i strong{color:var(--text);display:block;font-weight:500}
+.tc-i span{color:var(--text4)}
+
+/* STEPS */
+.st-g{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.st{text-align:center;padding:40px 24px;position:relative}
+.st-n{width:56px;height:56px;border-radius:50%;margin:0 auto 24px;display:flex;align-items:center;justify-content:center;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);font-size:20px;font-weight:300;color:var(--purple-lt);box-shadow:0 0 30px rgba(139,92,246,.1);transition:all .3s}
+.st:hover .st-n{background:rgba(139,92,246,.2);box-shadow:0 0 40px rgba(139,92,246,.2);transform:scale(1.1)}
+.st h3{font-size:18px;font-weight:400;margin-bottom:10px}
+.st p{font-size:14px;color:var(--text4);line-height:1.6;max-width:260px;margin:0 auto}
+
+/* PRICING */
+.pr-g{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+.pr{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:40px 32px;transition:all .3s;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.pr.f{border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06)}
+.pr.f::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--purple-lt),var(--purple))}
+.pr:hover{transform:translateY(-4px);box-shadow:var(--shadow-h)}
+.pr.f:hover{box-shadow:var(--glow),var(--shadow-h)}
+.pr-name{font-size:16px;font-weight:400;color:var(--text4);margin-bottom:8px}
+.pr-price{font-size:48px;font-weight:300;letter-spacing:-2px;margin-bottom:4px}
+.pr-price span{font-size:16px;font-weight:400;color:var(--text4);letter-spacing:0}
+.pr-desc{font-size:14px;color:var(--text4);margin-bottom:24px}
+.pr-ul{list-style:none;margin-bottom:32px;flex:1}
+.pr-ul li{padding:6px 0;font-size:14px;color:var(--text2);display:flex;align-items:center;gap:10px}
+.pr-ul li::before{content:'✓';color:var(--purple);font-weight:600}
+.pr .btn-p,.pr .btn-g{width:100%;text-align:center}
+
+/* FINAL CTA */
+.f-cta{text-align:center;padding:120px 40px;position:relative;overflow:hidden}
+.f-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(139,92,246,.08) 0%,transparent 70%);pointer-events:none}
+.f-cta h2{font-size:48px;font-weight:300;letter-spacing:-.8px;margin-bottom:16px}
+.f-cta h2 em{font-style:normal;background:linear-gradient(135deg,var(--purple-lt),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.f-cta p{font-size:16px;color:var(--text4);margin-bottom:36px}
+
+/* FOOTER */
+.ft{padding:48px 40px;max-width:1200px;margin:0 auto;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.ft-l{display:flex;gap:24px}
+.ft-l a{font-size:13px;color:var(--text4);text-decoration:none;transition:color .2s}
+.ft-l a:hover{color:var(--text2)}
+.ft-c{font-size:12px;color:var(--text4)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">100x</div>
+  <div class="nav-links">
+    <a href="#demo">演示</a>
+    <a href="#how">使用方法</a>
+    <a href="#pricing">定价</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn">EN / 中文</button>
+    <button class="nav-btn">💬</button>
+    <button class="nav-cta">开始使用</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">全球首个主动创意引擎</div>
+  <h1>你的广告素材<span>我们包了</span></h1>
+  <p class="hero-sub">上传产品图片，AI解码品牌DNA，自动生成多平台广告素材。从创意到投放，5分钟搞定。</p>
+  <div class="hero-actions">
+    <button class="btn-p">免费生成</button>
+    <button class="btn-g">观看演示</button>
+  </div>
+  <div class="avatar-group">
+    <div class="avs">
+      <div class="av"></div><div class="av"></div><div class="av"></div><div class="av"></div>
+    </div>
+    <span>已有 2,400+ 品牌在使用</span>
+  </div>
+</section>
+
+<!-- PAIN POINTS -->
+<section class="s">
+  <div class="s-label">痛点</div>
+  <h2 class="s-title">广告创意的四大痛点</h2>
+  <p class="s-desc">每一个做营销的人，都在这些事上浪费了大量时间。</p>
+  <div class="pain-g">
+    <div class="pain">
+      <div class="pain-icon">🎨</div>
+      <h3>素材做3天</h3>
+      <p>从构思到出图，一张素材耗时3天起步，错过了最佳投放窗口。</p>
+    </div>
+    <div class="pain">
+      <div class="pain-icon">💰</div>
+      <h3>外包¥300起</h3>
+      <p>一张广告图外包费用300+，月均8张就是2400，年年如此。</p>
+    </div>
+    <div class="pain">
+      <div class="pain-icon">📋</div>
+      <h3>模板千篇一律</h3>
+      <p>用模板？你的竞争对手也在用。同样的模板，不同的品牌，毫无差异化。</p>
+    </div>
+    <div class="pain">
+      <div class="pain-icon">🤯</div>
+      <h3>多平台改到崩溃</h3>
+      <p>IG 1:1、FB 16:9、TikTok 9:16……每个平台裁一次，改到怀疑人生。</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="s s-brand">
+  <div class="s-label">方式</div>
+  <h2 class="s-title">别再追着素材跑了</h2>
+  <p class="s-desc">从被动响应到主动创造，一个平台的效率革命。</p>
+  <div class="cmp-g">
+    <div class="cmp">
+      <h3>被动响应式</h3>
+      <ul>
+        <li>收到需求 → 找设计师 → 等排期</li>
+        <li>一稿二稿三稿，来回修改5次+</li>
+        <li>一个尺寸做完，还要改其他尺寸</li>
+        <li>品牌调性全靠设计师个人感觉</li>
+        <li>单张素材成本¥300-800</li>
+        <li>从需求到上线：3-7天</li>
+      </ul>
+    </div>
+    <div class="cmp hi">
+      <h3>主动创意引擎</h3>
+      <ul>
+        <li>上传产品 → AI自动生成 → 即刻可用</li>
+        <li>8张多尺寸素材一次批量产出</li>
+        <li>覆盖IG/FB/TikTok/Pinterest等8大平台</li>
+        <li>品牌DNA深度解析，风格统一可控</li>
+        <li>单次生成成本接近¥0</li>
+        <li>从上传到下载：5分钟</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="s">
+  <div class="s-label">效果</div>
+  <h2 class="s-title">AI生成的真实素材</h2>
+  <p class="s-desc">不同品类，同样专业级的广告创意输出。</p>
+  <div class="demo-pills">
+    <button class="dp on">全部</button>
+    <button class="dp">护肤品</button>
+    <button class="dp">食品饮料</button>
+    <button class="dp">服饰鞋包</button>
+    <button class="dp">家居好物</button>
+    <button class="dp">数码配件</button>
+  </div>
+  <div class="demo-g">
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+    <div class="di"><div class="di-b"></div><div class="di-ov"><span>AI Generated</span></div></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="s s-brand">
+  <div class="s-label">评价</div>
+  <h2 class="s-title">他们都在用100x</h2>
+  <div class="t-g">
+    <div class="tc">
+      <p>「以前一张素材要等3天，现在5分钟搞定8张。投放频率从一周1次变成了一天3次，ROI直接翻倍。」</p>
+      <div class="tc-a"><div class="tc-av"></div><div class="tc-i"><strong>陈思远</strong><span>DTC品牌创始人</span></div></div>
+    </div>
+    <div class="tc">
+      <p>「最震惊的是品牌一致性的把控。AI能理解我们的设计语言，每次出的图都像同一个设计师做的。」</p>
+      <div class="tc-a"><div class="tc-av"></div><div class="tc-i"><strong>林小禾</strong><span>美妆品牌市场总监</span></div></div>
+    </div>
+    <div class="tc">
+      <p>「省下来的不只是钱，是团队的心力。设计师不再做苦力活，而是专注在真正有创意的事情上。」</p>
+      <div class="tc-a"><div class="tc-av"></div><div class="tc-i"><strong>张凯文</strong><span>跨境电商运营负责人</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="s">
+  <div class="s-label">流程</div>
+  <h2 class="s-title">三步搞定素材</h2>
+  <p class="s-desc">零设计门槛，5分钟从上传到下载。</p>
+  <div class="st-g">
+    <div class="st">
+      <div class="st-n">1</div>
+      <h3>上传品牌资料</h3>
+      <p>上传产品图或品牌参考，AI自动分析品牌DNA、色调、调性。</p>
+    </div>
+    <div class="st">
+      <div class="st-n">2</div>
+      <h3>选择创意方向</h3>
+      <p>告诉AI你想传达的核心卖点、目标受众和使用场景。</p>
+    </div>
+    <div class="st">
+      <div class="st-n">3</div>
+      <h3>一键批量出图</h3>
+      <p>8张多平台素材同时生成，覆盖IG/FB/TikTok等全部主流尺寸。</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="s s-brand">
+  <div class="s-label">定价</div>
+  <h2 class="s-title">简单透明的价格</h2>
+  <p class="s-desc">先体验，再决定。免费使用，下载才扣点。</p>
+  <div class="pr-g">
+    <div class="pr">
+      <div class="pr-name">体验</div>
+      <div class="pr-price">¥0<span></span></div>
+      <div class="pr-desc">快速感受AI创意能力</div>
+      <ul class="pr-ul">
+        <li>体验2次生成</li>
+        <li>每次4张素材</li>
+        <li>预览低清版本</li>
+        <li>基础平台尺寸</li>
+      </ul>
+      <button class="btn-g">免费开始</button>
+    </div>
+    <div class="pr f">
+      <div class="pr-name">免费</div>
+      <div class="pr-price">¥0<span></span></div>
+      <div class="pr-desc">个人和小团队首选</div>
+      <ul class="pr-ul">
+        <li>每月50次生成</li>
+        <li>每次8张素材</li>
+        <li>高清原图下载</li>
+        <li>全部8个平台尺寸</li>
+        <li>品牌DNA记忆</li>
+        <li>迭代优化</li>
+      </ul>
+      <button class="btn-p">立即体验</button>
+    </div>
+    <div class="pr">
+      <div class="pr-name">Pro</div>
+      <div class="pr-price">即将上线</div>
+      <div class="pr-desc">团队和企业级需求</div>
+      <ul class="pr-ul">
+        <li>无限次生成</li>
+        <li>品牌专属模型</li>
+        <li>团队协作空间</li>
+        <li>API接入</li>
+        <li>优先支持</li>
+      </ul>
+      <button class="btn-g">联系我们</button>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="f-cta">
+  <h2>让AI替你<em>包办所有素材</em></h2>
+  <p>从今天开始，不再为广告素材发愁。</p>
+  <button class="btn-p">免费生成</button>
+</section>
+
+<!-- FOOTER -->
+<footer class="ft">
+  <div class="ft-l">
+    <a href="#">关于我们</a>
+    <a href="#">博客</a>
+    <a href="#">联系我们</a>
+    <a href="#">隐私政策</a>
+    <a href="#">服务条款</a>
+  </div>
+  <div class="ft-c">© 2025 100x.pics — AI广告素材生成</div>
+</footer>
+
+</body>
+</html>
