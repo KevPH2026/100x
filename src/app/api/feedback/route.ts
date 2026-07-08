@@ -11,6 +11,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '反馈内容不能为空或超过2000字' }, { status: 400 });
     }
 
+    // XSS过滤：strip HTML tags
+    const sanitized = content.trim().replace(/<[^>]*>/g, '').replace(/[<>'"&]/g, '');
+    if (!sanitized) {
+      return NextResponse.json({ error: '反馈内容不能为空' }, { status: 400 });
+    }
+    const sanitizedContact = contact?.trim().replace(/<[^>]*>/g, '').replace(/[<>'"&]/g, '') || null;
+
     // 收集用户身份
     let userId: string | null = null;
     try {
@@ -30,8 +37,8 @@ export async function POST(req: NextRequest) {
         userId,
         ip,
         page: page || '/',
-        content: content.trim(),
-        contact: contact?.trim() || null,
+        content: sanitized,
+        contact: sanitizedContact,
       },
     });
 
