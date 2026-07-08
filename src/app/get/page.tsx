@@ -439,62 +439,82 @@ export default function GeneratePage() {
 
     const total = tasks.length;
     let done = 0;
+    let failed = 0;
     const results: GeneratedImage[] = [];
+    const failedTasks: string[] = [];
 
     for (const task of tasks) {
       setCurrentScene(task.scene.label + ' · ' + task.platformKey);
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 120000);
-        const res = await fetch('/api/adforge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brandName: brandName.trim(),
-            sellingPoint: sellingPoint.trim(),
-            targetCountry,
-            referenceImage,
-            cutoutImage: cutoutImage || undefined,
-            styleContext,
-            sceneIndex: task.sceneIdx,
-            customSceneDesc: customScene.trim() || undefined,
-            platformOverride: task.platformKey,
-            campaignTheme: campaignTheme.trim(),
-            marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
-            mood: moodObj?.desc || moodObj?.label || mood,
-            urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
-            cta: cta.trim() || '立即购买',
-            brandDNA,
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
+      let success = false;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 120000);
+          const res = await fetch('/api/adforge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandName: brandName.trim(),
+              sellingPoint: sellingPoint.trim(),
+              targetCountry,
+              referenceImage,
+              cutoutImage: cutoutImage || undefined,
+              styleContext,
+              sceneIndex: task.sceneIdx,
+              customSceneDesc: customScene.trim() || undefined,
+              platformOverride: task.platformKey,
+              campaignTheme: campaignTheme.trim(),
+              marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
+              mood: moodObj?.desc || moodObj?.label || mood,
+              urgency: urgencyObj?.desc || urgencyObj?.label || urgency,
+              cta: cta.trim() || '立即购买',
+              brandDNA,
+            }),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          console.error('Generate failed for', task.scene.label, err.error);
-        } else {
-          const data = await res.json();
-          const imageUrl = data.image?.url;
-          if (imageUrl) {
-            results.push({
-              url: imageUrl,
-              platform: task.platformKey,
-              scene: customScene.trim() || task.scene.label,
-              ratio: data.image.ratio || task.scene.aspectRatio,
-              refineHistory: [],
-            });
-            setGeneratedImages([...results]);
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            console.error(`Generate failed (${attempt}/2) for ${task.scene.label}:`, err.error);
+            if (attempt === 2) {
+              failedTasks.push(`${task.scene.label}: ${err.error || '生成失败'}`);
+              failed++;
+            }
+          } else {
+            const data = await res.json();
+            const imageUrl = data.image?.url;
+            if (imageUrl) {
+              results.push({
+                url: imageUrl,
+                platform: task.platformKey,
+                scene: customScene.trim() || task.scene.label,
+                ratio: data.image.ratio || task.scene.aspectRatio,
+                refineHistory: [],
+              });
+              setGeneratedImages([...results]);
+              success = true;
+              break; // 成功，退出重试
+            }
+          }
+        } catch (err) {
+          console.error(`Generate error (${attempt}/2):`, err);
+          if (attempt === 2) {
+            failedTasks.push(`${task.scene.label}: ${err?.toString?.() || '请求异常'}`);
+            failed++;
           }
         }
-      } catch (err) {
-        console.error('Generate error:', err);
       }
       done++;
       setProgress(Math.round((done / total) * 100));
     }
 
     setProgress(100);
+    if (results.length === 0) {
+      setError(`全部 ${total} 张素材生成失败${failedTasks.length ? '：\n' + failedTasks.join('\n') : ''}`);
+    } else if (failed > 0) {
+      setError(`${results.length} 张成功，${failed} 张失败（${failedTasks.join('、')}）`);
+    }
     setStep('result');
   };
 
@@ -506,38 +526,47 @@ export default function GeneratePage() {
 
     setGeneratedImages(prev => prev.map((p, i) => i === idx ? { ...p, refining: true } : p));
 
-    try {
-      const res = await fetch('/api/adforge/refine', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceImageUrl: img.url,
-          instruction: instruction.trim(),
-          aspectRatio: img.ratio,
-          brandDNA,
-          brandName: brandName.trim(),
-          scene: img.scene,
-          platform: img.platform,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.image?.url) {
-        setError(json.error || '再编辑失败');
-        setGeneratedImages(prev => prev.map((p, i) => i === idx ? { ...p, refining: false } : p));
-        return;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetch('/api/adforge/refine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sourceImageUrl: img.url,
+            instruction: instruction.trim(),
+            aspectRatio: img.ratio,
+            brandDNA,
+            brandName: brandName.trim(),
+            scene: img.scene,
+            platform: img.platform,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.image?.url) {
+          if (attempt === 2) {
+            setError(json.error || '再编辑失败（已重试）');
+            setGeneratedImages(prev => prev.map((p, i) => i === idx ? { ...p, refining: false } : p));
+            return;
+          }
+          continue; // 重试
+        }
+        setGeneratedImages(prev => prev.map((p, i) => i === idx ? {
+          ...p,
+          refining: false,
+          url: json.image.url,
+          refineHistory: [...(p.refineHistory || []), { url: img.url, instruction }],
+        } : p));
+        setToast({ msg: 'v' + ((img.refineHistory?.length || 0) + 1) + ' → v' + ((img.refineHistory?.length || 0) + 2), sub: instruction.trim().slice(0, 30) });
+        setTimeout(() => setToast(null), 3000);
+        return; // 成功
+      } catch (err) {
+        console.error(`refine err (${attempt}/2)`, err);
+        if (attempt === 2) {
+          setError('再编辑出错（已重试）');
+          setGeneratedImages(prev => prev.map((p, i) => i === idx ? { ...p, refining: false } : p));
+          return;
+        }
       }
-      setGeneratedImages(prev => prev.map((p, i) => i === idx ? {
-        ...p,
-        refining: false,
-        url: json.image.url,
-        refineHistory: [...(p.refineHistory || []), { url: img.url, instruction }],
-      } : p));
-      setToast({ msg: 'v' + ((img.refineHistory?.length || 0) + 1) + ' → v' + ((img.refineHistory?.length || 0) + 2), sub: instruction.trim().slice(0, 30) });
-      setTimeout(() => setToast(null), 3000);
-    } catch (err) {
-      console.error('refine err', err);
-      setError('再编辑出错');
-      setGeneratedImages(prev => prev.map((p, i) => i === idx ? { ...p, refining: false } : p));
     }
   };
 
