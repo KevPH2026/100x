@@ -169,3 +169,19 @@ model ModelHealthLog {
   @@index([ok])
   @@map("model_health_logs")
 }
+
+// ─── 用户反馈 ────────────────────────────────────────────
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?  // 注册用户ID，未登录为null
+  ip        String?  // 未登录用户IP（截断/24）
+  page      String   // 当前页面路径
+  content   String   // 反馈内容
+  contact   String?  // 用户留的联系方式（可选）
+  status    String   @default("pending") // pending / resolved / dismissed
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("feedbacks")
+}
