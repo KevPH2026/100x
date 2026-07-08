@@ -159,11 +159,13 @@ function DashboardTab() {
 
   if (loading) return <Loading />;
 
+  const sr = stats?.successRate ?? 100;
+  const srGradient = sr >= 85 ? 'from-emerald-600 to-teal-700' : sr >= 70 ? 'from-amber-500 to-orange-600' : 'from-red-500 to-rose-600';
   const gradCards = [
     { label: '总用户', value: stats?.totalUsers ?? 0, sub: `今日活跃 ${(stats?.activeUsers ?? 0)}`, gradient: 'from-violet-600 to-purple-700' },
     { label: '今日生成', value: stats?.todayGenLogs ?? 0, sub: `总素材 ${stats?.totalAssets ?? 0}`, gradient: 'from-blue-600 to-indigo-700' },
     { label: '今日访客', value: stats?.todayGuests ?? 0, sub: `累计 ${stats?.totalGuests ?? 0}`, gradient: 'from-emerald-600 to-teal-700' },
-    { label: '成功率', value: `${stats?.successRate ?? 100}%`, sub: `近7天共 ${stats?.totalGen ?? 0} 次`, gradient: 'from-amber-500 to-orange-600' },
+    { label: '成功率', value: `${sr}%`, sub: `近7天共 ${stats?.totalGen ?? 0} 次`, gradient: srGradient },
   ];
 
   // 模型状态
@@ -209,7 +211,7 @@ function DashboardTab() {
                   <span className="text-xs text-zinc-300 truncate">{name}</span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-[10px] font-mono ${m.lastLatency < 2000 ? 'text-emerald-400' : m.lastLatency < 8000 ? 'text-amber-400' : 'text-red-400'}`}>
+                  <span className={`text-[10px] font-mono ${m.lastLatency < 3000 ? 'text-emerald-400' : m.lastLatency < 15000 ? 'text-amber-400' : 'text-red-400'}`}>
                     {m.lastLatency < 1000 ? `${m.lastLatency}ms` : `${(m.lastLatency/1000).toFixed(1)}s`}
                   </span>
                   <span className="text-[10px] text-zinc-500">{m.ok}/{m.ok + m.fail}</span>
@@ -413,13 +415,11 @@ function UsersTab() {
                   <button onClick={() => toggleExpand(u.id)} className="text-zinc-500 hover:text-white shrink-0">
                     {expandedId === u.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
-                  <div className="flex-1 min-w-0 grid grid-cols-8 gap-2 items-center">
+                  <div className="flex-1 min-w-0 grid grid-cols-6 gap-2 items-center">
                     <div className="col-span-2 min-w-0">
                       <p className="text-sm text-white truncate">{u.email}</p>
                       <p className="text-[10px] text-zinc-500 truncate">{u.name || '—'}</p>
                     </div>
-                    <p className="text-xs text-zinc-400 truncate">{u.company || '—'}</p>
-                    <p className="text-xs text-zinc-400 truncate">{u.phone || '—'}</p>
                     <div className="text-right">
                       {editingId === u.id ? (
                         <input type="number" value={editQuota} onChange={e => setEditQuota(e.target.value)}
@@ -1504,15 +1504,23 @@ function SettingsTab() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 max-w-2xl">
         <div>
           <label className="text-xs text-zinc-500 mb-1 block">Novart API Key</label>
-          <p className="text-sm text-zinc-400 font-mono">{c.novartKey ? '••••••••' + String(c.novartKey).slice(-6) : '未配置'}</p>
+          <p className={`text-sm font-mono ${(c as any).novartConfigured ? 'text-emerald-400' : 'text-red-400'}`}>{(c as any).novartConfigured ? '✓ 已配置' : '✗ 未配置'}</p>
         </div>
         <div>
           <label className="text-xs text-zinc-500 mb-1 block">Novart Base URL</label>
           <p className="text-sm text-zinc-400 font-mono">{String(c.novartBaseUrl || '未配置')}</p>
         </div>
         <div>
-          <label className="text-xs text-zinc-500 mb-1 block">TokenRouter API Key</label>
-          <p className="text-sm text-zinc-400 font-mono">{(c as any).tokenrouterKey ? '••••••••' : '未配置'}</p>
+          <label className="text-xs text-zinc-500 mb-1 block">Novart 模型</label>
+          <p className="text-sm text-zinc-400 font-mono">{String(c.novartModel || '未配置')}</p>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-500 mb-1 block">MiniMax 模型</label>
+          <p className="text-sm text-zinc-400 font-mono">{String(c.minimaxModel || '未配置')}</p>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-500 mb-1 block">图片Provider</label>
+          <p className="text-sm text-zinc-400 font-mono">{String(c.imageProvider || 'minimax')}</p>
         </div>
         <div className="pt-2 border-t border-zinc-800">
           <p className="text-[10px] text-zinc-600">以上Key通过 .env.local 或 Vercel 环境变量设置，此处仅展示状态。</p>

@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get('host') || '';
-  const is100x = host.startsWith('100x.pics') || host.startsWith('www.100x.pics');
+
+  // www → non-www 301 redirect
+  if (host.startsWith('www.')) {
+    const url = req.nextUrl.clone();
+    url.protocol = 'https:';
+    url.host = host.replace('www.', '');
+    return NextResponse.redirect(url, 301);
+  }
+
+  const is100x = host.startsWith('100x.pics');
 
   if (is100x) {
     const url = req.nextUrl.clone();
