@@ -312,10 +312,6 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
   editFields?: Record<string, string>;
   brandInfo?: { brandName?: string; industry?: string; sellingPoints?: string[]; targetAudience?: string; description?: string };
 }> {
-  // Fast path: URL detection is regex-based and reliable
-  const url = extractUrl(message);
-  if (url) return { intent: 'analyze_url', extractedUrl: url };
-
   // Fast path for simple cases
   if (/^(你好|hi|hello|hey|嗨|yo|哈喽)[\s!！.。?？]*$/i.test(message.trim())) {
     return { intent: 'greet' };
@@ -324,18 +320,54 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
     return { intent: 'confirm' };
   }
 
+  // URL detection — but don't short-circuit if message also contains
+  // generation instructions (scene/style/composition/etc.)
+  const url = extractUrl(message);
+  const hasGenerateKeywords = /(场景|背景|氛围|风格|构图|参数|生成|素材|图|广告|scene|style|composition|generate|ad|image|aspect|ratio)/i.test(message);
+  if (url && !hasGenerateKeywords) {
+    // Pure URL share → analyze it
+    return { intent: 'analyze_url', extractedUrl: url };
+  }
+
   // Use LLM for complex intent detection
   const prompts = await loadAgentPrompts();
-  const systemPrompt = prompts.intentDetection + `\n\n- Has brand profile already: ${hasBrand}\n- If user mentions a brand name + product/service info, use "brand_info" intent.`;
+  const systemPrompt = prompts.intentDetection + `\n\n- Has brand profile already: ${hasBrand}\n- If user mentions a brand name + product/service info, use "brand_info" intent.\n- If user provides a URL but ALSO gives detailed generation instructions (scene/style/composition/mood), use "generate" intent and extract the generation details from the message.`;
 
   try {
     const llmResponse = await callLLM(systemPrompt, message);
     const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    // If LLM detected generate but message also has URL, attach it
+    if (url && parsed.intent === 'generate') {
+      parsed.extractedUrl = url;
+    }
+    // If LLM returned brand_info or generate, carry the URL along
+    if (url && !parsed.extractedUrl) {
+      parsed.extractedUrl = url;
+    }
+    return parsed;
   } catch {
-    // Fallback to regex-based detection
-    if (/(生成|做|来|搞|给我|create|generate|make).*(素材|图|广告|material|ad|image)/i.test(message)) return { intent: 'generate', generateDetails: { count: 3 } };
+    // Strong fallback: detect generate intent even when LLM fails
+    const hasGenWord = /生成|做|来|搞|给我|create|generate|make|帮我/i.test(message);
+    const hasSceneDetail = /场景|背景|氛围|风格|构图|参数|scene|style|composition|aspect/i.test(message);
+    if (hasGenWord && hasSceneDetail) {
+      // Extract brand from message or URL
+      let brandHint = '';
+      const urlMatch = message.match(/https?:\/\/(?:www\.)?([^\/\s]+)/i);
+      if (urlMatch) brandHint = urlMatch[1].replace(/\.(com|net|shop|store|io|co|cn)$/i, '');
+      // Also try Chinese brand extraction
+      const brandCn = message.match(/(?:品牌|品牌名|叫)[：:是为]\s*(\S{2,15})/);
+      if (brandCn) brandHint = brandCn[1];
+      return {
+        intent: 'generate',
+        generateDetails: { count: 1, desc: message.slice(0, 300) },
+        extractedUrl: url || undefined,
+        brandInfo: { brandName: brandHint || undefined, description: message.slice(0, 300) },
+      };
+    }
+    if (/(生成|做|来|搞|给我|create|generate|make).*(素材|图|广告|material|ad|image)/i.test(message)) return { intent: 'generate', generateDetails: { count: 3 }, extractedUrl: url || undefined };
     if (/(不是|不对|修改|改成|换成|edit|change|fix)/i.test(message)) return { intent: 'edit' };
+    if (url) return { intent: 'analyze_url', extractedUrl: url };
     return { intent: 'chat' };
   }
 }
@@ -349,14 +381,8 @@ async function buildScenesWithLLM(
   const prompts = await loadAgentPrompts();
   const systemPrompt = prompts.sceneBuilder;
 
-  const brandContext = `Brand: ${brand.brandName}
-Industry: ${brand.industry || 'Unknown'}
-Style: ${brand.style || 'Modern'}
-Target Audience: ${brand.targetAudience || 'General'}
-Selling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}
-Tone: ${brand.toneOfVoice || 'Professional'}
-Mood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}
-User Request: ${message}`;
+  const brandContext = `Brand: ${brand.brandName}\nIndustry: ${brand.industry || 'Unknown'}\nStyle: ${brand.style || 'Modern'}
+Target Audience: ${brand.targetAudience || 'General'}\nSelling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}\nTone: ${brand.toneOfVoice || 'Professional'}\nMood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}\nUser Request: ${message}`;
 
   try {
     const llmResponse = await callLLM(systemPrompt, brandContext);
@@ -365,7 +391,36 @@ User Request: ${message}`;
     if (Array.isArray(scenes) && scenes.length > 0) return scenes.slice(0, 6);
   } catch { /* fallback below */ }
 
-  // Fallback scenes
+  // Smart fallback: parse user's detailed scene description from message
+  const sceneText = message.match(/场景[：:]\s*(.+)/)?.[1] || '';
+  const bgText = message.match(/背景[：:]\s*(.+)/)?.[1] || '';
+  const moodText = message.match(/氛围[：:]\s*(.+)/)?.[1] || '';
+  const styleText = message.match(/风格[：:]\s*(.+)/)?.[1] || '';
+  const compText = message.match(/构图[：:]\s*(.+)/)?.[1] || '';
+  const ratioMatch = message.match(/参数[：:]\s*(\d+:\d+)/)?.[1];
+  const subjectText = message.match(/(?:主体|产品)[：:]\s*(.+)/)?.[1] || brand.brandName;
+
+  // Build a rich English prompt from user's Chinese description
+  const richDesc = [
+    subjectText ? `Product: ${subjectText}` : '',
+    sceneText ? `Setting: ${sceneText}` : '',
+    bgText ? `Background: ${bgText}` : '',
+    moodText ? `Mood: ${moodText}` : '',
+    styleText ? `Style: ${styleText}` : '',
+    compText ? `Composition: ${compText}` : '',
+  ].filter(Boolean).join('. ');
+
+  if (richDesc.length > 20) {
+    const aspectRatio = ratioMatch || '3:2';
+    return [{
+      label: 'Custom Scene',
+      desc: richDesc,
+      aspectRatio,
+      platform: 'Custom',
+    }];
+  }
+
+  // Generic fallback scenes
   return [
     { label: 'IG Feed', desc: `Product hero shot for ${brand.brandName}, clean background with brand-appropriate colors, professional studio lighting, modern composition`, aspectRatio: '1:1', platform: 'IG Feed' },
     { label: 'Facebook Ad', desc: `Lifestyle product showcase for ${brand.brandName}, aspirational setting, natural lighting, scroll-stopping visual`, aspectRatio: '16:9', platform: 'Facebook' },
@@ -504,7 +559,61 @@ export async function POST(req: NextRequest) {
 
       case 'generate': {
         const brand = currentBrand;
+
+        // If no brand, try to extract from intentResult.brandInfo or message itself
         if (!brand?.brandName) {
+          // Priority 1: intentResult already has brandInfo (from LLM or regex fallback)
+          const info = intentResult.brandInfo;
+          let brandProfile: BrandProfile | null = null;
+
+          if (info?.brandName) {
+            brandProfile = {
+              brandName: info.brandName,
+              sellingPoints: info.sellingPoints?.filter(Boolean) || [],
+              description: info.description || intentResult.generateDetails?.desc || message.slice(0, 200),
+              targetAudience: info.targetAudience,
+            };
+          } else {
+            // Priority 2: extract brand from URL domain
+            const urlMatch = message.match(/https?:\/\/(?:www\.)?([^\/\s]+)/i);
+            if (urlMatch) {
+              const domain = urlMatch[1].replace(/\.(com|net|shop|store|io|co|cn|site|online)$/i, '');
+              brandProfile = {
+                brandName: domain,
+                description: message.slice(0, 200),
+              };
+            }
+          }
+
+          if (brandProfile) {
+            // Auto-save if logged in
+            if (userId) {
+              await prisma.userBrand.upsert({
+                where: { userId_brandName: { userId, brandName: brandProfile.brandName } },
+                update: { lastUsedAt: new Date(), notes: brandProfile.description },
+                create: { userId, brandName: brandProfile.brandName, notes: brandProfile.description },
+              }).catch(() => {});
+            }
+            // Build scenes directly from user's detailed description
+            const scenes = await buildScenesWithLLM(message, brandProfile);
+            const sp = brandProfile.sellingPoints?.[0] || brandProfile.description?.slice(0, 60) || brandProfile.brandName;
+            response = {
+              reply: `好的！根据你的描述，我为 **${brandProfile.brandName}** 生成 **${scenes.length} 张**素材：\n\n` +
+                scenes.map((s, i) => `${i + 1}. ${s.label}（${s.aspectRatio}）`).join('\n') +
+                `\n\n正在生成中，每张约30秒...`,
+              action: 'generate',
+              generateParams: {
+                brandName: brandProfile.brandName,
+                sellingPoint: intentResult.generateDetails?.desc || sp,
+                scenes,
+                targetCountry: 'US',
+                mood: 'modern and clean',
+              },
+              brandProfile,
+            };
+            break;
+          }
+
           response = {
             reply: '我需要先了解你的品牌才能生成素材。告诉我你的**品牌网站**或者**品牌名+核心卖点**？',
             action: 'ask_clarify',

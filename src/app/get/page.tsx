@@ -710,9 +710,12 @@ export default function GeneratePage() {
                   </button>
                 </div>
                 {scrapeError && (
-                  <p className="mt-2 text-xs text-red-400 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> {scrapeError}
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-xs text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {scrapeError}
+                    </p>
+                    <p className="text-[11px] text-white/30 mt-1">该网站限制了访问，不影响使用 — 请在下方手动填写品牌信息和卖点，或上传参考图即可。</p>
+                  </div>
                 )}
               </div>
 
