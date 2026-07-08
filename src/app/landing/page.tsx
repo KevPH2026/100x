@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Check, Zap, Crown } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Check, Zap, Crown, MessageSquare, X } from 'lucide-react';
 
 type Lang = 'zh' | 'en';
 
@@ -405,11 +405,32 @@ function CarouselGrid({ series }: { series: DemoSeries }) {
 export default function LandingPage() {
   const [lang, setLang] = useState<Lang>('en');
   const [activeSeries, setActiveSeries] = useState(0);
+  const [fbOpen, setFbOpen] = useState(false);
+  const [fbContent, setFbContent] = useState('');
+  const [fbContact, setFbContact] = useState('');
+  const [fbSending, setFbSending] = useState(false);
+  const [fbSent, setFbSent] = useState(false);
   const t = T[lang];
   const total = DEMO_SERIES.length;
 
   const next = useCallback(() => setActiveSeries(i => (i + 1) % total), [total]);
   const prev = useCallback(() => setActiveSeries(i => (i - 1 + total) % total), [total]);
+
+  const submitFb = async () => {
+    if (!fbContent.trim() || fbSending) return;
+    setFbSending(true);
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: fbContent.trim(), page: '/landing', contact: fbContact.trim() || undefined }),
+      });
+      if (res.ok) {
+        setFbSent(true);
+        setTimeout(() => { setFbOpen(false); setFbContent(''); setFbContact(''); setFbSent(false); }, 1500);
+      }
+    } catch {}
+    setFbSending(false);
+  };
 
   useEffect(() => {
     const timer = setInterval(next, 5000);
@@ -817,12 +838,48 @@ export default function LandingPage() {
             <span className="text-xs text-zinc-600">100pics.today</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://dtclab.org/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTCLab</a>
+            <button onClick={() => setFbOpen(!fbOpen)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1">
+              <MessageSquare className="w-3 h-3" />反馈
+            </button>
+            <a href="https://dtclab.org/" target="__blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTCLab</a>
             <a href="https://dtc.doctor/" target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">DTC Doctor</a>
             <p className="text-xs text-zinc-700">{t.footer}</p>
           </div>
         </div>
       </footer>
+
+      {/* ── 反馈浮窗 ── */}
+      {fbOpen && (
+        <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl overflow-hidden"
+          style={{ background: 'rgba(15,15,20,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.5)' }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-xs font-bold text-white/70">反馈问题</span>
+            <button onClick={() => setFbOpen(false)}><X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" /></button>
+          </div>
+          <div className="p-3 space-y-2">
+            {fbSent ? (
+              <div className="text-center py-4">
+                <Check className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                <p className="text-xs text-emerald-400">感谢反馈！</p>
+              </div>
+            ) : (
+              <>
+                <textarea value={fbContent} onChange={e => setFbContent(e.target.value)} placeholder="描述问题或建议..." rows={3}
+                  className="w-full px-3 py-2 rounded-lg text-xs text-white placeholder:text-white/25 outline-none resize-none"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <input value={fbContact} onChange={e => setFbContact(e.target.value)} placeholder="联系方式（可选）"
+                  className="w-full px-3 py-2 rounded-lg text-xs text-white placeholder:text-white/25 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <button onClick={submitFb} disabled={!fbContent.trim() || fbSending}
+                  className="w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-30 transition-all"
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+                  {fbSending ? '提交中...' : '提交反馈'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

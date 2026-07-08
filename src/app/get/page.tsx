@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Fragment } from 'react';
-import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors, ArrowRight, Bell } from 'lucide-react';
+import { Sparkles, Zap, Check, Download, AlertCircle, ImagePlus, X, Loader2, Link2, Globe, ChevronDown, User, LogOut, LayoutDashboard, Wand2, Palette, Target, Heart, Clock, MousePointerClick, RefreshCw, Scissors, ArrowRight, Bell, MessageSquare } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
 function UserMenu() {
@@ -681,6 +681,8 @@ export default function GeneratePage() {
                   </div>
                 )}
               </div>
+              {/* 用户反馈 */}
+              <FeedbackButton />
               <UserMenu />
             </div>
           </div>
@@ -1400,5 +1402,80 @@ function ImageCard({ img, index, brandName, onRefine }: {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── 用户反馈浮窗 ──────────────────────────────────────────
+function FeedbackButton() {
+  const [open, setOpen] = useState(false);
+  const [content, setContent] = useState('');
+  const [contact, setContact] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSubmit = async () => {
+    if (!content.trim() || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: content.trim(),
+          page: window.location.pathname,
+          contact: contact.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        setSent(true);
+        setTimeout(() => { setOpen(false); setContent(''); setContact(''); setSent(false); }, 1500);
+      }
+    } catch {}
+    setSending(false);
+  };
+
+  return (
+    <>
+      <button onClick={() => setOpen(!open)} className="p-1.5 rounded-lg hover:bg-white/5 transition-all" title="反馈问题">
+        <MessageSquare className={`w-4 h-4 transition-all ${open ? 'text-violet-400' : 'text-white/40'}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-72 rounded-xl overflow-hidden z-50"
+          style={{ background: 'rgba(15,15,20,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.5)' }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-xs font-bold text-white/70">反馈问题</span>
+            <button onClick={() => setOpen(false)}><X className="w-3.5 h-3.5 text-white/30 hover:text-white/60" /></button>
+          </div>
+          <div className="p-3 space-y-2">
+            {sent ? (
+              <div className="text-center py-4">
+                <Check className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                <p className="text-xs text-emerald-400">感谢反馈！我们会尽快处理</p>
+              </div>
+            ) : (
+              <>
+                <textarea ref={textareaRef} value={content} onChange={e => setContent(e.target.value)}
+                  placeholder="描述你遇到的问题或建议..."
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg text-xs text-white placeholder:text-white/25 outline-none resize-none"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <input value={contact} onChange={e => setContact(e.target.value)}
+                  placeholder="联系方式（可选，方便回复你）"
+                  className="w-full px-3 py-2 rounded-lg text-xs text-white placeholder:text-white/25 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <button onClick={handleSubmit} disabled={!content.trim() || sending}
+                  className="w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-30 transition-all"
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+                  {sending ? '提交中...' : '提交反馈'}
+                </button>
+              </>
+            )}
+            <p className="text-[9px] text-white/15 text-center">当前页面: {typeof window !== 'undefined' ? window.location.pathname : '/'}</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
