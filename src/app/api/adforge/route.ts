@@ -378,6 +378,18 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
         }}).catch(() => {});
       }
     } catch {}
+
+    // ── 记录模型健康日志 ──
+    try {
+      await prisma.modelHealthLog.create({ data: {
+        name: providerUsed || 'unknown-image',
+        ok: false,
+        latencyMs,
+        detail: result.err?.slice(0, 200) || 'unknown',
+        type: 'Image',
+      }}).catch(() => {});
+    } catch {}
+
     return NextResponse.json({ error: `生成失败: ${result.err || 'unknown'}`, provider: providerUsed }, { status: 500 });
   }
   console.log(`[ADFORGE] Done ${Date.now()-t0}ms via ${providerUsed}, ${result.buf.length}b`);
@@ -455,6 +467,18 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
       success: true,
       latencyMs: Date.now() - t0,
       workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel, imageTimeoutMs: rt.imageTimeoutMs } : undefined,
+    }}).catch(() => {});
+  } catch {}
+
+  // ── 记录模型健康日志（成功）──
+  const finalLatency = Date.now() - t0;
+  try {
+    await prisma.modelHealthLog.create({ data: {
+      name: providerUsed || 'unknown-image',
+      ok: true,
+      latencyMs: finalLatency,
+      detail: `${brandName} ${scene.label || ''}`.slice(0, 200),
+      type: 'Image',
     }}).catch(() => {});
   } catch {}
 
