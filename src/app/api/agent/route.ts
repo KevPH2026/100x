@@ -51,6 +51,7 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
   const maxTokens = rt?.llmMaxTokens || 2000;
   const timeoutMs = rt?.llmTimeoutMs || 30000;
 
+  const t0 = Date.now();
   const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
     method: 'POST',
     headers: {
@@ -68,14 +69,26 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
     }),
     signal: AbortSignal.timeout(timeoutMs),
   });
+  const latencyMs = Date.now() - t0;
 
   if (!res.ok) {
     const err = await res.text().catch(() => '');
+    // 记录LLM失败
+    prisma.modelHealthLog.create({ data: {
+      name: model, ok: false, latencyMs,
+      detail: `API ${res.status}: ${err.slice(0, 150)}`, type: 'LLM',
+    }}).catch(() => {});
     throw new Error(`LLM API ${res.status}: ${err.slice(0, 200)}`);
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  const content = data.choices?.[0]?.message?.content || '';
+  // 记录LLM成功
+  prisma.modelHealthLog.create({ data: {
+    name: model, ok: true, latencyMs,
+    detail: content.slice(0, 150), type: 'LLM',
+  }}).catch(() => {});
+  return content;
 }
 
 // ─── Default Prompts ────────────────────────────────────────────────────────
