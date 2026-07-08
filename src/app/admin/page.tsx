@@ -1455,6 +1455,92 @@ function ModelHealthTab() {
           </div>
         </div>
       )}
+
+      {/* ── 历史监测记录 ── */}
+      <HealthHistory />
+    </div>
+  );
+}
+
+// ── 历史健康记录 ──
+function HealthHistory() {
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/admin/model-health?page=1&limit=100');
+        const data = await res.json();
+        setHistory(data.logs || []);
+      } catch {}
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <div className="py-8 text-center text-xs text-zinc-600">加载历史记录...</div>;
+  if (!history.length) return null;
+
+  // 按服务名分组，取最近20条算成功率+平均延迟
+  const grouped: Record<string, any[]> = {};
+  for (const h of history) {
+    if (!grouped[h.name]) grouped[h.name] = [];
+    grouped[h.name].push(h);
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-white">历史监测（近 {history.length} 条）</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Object.entries(grouped).map(([name, logs]) => {
+          const total = logs.length;
+          const ok = logs.filter(l => l.ok).length;
+          const rate = ((ok / total) * 100).toFixed(1);
+          const avgLatency = Math.round(logs.reduce((s: number, l: any) => s + l.latencyMs, 0) / total);
+          const lastOk = logs[0]?.ok;
+          const lastLatency = logs[0]?.latencyMs || 0;
+
+          return (
+            <div key={name} className="rounded-xl bg-zinc-900 border border-zinc-800 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-white truncate mr-2">{name}</h4>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${lastOk ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                  {lastOk ? '正常' : '异常'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[10px] text-zinc-500">成功率</p>
+                  <p className={`text-sm font-bold ${parseFloat(rate) >= 95 ? 'text-emerald-400' : parseFloat(rate) >= 80 ? 'text-amber-400' : 'text-red-400'}`}>{rate}%</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500">平均延迟</p>
+                  <p className="text-sm font-bold text-zinc-300">{avgLatency < 1000 ? `${avgLatency}ms` : `${(avgLatency/1000).toFixed(1)}s`}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-zinc-500">检测次数</p>
+                  <p className="text-sm font-bold text-zinc-300">{total}</p>
+                </div>
+              </div>
+              {/* 最近10条延迟mini chart */}
+              <div className="flex items-end gap-px h-6">
+                {logs.slice(0, 10).reverse().map((l: any, i: number) => {
+                  const maxL = Math.max(...logs.slice(0, 10).map((x: any) => x.latencyMs), 1);
+                  const h = Math.max(2, (l.latencyMs / maxL) * 100);
+                  return (
+                    <div key={i} className="flex-1 rounded-t"
+                      style={{ height: `${h}%`, background: l.ok ? '#10b981' : '#ef4444' }}
+                      title={`${new Date(l.createdAt).toLocaleString('zh-CN')}: ${l.latencyMs}ms ${l.ok ? '✓' : '✕'}`}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-[9px] text-zinc-600 text-right">最近10次 ←</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

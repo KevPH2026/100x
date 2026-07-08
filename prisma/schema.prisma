@@ -7,74 +7,74 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  password      String
-  name          String?
-  company       String?                 // 公司名称
-  phone         String?                 // 联系电话
-  inviteCodeId  String?  @unique
-  quotaTotal    Int      @default(10)   // 免费用户默认10张
-  quotaUsed     Int      @default(0)   // 已用张数
-  disabled      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String?
+  company      String? // 公司名称
+  phone        String? // 联系电话
+  inviteCodeId String?  @unique
+  quotaTotal   Int      @default(10) // 免费用户默认10张
+  quotaUsed    Int      @default(0) // 已用张数
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  inviteCode    InviteCode? @relation(fields: [inviteCodeId], references: [id])
-  assets        Asset[]
-  brands        UserBrand[]
-  memories      UserMemory[]
+  inviteCode InviteCode?  @relation(fields: [inviteCodeId], references: [id])
+  assets     Asset[]
+  brands     UserBrand[]
+  memories   UserMemory[]
 
   @@map("users")
 }
 
 model InviteCode {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  quota       Int       @default(100)   // 每个用户可生成张数
-  maxUses     Int       @default(50)    // 最大使用次数（多少个用户可用）
-  currentUses Int       @default(0)     // 已使用次数
-  note        String?                   // Admin 备注
-  createdAt   DateTime  @default(now())
+  id          String   @id @default(cuid())
+  code        String   @unique
+  quota       Int      @default(100) // 每个用户可生成张数
+  maxUses     Int      @default(50) // 最大使用次数（多少个用户可用）
+  currentUses Int      @default(0) // 已使用次数
+  note        String? // Admin 备注
+  createdAt   DateTime @default(now())
 
-  users       User[]
+  users User[]
 
   @@map("invite_codes")
 }
 
 model Asset {
-  id           String   @id @default(cuid())
-  userId       String
-  imageUrl     String   // Vercel Blob URL
-  brandName    String
-  platform     String   // IG Feed / TikTok / FB etc
-  sceneLabel   String
-  aspectRatio  String
-  headline     String?  // 关联文案主标题
-  sourceUrl    String?  // 来源产品页
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  imageUrl    String // Vercel Blob URL
+  brandName   String
+  platform    String // IG Feed / TikTok / FB etc
+  sceneLabel  String
+  aspectRatio String
+  headline    String? // 关联文案主标题
+  sourceUrl   String? // 来源产品页
+  createdAt   DateTime @default(now())
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("assets")
 }
 
 // ─── 用户品牌档案 ──────────────────────────────────────────
 model UserBrand {
-  id          String   @id @default(cuid())
-  userId      String
-  brandName   String
-  industry    String?           // 行业：美妆/3C/服饰/食品...
-  style       String?           // 品牌风格：极简/奢华/活泼/科技...
-  targetAudience String?        // 目标人群
-  colorPalette Json?            // 品牌色板 [{hex, name}]
-  logoUrl     String?           // 品牌logo
-  notes       String?           // 用户备注
-  usageCount  Int      @default(1)  // 生成次数（自动累加）
-  lastUsedAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  brandName      String
+  industry       String? // 行业：美妆/3C/服饰/食品...
+  style          String? // 品牌风格：极简/奢华/活泼/科技...
+  targetAudience String? // 目标人群
+  colorPalette   Json? // 品牌色板 [{hex, name}]
+  logoUrl        String? // 品牌logo
+  notes          String? // 用户备注
+  usageCount     Int      @default(1) // 生成次数（自动累加）
+  lastUsedAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, brandName])
   @@map("user_brands")
@@ -82,17 +82,17 @@ model UserBrand {
 
 // ─── 用户偏好记忆 ──────────────────────────────────────────
 model UserMemory {
-  id        String   @id @default(cuid())
-  userId    String
-  category  String              // preference / pattern / insight / feedback
-  key       String              // 如: default_platform / color_preference / scene_preference
-  value     String              // 值（自由文本或JSON字符串）
-  source    String?             // auto / manual — 自动学习还是用户手动设置
-  confidence Float   @default(1.0)  // 置信度 0-1
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  category   String // preference / pattern / insight / feedback
+  key        String // 如: default_platform / color_preference / scene_preference
+  value      String // 值（自由文本或JSON字符串）
+  source     String? // auto / manual — 自动学习还是用户手动设置
+  confidence Float    @default(1.0) // 置信度 0-1
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category, key])
   @@map("user_memories")
@@ -108,48 +108,64 @@ model AppConfig {
 
 // ─── 游客使用记录 ──────────────────────────────────────────
 model GuestLog {
-  id          String   @id @default(cuid())
-  ip          String?                // IP地址（截断 /24）
-  ua          String?                // User-Agent
-  fingerprint String?                // 浏览器指纹（如可用）
-  brandName   String?                // 输入的品牌名
-  sellingPoint String?               // 输入的卖点
-  platform    String?                // IG Feed / TikTok / FB
-  aspectRatio String?                // 1:1, 9:16...
-  imageUrl    String?                // 生成的图片URL
-  provider    String?                // novart / tokenrouter
-  success     Boolean  @default(true)
-  error       String?                // 失败原因
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  ip           String? // IP地址（截断 /24）
+  ua           String? // User-Agent
+  fingerprint  String? // 浏览器指纹（如可用）
+  brandName    String? // 输入的品牌名
+  sellingPoint String? // 输入的卖点
+  platform     String? // IG Feed / TikTok / FB
+  aspectRatio  String? // 1:1, 9:16...
+  imageUrl     String? // 生成的图片URL
+  provider     String? // novart / tokenrouter
+  success      Boolean  @default(true)
+  error        String? // 失败原因
+  createdAt    DateTime @default(now())
 
   @@map("guest_logs")
 }
 
 // ─── 完整生成日志（注册用户+游客通用）─────────────────────
 model GenerationLog {
-  id          String   @id @default(cuid())
-  userId      String?                // 注册用户ID（null=游客）
-  ip          String?                // IP（截断 /24）
-  brandName   String                 // 品牌名
-  prompt      String                 // 实际发给模型的完整prompt
-  sceneLabel  String?                // 场景标签
-  sceneDesc   String?                // 场景描述（用户提供的）
-  aspectRatio String?                // 宽高比
-  platform    String?                // 投放平台
-  style       String?                // 风格
-  mood        String?                // 氛围
-  targetCountry String?             // 目标国家
-  imageModel  String?                // 使用的生图模型
-  imageUrl    String?                // 生成的图片URL
-  imagePrompt String?                // 用户的原始输入消息
-  workflow    Json?                  // 完整工作流快照 { llmModel, imageProvider, novartImageModel, ... }
-  success     Boolean  @default(true)
-  error       String?                // 失败原因
-  latencyMs   Int?                   // 耗时(毫秒)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String? // 注册用户ID（null=游客）
+  ip            String? // IP（截断 /24）
+  brandName     String // 品牌名
+  prompt        String // 实际发给模型的完整prompt
+  sceneLabel    String? // 场景标签
+  sceneDesc     String? // 场景描述（用户提供的）
+  aspectRatio   String? // 宽高比
+  platform      String? // 投放平台
+  style         String? // 风格
+  mood          String? // 氛围
+  targetCountry String? // 目标国家
+  imageModel    String? // 使用的生图模型
+  imageUrl      String? // 生成的图片URL
+  imagePrompt   String? // 用户的原始输入消息
+  workflow      Json? // 完整工作流快照 { llmModel, imageProvider, novartImageModel, ... }
+  success       Boolean  @default(true)
+  error         String? // 失败原因
+  latencyMs     Int? // 耗时(毫秒)
+  createdAt     DateTime @default(now())
 
   @@index([userId])
   @@index([brandName])
   @@index([createdAt])
   @@map("generation_logs")
+}
+
+// ─── 模型健康监测日志 ────────────────────────────────────────
+model ModelHealthLog {
+  id        String   @id @default(cuid())
+  name      String   // 服务名：MiniMax-Text-01 / nova-image-pro / Neon / Blob / NextAuth
+  ok        Boolean  // 本次探测是否正常
+  latencyMs Int      // 响应延迟(ms)
+  detail    String?  // 成功时返回摘要，失败时返回错误信息
+  type      String   // LLM / Image / Database / Storage / Auth
+  createdAt DateTime @default(now())
+
+  @@index([name])
+  @@index([createdAt])
+  @@index([ok])
+  @@map("model_health_logs")
 }

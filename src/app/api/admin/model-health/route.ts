@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 function verifyAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('admin_token')?.value;
@@ -25,9 +26,11 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       if (data.base_resp?.status_code) throw new Error(`API ${data.base_resp.status_code}: ${data.base_resp.status_msg}`);
       if (!data.choices?.[0]?.message?.content) throw new Error('Empty response');
-      results.push({ name: 'MiniMax-Text-01 (LLM)', ok: true, latencyMs: Date.now() - t0, detail: data.choices[0].message.content.slice(0, 50), type: 'LLM', usage: '意图识别 + 场景生成' });
+      const latency = Date.now() - t0;
+      results.push({ name: 'MiniMax-Text-01 (LLM)', ok: true, latencyMs: latency, detail: data.choices[0].message.content.slice(0, 50), type: 'LLM', usage: '意图识别 + 场景生成' });
     } catch (e: any) {
-      results.push({ name: 'MiniMax-Text-01 (LLM)', ok: false, latencyMs: Date.now() - t0, detail: e.message || String(e), type: 'LLM', usage: '意图识别 + 场景生成' });
+      const latency = Date.now() - t0;
+      results.push({ name: 'MiniMax-Text-01 (LLM)', ok: false, latencyMs: latency, detail: e.message || String(e), type: 'LLM', usage: '意图识别 + 场景生成' });
     }
   } else {
     results.push({ name: 'MiniMax-Text-01 (LLM)', ok: false, latencyMs: 0, detail: 'MINIMAX_API_KEY 未配置', type: 'LLM', usage: '意图识别 + 场景生成' });
@@ -52,9 +55,11 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       if (data.error) throw new Error(`${data.error.code}: ${data.error.message}`);
       if (!data.candidates?.[0]?.content?.parts?.some((p: any) => p.inlineData || p.fileData)) throw new Error('No image in response');
-      results.push({ name: `${novartModel} (Novart)`, ok: true, latencyMs: Date.now() - t0, detail: 'Image generated OK', type: 'Image', usage: '广告素材生成（主）' });
+      const latency = Date.now() - t0;
+      results.push({ name: `${novartModel} (Novart)`, ok: true, latencyMs: latency, detail: 'Image generated OK', type: 'Image', usage: '广告素材生成（主）' });
     } catch (e: any) {
-      results.push({ name: `${novartModel} (Novart)`, ok: false, latencyMs: Date.now() - t0, detail: e.message || String(e), type: 'Image', usage: '广告素材生成（主）' });
+      const latency = Date.now() - t0;
+      results.push({ name: `${novartModel} (Novart)`, ok: false, latencyMs: latency, detail: e.message || String(e), type: 'Image', usage: '广告素材生成（主）' });
     }
   } else {
     results.push({ name: `${novartModel} (Novart)`, ok: false, latencyMs: 0, detail: 'NOVART_API_KEY 未配置', type: 'Image', usage: '广告素材生成（主）' });
@@ -63,7 +68,6 @@ export async function POST(req: NextRequest) {
   // ── 3. Neon DB ──
   const t3 = Date.now();
   try {
-    const { prisma } = await import('@/lib/prisma');
     const count = await prisma.user.count();
     results.push({ name: 'Neon PostgreSQL', ok: true, latencyMs: Date.now() - t3, detail: `${count} users in DB`, type: 'Database', usage: '用户/素材/日志存储' });
   } catch (e: any) {
@@ -93,5 +97,43 @@ export async function POST(req: NextRequest) {
     results.push({ name: 'NextAuth', ok: false, latencyMs: Date.now() - t5, detail: e.message || String(e), type: 'Auth', usage: '用户登录/注册' });
   }
 
+  // ── 写入健康日志 ──
+  try {
+    await prisma.modelHealthLog.createMany({
+      data: results.map(r => ({
+        name: r.name,
+        ok: r.ok,
+        latencyMs: r.latencyMs,
+        detail: (r.detail || '').slice(0, 500),
+        type: r.type,
+      })),
+    });
+  } catch (e) {
+    console.error('[model-health] write log failed:', e);
+  }
+
   return NextResponse.json({ checkedAt: new Date().toISOString(), results });
+}
+
+// GET: 读取健康日志（分页）
+export async function GET(req: NextRequest) {
+  if (!verifyAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const url = new URL(req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+  const limit = Math.min(100, parseInt(url.searchParams.get('limit') || '50'));
+  const name = url.searchParams.get('name'); // 按服务名过滤
+
+  const where = name ? { name } : {};
+  const [logs, total] = await Promise.all([
+    prisma.modelHealthLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.modelHealthLog.count({ where }),
+  ]);
+
+  return NextResponse.json({ logs, total, page, totalPages: Math.ceil(total / limit) });
 }
