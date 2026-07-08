@@ -5,7 +5,8 @@ import {
   BarChart3, Users, Image as ImageIcon, Ticket, Settings,
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
-  Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText
+  Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText,
+  Activity
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ const TABS = [
   { key: 'assets', label: '素材库', icon: ImageIcon },
   { key: 'invites', label: '邀请码', icon: Ticket },
   { key: 'workflows', label: '工作流', icon: GitBranch },
+  { key: 'health', label: '模型监测', icon: Activity },
   { key: 'settings', label: '配置', icon: Settings },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -136,6 +138,7 @@ export default function AdminPage() {
           {tab === 'assets' && <AssetsTab />}
           {tab === 'invites' && <InvitesTab />}
           {tab === 'workflows' && <WorkflowsTab />}
+          {tab === 'health' && <ModelHealthTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -1337,6 +1340,121 @@ function Pagination({ page, totalPages, setPage }: { page: number; totalPages: n
       <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="p-2 text-zinc-500 hover:text-white disabled:opacity-30 transition"><ChevronLeft className="w-4 h-4" /></button>
       <span className="text-xs text-zinc-400">{page} / {totalPages}</span>
       <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="p-2 text-zinc-500 hover:text-white disabled:opacity-30 transition"><ChevronRight className="w-4 h-4" /></button>
+    </div>
+  );
+}
+
+// ─── Model Health Monitor ──────────────────────────────────────────
+function ModelHealthTab() {
+  const [results, setResults] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+
+  const runCheck = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/model-health', { method: 'POST' });
+      const data = await res.json();
+      setResults(data.results || []);
+      setCheckedAt(data.checkedAt);
+    } catch (e) {
+      setResults([]);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { runCheck(); }, [runCheck]);
+
+  const typeColors: Record<string, string> = {
+    LLM: 'from-blue-500/20 to-blue-600/10 border-blue-500/20',
+    Image: 'from-purple-500/20 to-purple-600/10 border-purple-500/20',
+    Database: 'from-green-500/20 to-green-600/10 border-green-500/20',
+    Storage: 'from-amber-500/20 to-amber-600/10 border-amber-500/20',
+    Auth: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/20',
+    Vision: 'from-rose-500/20 to-rose-600/10 border-rose-500/20',
+  };
+
+  const typeLabels: Record<string, string> = {
+    LLM: '🧠 大语言模型',
+    Image: '🎨 图像生成',
+    Database: '🗄️ 数据库',
+    Storage: '📦 存储',
+    Auth: '🔐 认证',
+    Vision: '👁️ 视觉',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">模型监测</h2>
+          <p className="text-xs text-zinc-500 mt-1">实时探测各服务可用性 · 每次点击重新检测</p>
+        </div>
+        <button onClick={runCheck} disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40"
+          style={{ background: loading ? 'rgba(139,92,246,0.1)' : 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? '检测中...' : '重新检测'}
+        </button>
+      </div>
+      {checkedAt && <p className="text-[10px] text-zinc-600">上次检测：{new Date(checkedAt).toLocaleString('zh-CN')}</p>}
+
+      {!results && loading && (
+        <div className="flex items-center justify-center py-16">
+          <RefreshCw className="w-8 h-8 text-violet-500 animate-spin" />
+          <span className="ml-3 text-zinc-400">正在探测各服务（30秒内）...</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {results?.map((r: any, i: number) => (
+          <div key={i} className={`rounded-xl overflow-hidden border bg-gradient-to-br ${typeColors[r.type] || 'from-zinc-500/10 to-zinc-600/5 border-zinc-700/30'}`}>
+            <div className="px-5 py-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-white">{r.name}</h3>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">{typeLabels[r.type] || r.type}</p>
+                </div>
+                <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${r.ok ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
+                  {r.ok ? '● 正常' : '✕ 异常'}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-500">响应延迟</span>
+                  <span className={`text-xs font-mono font-bold ${r.latencyMs < 2000 ? 'text-emerald-400' : r.latencyMs < 8000 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {r.latencyMs < 1000 ? `${r.latencyMs}ms` : `${(r.latencyMs/1000).toFixed(1)}s`}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${r.latencyMs < 2000 ? 'bg-emerald-500' : r.latencyMs < 8000 ? 'bg-amber-500' : 'bg-red-500'}`}
+                    style={{ width: `${Math.min(100, (r.latencyMs / 15000) * 100)}%` }} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-500">用途</span>
+                  <span className="text-[10px] text-zinc-400">{r.usage || '—'}</span>
+                </div>
+                {r.detail && (
+                  <div className="mt-1 px-2 py-1 rounded bg-black/20">
+                    <span className="text-[9px] text-zinc-500 font-mono break-all">{String(r.detail).slice(0, 120)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {results && results.length > 0 && (
+        <div className="px-5 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+          <div className="flex items-center gap-6 text-xs">
+            <span className="text-zinc-500">总计：{results.length} 个服务</span>
+            <span className="text-emerald-400">{results.filter(r => r.ok).length} 正常</span>
+            {results.some(r => !r.ok) && <span className="text-red-400">{results.filter(r => !r.ok).length} 异常</span>}
+            <span className="text-zinc-500">平均延迟：{Math.round(results.reduce((s: number, r: any) => s + r.latencyMs, 0) / results.length)}ms</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
