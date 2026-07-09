@@ -30,6 +30,7 @@ interface ChatMessage {
   timestamp: number;
   suggestions?: string[];
   imageAttachment?: string; // base64 data URL or blob URL
+  recommendations?: { audience: string; scene: string; reason: string; platform: string; ratio: string }[]; // brainstorm
 }
 
 interface GeneratedImage {
@@ -335,6 +336,7 @@ export default function ChatPage() {
         content: data.reply || '抱歉，我无法理解。请再试一次。',
         timestamp: Date.now(),
         suggestions: data.suggestions,
+        recommendations: data.recommendations,
       };
       setMessages(prev => [...prev, agentMsg]);
 
@@ -347,7 +349,17 @@ export default function ChatPage() {
         if (window.innerWidth < 768) setPanelOpen(true);
       }
 
-      // Handle generate action
+      // Handle iterate action — re-generate with feedback
+      if (data.action === 'iterate' && data.generateParams) {
+        await handleGenerate(data.generateParams);
+      }
+
+      // Handle batch action — same as generate
+      if (data.action === 'batch' && data.generateParams) {
+        await handleGenerate(data.generateParams);
+      }
+
+      // Handle brainstorm action — show recommendations in message
       if (data.action === 'generate' && data.generateParams) {
         await handleGenerate(data.generateParams);
       }
@@ -602,6 +614,63 @@ export default function ChatPage() {
                       ))}
                     </div>
                   </div>
+                  {/* Brainstorm Recommendations */}
+                  {msg.recommendations && msg.recommendations.length > 0 && (
+                    <div className="space-y-2 mt-3 ml-9">
+                      <div className="text-xs text-zinc-500 mb-1.5">💡 推荐场景（点击生成）</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {msg.recommendations.map((rec, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (!brand?.brandName || sending) return;
+                              handleGenerate({
+                                brandName: brand.brandName,
+                                sellingPoint: brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName,
+                                scenes: [{ label: `${rec.platform} - ${rec.audience}`, desc: rec.scene, aspectRatio: rec.ratio, platform: rec.platform }],
+                                referenceImage: brand.logoUrl,
+                                targetCountry: 'US',
+                                mood: 'modern and clean',
+                              });
+                            }}
+                            disabled={sending}
+                            className="text-left p-3 rounded-xl border border-violet-800/40 bg-violet-950/20 hover:bg-violet-900/30 hover:border-violet-700/60 transition-all group"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-violet-300">{rec.platform}</span>
+                              <span className="text-[10px] text-zinc-500">{rec.ratio}</span>
+                            </div>
+                            <div className="text-xs text-zinc-300 mb-1">{rec.audience}</div>
+                            <div className="text-[10px] text-zinc-500 line-clamp-2">{rec.reason}</div>
+                            <div className="mt-1.5 text-[10px] text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">点击生成 →</div>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!brand?.brandName || sending) return;
+                          const allScenes = msg.recommendations!.map(rec => ({
+                            label: `${rec.platform} - ${rec.audience}`,
+                            desc: rec.scene,
+                            aspectRatio: rec.ratio,
+                            platform: rec.platform,
+                          }));
+                          handleGenerate({
+                            brandName: brand.brandName,
+                            sellingPoint: brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName,
+                            scenes: allScenes,
+                            referenceImage: brand.logoUrl,
+                            targetCountry: 'US',
+                            mood: 'modern and clean',
+                          });
+                        }}
+                        disabled={sending}
+                        className="text-xs text-violet-400 hover:text-violet-300 transition-colors ml-auto flex items-center gap-1"
+                      >
+                        全部生成 <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                   {/* Suggestions */}
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2 ml-9">
