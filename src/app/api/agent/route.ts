@@ -454,7 +454,7 @@ async function generateChatResponse(message: string, brand: BrandProfile | null)
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, brandProfile: clientBrand, conversationState } = await req.json();
+    const { message, brandProfile: clientBrand, conversationState, referenceImage } = await req.json();
 
     if (!message?.trim()) {
       return NextResponse.json({ reply: '请告诉我你的需求 😊', action: 'ask_clarify' });
@@ -639,8 +639,8 @@ export async function POST(req: NextRequest) {
         const scenes = await buildScenesWithLLM(message, brand);
         const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
 
-        // Determine reference image: prefer brand logoUrl
-        const refImg = brand.logoUrl || undefined;
+        // Determine reference image: prefer user-uploaded image, then brand logoUrl
+        const refImg = referenceImage || brand.logoUrl || undefined;
 
         response = {
           reply: `好的！为 **${brand.brandName}** 生成 **${scenes.length} 张**素材：\n\n` +

@@ -29,6 +29,7 @@ interface ChatMessage {
   content: string;
   timestamp: number;
   suggestions?: string[];
+  imageAttachment?: string; // base64 data URL or blob URL
 }
 
 interface GeneratedImage {
@@ -241,8 +242,10 @@ export default function ChatPage() {
   const [generating, setGenerating] = useState(false);
   const [rightTab, setRightTab] = useState<'brand' | 'images'>('brand');
   const [panelOpen, setPanelOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null); // base64 data URL
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -297,16 +300,19 @@ export default function ChatPage() {
   }, [session?.user]);
 
   const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || sending) return;
+    if (!text.trim() && !pendingImage) return;
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
-      content: text.trim(),
+      content: text.trim() || '(上传了参考图)',
       timestamp: Date.now(),
+      imageAttachment: pendingImage || undefined,
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    const attachedImage = pendingImage;
+    setPendingImage(null);
     setSending(true);
 
     try {
@@ -314,9 +320,10 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text.trim(),
+          message: text.trim() || '(上传了参考图)',
           brandProfile: brand,
           conversationState: { brandConfirmed },
+          referenceImage: attachedImage || undefined,
         }),
       });
 
@@ -359,7 +366,7 @@ export default function ChatPage() {
     } finally {
       setSending(false);
     }
-  }, [brand, brandConfirmed, sending]);
+  }, [brand, brandConfirmed, sending, pendingImage]);
 
   const handleGenerate = useCallback(async (params: {
     brandName: string;
@@ -461,6 +468,49 @@ export default function ChatPage() {
     sendMessage(text);
   }, [sendMessage]);
 
+  // Handle image upload
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Validate: max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      setMessages(prev => [...prev, {
+        id: `err-${Date.now()}`, role: 'system',
+        content: '⚠️ 图片不能超过10MB', timestamp: Date.now(),
+      }]);
+      return;
+    }
+    // Compress if needed (>1MB): resize to max 1024px
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        if (file.size <= 1024 * 1024 || img.width <= 1024) {
+          // No resize needed
+          setPendingImage(ev.target?.result as string);
+        } else {
+          // Resize to max 1024px on longest side
+          const maxDim = 1024;
+          const scale = maxDim / Math.max(img.width, img.height);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setPendingImage(canvas.toDataURL('image/jpeg', 0.85));
+        }
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  }, []);
+
+  const removePendingImage = useCallback(() => {
+    setPendingImage(null);
+  }, []);
+
   // Badge count for panel toggle
   const badgeCount = (brand ? 1 : 0) + images.filter(i => !i.loading && !i.error).length;
 
@@ -530,6 +580,14 @@ export default function ChatPage() {
                           ? 'bg-transparent text-zinc-500 text-xs'
                           : 'bg-zinc-800 text-zinc-200'
                     }`}>
+                      {/* Image attachment */}
+                      {msg.imageAttachment && (
+                        <img
+                          src={msg.imageAttachment}
+                          alt="参考图"
+                          className="rounded-lg max-h-40 mb-2 object-cover"
+                        />
+                      )}
                       {/* Simple markdown: bold + code + newlines */}
                       {msg.content.split('\n').map((line, i) => (
                         <p key={i} className={i > 0 ? 'mt-1.5' : ''}>
@@ -586,7 +644,36 @@ export default function ChatPage() {
 
           {/* Input */}
           <div className="shrink-0 border-t border-zinc-800 p-3 md:p-4 pb-[env(safe-area-inset-bottom,0px)] md:pb-4">
+            {/* Pending image preview */}
+            {pendingImage && (
+              <div className="max-w-3xl mx-auto mb-2">
+                <div className="relative inline-block">
+                  <img src={pendingImage} alt="待发送" className="h-16 rounded-lg object-cover border border-zinc-700" />
+                  <button
+                    onClick={removePendingImage}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 border border-zinc-600 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-red-600/80 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-end gap-2 max-w-3xl mx-auto">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending || generating}
+                className="shrink-0 w-10 h-10 rounded-xl border border-zinc-800 hover:border-zinc-600 text-zinc-500 hover:text-zinc-300 disabled:opacity-50 flex items-center justify-center transition-colors"
+                title="上传参考图"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={input}
@@ -599,7 +686,7 @@ export default function ChatPage() {
               />
               <button
                 onClick={() => sendMessage(input)}
-                disabled={!input.trim() || sending || generating}
+                disabled={(!input.trim() && !pendingImage) || sending || generating}
                 className="shrink-0 w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 active:bg-violet-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white flex items-center justify-center transition-colors"
               >
                 <Send className="w-4 h-4" />
