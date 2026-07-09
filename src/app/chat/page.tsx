@@ -6,6 +6,7 @@ import {
   Send, Sparkles, Globe, Edit3, Check, X, Image as ImageIcon,
   Loader2, Download, LayoutDashboard, LogOut, User, ChevronRight,
   ExternalLink, Palette, Target, Tag, Zap, PanelRightOpen, PanelRightClose, XCircle,
+  Lightbulb, Layers, RefreshCw, Package, TreePine, Link2, ArrowRight,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ interface ChatMessage {
   suggestions?: string[];
   imageAttachment?: string; // base64 data URL or blob URL
   recommendations?: { audience: string; scene: string; reason: string; platform: string; ratio: string }[]; // brainstorm
+  quickActions?: { icon: string; label: string; prompt: string }[]; // quick entry cards
 }
 
 interface GeneratedImage {
@@ -241,6 +243,8 @@ export default function ChatPage() {
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [waitingReply, setWaitingReply] = useState(false);
+  const [generatingScenes, setGeneratingScenes] = useState<{ label: string; status: 'pending' | 'generating' | 'done' | 'error' }[]>([]);
   const [rightTab, setRightTab] = useState<'brand' | 'images'>('brand');
   const [panelOpen, setPanelOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null); // base64 data URL
@@ -288,12 +292,16 @@ export default function ChatPage() {
           id: 'init',
           role: 'agent',
           content: session?.user
-            ? `你好！我是 **100x AI素材助手** 🎨\n\n告诉我你的**品牌网站**，我来帮你快速建立品牌档案，然后一键生成广告素材。\n\n直接发网址就行，比如 \`glowskin.com\``
-            : '你好！我是 **100x AI素材助手** 🎨\n\n先登录，然后告诉我你的品牌网站，我来帮你快速生成广告素材。',
+            ? `你好！我是 **100x AI素材助手** 🎨\n\n告诉我你的品牌，我来帮你生成各平台广告素材。\n\n你可以直接发**品牌网站**，或者从下面的入口开始 👇`
+            : '你好！我是 **100x AI素材助手** 🎨\n\n登录后即可开始生成广告素材。点击右上角登录 →',
           timestamp: Date.now(),
-          suggestions: session?.user
-            ? ['分析我的品牌网站', '直接告诉我品牌名和卖点']
-            : [],
+          quickActions: session?.user ? [
+            { icon: 'url', label: '分析品牌网站', prompt: '分析我的品牌网站 ' },
+            { icon: 'brainstorm', label: '创意脑暴', prompt: '帮我想想适合我产品的广告场景' },
+            { icon: 'describe', label: '自然语言指定', prompt: '做一张' },
+            { icon: 'batch', label: '全平台素材', prompt: '生成全平台一套' },
+            { icon: 'seasonal', label: '节日主题', prompt: '来张圣诞主题的' },
+          ] : [],
         }]);
       }, 300);
       return () => clearTimeout(timer);
@@ -315,6 +323,7 @@ export default function ChatPage() {
     const attachedImage = pendingImage;
     setPendingImage(null);
     setSending(true);
+    setWaitingReply(true);
 
     try {
       const res = await fetch('/api/agent', {
@@ -377,6 +386,7 @@ export default function ChatPage() {
       }]);
     } finally {
       setSending(false);
+      setWaitingReply(false);
     }
   }, [brand, brandConfirmed, sending, pendingImage]);
 
@@ -392,6 +402,9 @@ export default function ChatPage() {
     setRightTab('images');
     if (window.innerWidth < 768) setPanelOpen(true);
 
+    // Track per-scene progress
+    setGeneratingScenes(params.scenes.map(s => ({ label: s.label || s.platform || '', status: 'pending' as const })));
+
     // 再编辑时：优先用上一版生成的图片做参考（保持产品一致性）
     const lastGeneratedUrl = images.find(i => i.url && !i.error)?.url;
     const refImage = lastGeneratedUrl || params.referenceImage;
@@ -404,6 +417,7 @@ export default function ChatPage() {
     // Generate one by one
     for (let i = 0; i < params.scenes.length; i++) {
       const scene = params.scenes[i];
+      setGeneratingScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'generating' as const } : s));
       try {
         const res = await fetch('/api/adforge', {
           method: 'POST',
@@ -431,14 +445,17 @@ export default function ChatPage() {
             ? { ...img, loading: false, url: data.image?.url || '', platform: data.image?.platform || scene.label, error: !data.image?.url }
             : img
         ));
+        setGeneratingScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'done' as const } : s));
       } catch (e) {
         setImages(prev => prev.map((img, idx) =>
           idx === i ? { ...img, loading: false, error: true } : img
         ));
+        setGeneratingScenes(prev => prev.map((s, idx) => idx === i ? { ...s, status: 'error' as const } : s));
       }
     }
 
     setGenerating(false);
+    setGeneratingScenes([]);
 
     setMessages(prev => [...prev, {
       id: `gen-${Date.now()}`,
@@ -671,8 +688,39 @@ export default function ChatPage() {
                       </button>
                     </div>
                   )}
+                  {/* Quick Actions (welcome cards) */}
+                  {msg.quickActions && msg.quickActions.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 ml-0 md:ml-9">
+                      {msg.quickActions.map((qa, i) => {
+                        const IconMap: Record<string, any> = { url: Globe, brainstorm: Lightbulb, describe: Palette, batch: Layers, seasonal: TreePine };
+                        const IconComp = IconMap[qa.icon] || Zap;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (sending) return;
+                              if (qa.icon === 'describe') {
+                                setInput(qa.prompt);
+                                inputRef.current?.focus();
+                              } else {
+                                sendMessage(qa.prompt);
+                              }
+                            }}
+                            disabled={sending}
+                            className="text-left p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80 hover:border-zinc-600 transition-all group"
+                          >
+                            <IconComp className="w-4 h-4 text-violet-400 mb-1.5" />
+                            <div className="text-xs font-medium text-zinc-200 group-hover:text-white">{qa.label}</div>
+                            <div className="mt-1 flex items-center gap-0.5 text-[10px] text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                              开始 <ArrowRight className="w-2.5 h-2.5" />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   {/* Suggestions */}
-                  {msg.suggestions && msg.suggestions.length > 0 && (
+                  {msg.suggestions && msg.suggestions.length > 0 && !msg.quickActions?.length && (
                     <div className="flex flex-wrap gap-1.5 mt-2 ml-9">
                       {msg.suggestions.map((s, i) => (
                         <button
@@ -690,16 +738,52 @@ export default function ChatPage() {
               </div>
             ))}
 
-            {/* Sending indicator */}
-            {sending && (
-              <div className="flex items-center gap-2 ml-9">
-                <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
-                <span className="text-xs text-zinc-500">思考中...</span>
+            {/* Typing indicator */}
+            {waitingReply && (
+              <div className="flex items-start gap-2.5">
+                <div className="shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div className="bg-zinc-800 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Generating indicator */}
-            {generating && (
+            {/* Generating progress */}
+            {generatingScenes.length > 0 && (
+              <div className="ml-9 space-y-1.5">
+                <div className="text-xs text-zinc-500 flex items-center gap-1.5">
+                  <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
+                  素材生成中
+                </div>
+                {generatingScenes.map((scene, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      scene.status === 'done' ? 'bg-green-400' :
+                      scene.status === 'generating' ? 'bg-violet-400 animate-pulse' :
+                      scene.status === 'error' ? 'bg-red-400' :
+                      'bg-zinc-600'
+                    }`} />
+                    <span className={scene.status === 'generating' ? 'text-violet-300' : 'text-zinc-500'}>
+                      {scene.label}
+                    </span>
+                    {scene.status === 'generating' && <span className="text-zinc-600">...</span>}
+                    {scene.status === 'done' && <span className="text-green-500">✓</span>}
+                    {scene.status === 'error' && <span className="text-red-400">✗</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Legacy generating indicator (fallback) */}
+
+            {/* Generating indicator - images panel fallback */}
+            {generating && generatingScenes.length === 0 && (
               <div className="flex items-center gap-2 ml-9">
                 <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
                 <span className="text-xs text-zinc-500">
@@ -748,7 +832,7 @@ export default function ChatPage() {
                 value={input}
                 onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
-                placeholder="输入品牌网站、需求、或指令..."
+                placeholder="发品牌网站、说需求、或选上方入口..."
                 disabled={sending || generating}
                 rows={1}
                 className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 md:px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-zinc-600 resize-none disabled:opacity-50"
