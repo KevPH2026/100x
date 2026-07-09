@@ -80,18 +80,34 @@ interface BrandProfile {
   logoUrl?: string;
 }
 
+interface Scene {
+  label: string;
+  desc: string;
+  aspectRatio: string;
+  platform?: string;
+}
+
+interface BrainstormRecommendation {
+  audience: string;
+  scene: string;
+  reason: string;
+  platform: string;
+  ratio: string;
+}
+
 interface AgentResponse {
   reply: string;
-  action?: 'brand_analyzed' | 'generate' | 'brand_saved' | 'ask_clarify' | 'greet';
+  action?: 'brand_analyzed' | 'generate' | 'brand_saved' | 'ask_clarify' | 'greet' | 'brainstorm' | 'iterate' | 'batch' | 'seasonal';
   brandProfile?: BrandProfile;
   generateParams?: {
     brandName: string;
     sellingPoint: string;
-    scenes: { label: string; desc: string; aspectRatio: string; platform?: string }[];
+    scenes: Scene[];
     referenceImage?: string;
     targetCountry?: string;
     mood?: string;
   };
+  recommendations?: BrainstormRecommendation[];
   suggestions?: string[];
 }
 
@@ -199,10 +215,12 @@ You MUST respond with valid JSON only, no markdown, no explanation, just the JSO
 
 Respond with JSON only:
 {
-  "intent": "generate" | "edit" | "clarify" | "chat" | "brand_info",
+  "intent": "generate" | "edit" | "clarify" | "chat" | "brand_info" | "brainstorm" | "iterate" | "batch" | "seasonal",
   "generateDetails": { "count": number, "platforms": ["ig"|"fb"|"tiktok"|"pinterest"|"google"|"youtube"|"all"], "desc": "custom description or null" },
-  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value or null" },
-  "brandInfo": { "brandName": "string or null", "industry": "string or null", "sellingPoints": ["array of strings or empty"], "targetAudience": "string or null", "description": "string or null" }
+  "editFields": { "industry": "new value" or null, "style": "new value" or null, "targetAudience": "new value" or null, "sellingPoint": "new value" or null },
+  "brandInfo": { "brandName": "string or null", "industry": "string or null", "sellingPoints": ["array of strings or empty"], "targetAudience": "string or null", "description": "string or null" },
+  "iterateFeedback": "user's modification feedback or null",
+  "seasonTheme": "holiday/season keyword or null"
 }
 
 Rules:
@@ -210,7 +228,11 @@ Rules:
 - "generate": user wants to create ad images. Extract count, platforms, any custom description.
 - "edit": user wants to modify brand profile. Extract which fields to change.
 - "clarify": user is asking a question or needs more info.
-- "chat": general conversation or doesn't fit other categories.`,
+- "chat": general conversation or doesn't fit other categories.
+- "brainstorm": user wants creative suggestions, scene recommendations, doesn't know how to choose. Keywords: 帮我想想、脑暴、创意建议、什么场景好、推荐、建议、idea、brainstorm、creative ideas.
+- "iterate": user gives modification feedback on already-generated results. Keywords: 换个背景、颜色不对、太暗了、风格不好、构图改、光线、色调、背景改、style wrong、too dark、change background、different color. Extract the feedback in "iterateFeedback".
+- "batch": user wants batch/all-platform/multi-variant generation. Keywords: 全平台、所有平台、一套、批量、变体、all platforms、batch、every platform、all sizes.
+- "seasonal": user mentions holidays, seasons, trending marketing themes. Keywords: 圣诞、双十一、情人节、summer、Black Friday、618、新年、春节、中秋、万圣、复活节、母亲节、父亲节、圣诞节、圣诞节促销、holiday season、Valentine、spring collection、summer sale、back to school. Extract the theme in "seasonTheme".`,
 
   sceneBuilder: `You are an advertising creative director. Generate scene descriptions for ad image generation.
 
@@ -251,6 +273,39 @@ ABSOLUTE RULES — VIOLATING ANY = FAILURE:
 7. Treat the reference product as a real physical object you are photographing — only the SURROUNDING SCENE changes.`,
 
   imageGenNoRef: `Create a stunning product advertisement image.`,
+
+  brainstormBuilder: `You are a senior creative strategist for DTC (Direct-to-Consumer) brands. Given a brand profile, recommend 4-6 optimal advertising creative scenarios.
+
+Analyze the brand's industry, style, target audience, selling points, and tone of voice. For each recommendation, explain WHY it works for this brand.
+
+Respond with JSON array only:
+[
+  {
+    "audience": "Target audience segment (Chinese, e.g. 25-35岁都市白领女性)",
+    "scene": "Detailed scene description for ad creative (Chinese, 2-3 sentences describing the visual scene)",
+    "reason": "Why this scene works for this brand and audience (Chinese, 1 sentence)",
+    "platform": "Best platform: IG Feed / IG Story / Facebook / TikTok / Pinterest / Google Ads / YouTube / 小红书",
+    "ratio": "Recommended aspect ratio: 1:1 / 16:9 / 9:16 / 2:3 / 3:2"
+  }
+]
+
+Generate 4-6 recommendations. Cover different audience segments and platforms. Prioritize scenes that align with the brand's visual style and selling points.`,
+
+  seasonalSceneBuilder: `You are an advertising creative director specializing in seasonal and holiday marketing campaigns.
+
+Given a brand profile and a seasonal/holiday theme, create specific scene descriptions for ad image generation. Each scene should incorporate the seasonal/holiday elements naturally while maintaining brand identity.
+
+Respond with JSON array only:
+[
+  {
+    "label": "Short label like 'IG Feed - Christmas Sale'",
+    "desc": "Detailed visual scene description in English (2-3 sentences). Include: seasonal elements (decorations, colors, props relevant to the holiday/season), product placement, setting/background, lighting, mood, composition. Make the seasonal theme feel natural, not forced.",
+    "aspectRatio": "One of: 1:1, 16:9, 9:16, 2:3, 3:2",
+    "platform": "Platform name: IG Feed, IG Story, Facebook, TikTok, Pinterest, Google Ads, YouTube"
+  }
+]
+
+Generate 3-6 scenes. Blend the seasonal/holiday theme with the brand's existing style. Each scene should feel authentic to the brand while celebrating the season.`,
 };
 
 let _cachedPrompts: typeof DEFAULT_PROMPTS | null = null;
@@ -268,6 +323,8 @@ async function loadAgentPrompts(): Promise<typeof DEFAULT_PROMPTS> {
         chatResponse: ap.chatResponse || DEFAULT_PROMPTS.chatResponse,
         imageGenWithRef: ap.imageGenWithRef || DEFAULT_PROMPTS.imageGenWithRef,
         imageGenNoRef: ap.imageGenNoRef || DEFAULT_PROMPTS.imageGenNoRef,
+        brainstormBuilder: (ap as any).brainstormBuilder || DEFAULT_PROMPTS.brainstormBuilder,
+        seasonalSceneBuilder: (ap as any).seasonalSceneBuilder || DEFAULT_PROMPTS.seasonalSceneBuilder,
       };
     } else {
       _cachedPrompts = { ...DEFAULT_PROMPTS };
@@ -410,11 +467,13 @@ async function detectIntentWithLLM(
   hasBrand: boolean,
   opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
 ): Promise<{
-  intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat' | 'brand_info';
+  intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat' | 'brand_info' | 'brainstorm' | 'iterate' | 'batch' | 'seasonal';
   extractedUrl?: string;
   generateDetails?: { count?: number; platforms?: string[]; desc?: string };
   editFields?: Record<string, string>;
   brandInfo?: { brandName?: string; industry?: string; sellingPoints?: string[]; targetAudience?: string; description?: string };
+  iterateFeedback?: string;
+  seasonTheme?: string;
 }> {
   // Fast path for simple cases
   if (/^(你好|hi|hello|hey|嗨|yo|哈喽)[\s!！.。?？]*$/i.test(message.trim())) {
@@ -431,6 +490,27 @@ async function detectIntentWithLLM(
   if (url && !hasGenerateKeywords) {
     // Pure URL share → analyze it
     return { intent: 'analyze_url', extractedUrl: url };
+  }
+
+  // Fast path: seasonal/holiday keywords
+  const seasonMatch = message.match(/(圣诞|双十一|双11|情人节|Christmas|Black Friday|黑五|618|新年|春节|中秋|万圣|复活节|母亲节|父亲节|holiday|Valentine|summer sale|back to school|spring collection|圣诞促销|节日促销)/i);
+  if (seasonMatch && !/^(确认|ok|yes|对|好的)/i.test(message.trim())) {
+    return { intent: 'seasonal', seasonTheme: seasonMatch[1], generateDetails: { count: 3, desc: message.slice(0, 300) } };
+  }
+
+  // Fast path: batch/all-platform keywords
+  if (/(全平台|所有平台|一套$|批量|变体|all platforms|batch|every platform|all sizes|全渠道|多平台)/i.test(message) && /(生成|做|来|搞|给我|create|generate|make|出)/i.test(message)) {
+    return { intent: 'batch', generateDetails: { count: 8, platforms: ['ig', 'fb', 'tiktok', 'pinterest', 'google', 'youtube'], desc: message.slice(0, 300) } };
+  }
+
+  // Fast path: brainstorm keywords
+  if (/(帮我想想|脑暴|创意建议|什么场景好|推荐.*场景|建议.*素材|idea|brainstorm|creative ideas|不知道.*什么|帮我推荐|有什么建议)/i.test(message)) {
+    return { intent: 'brainstorm' };
+  }
+
+  // Fast path: iterate feedback keywords
+  if (/(换个背景|颜色不对|太暗|太亮|风格不好|构图改|光线|色调|背景改|style wrong|too dark|too bright|change background|different color|换个.*风格|换.*颜色|改成|调整.*风格|不太对|不满意|效果不好|重新)/i.test(message) && hasBrand) {
+    return { intent: 'iterate', iterateFeedback: message.slice(0, 500) };
   }
 
   // Use LLM for complex intent detection
@@ -538,6 +618,109 @@ Target Audience: ${brand.targetAudience || 'General'}\nSelling Points: ${brand.s
     { label: 'IG Feed', desc: `Product hero shot for ${brand.brandName}, clean background with brand-appropriate colors, professional studio lighting, modern composition`, aspectRatio: '1:1', platform: 'IG Feed' },
     { label: 'Facebook Ad', desc: `Lifestyle product showcase for ${brand.brandName}, aspirational setting, natural lighting, scroll-stopping visual`, aspectRatio: '16:9', platform: 'Facebook' },
     { label: 'IG Story', desc: `Vertical immersive product experience for ${brand.brandName}, bold visual impact, trendy aesthetic`, aspectRatio: '9:16', platform: 'IG Story' },
+  ];
+}
+
+// ─── LLM Brainstorm Scene Builder ────────────────────────────────────────────
+
+async function brainstormScenesWithLLM(
+  brand: BrandProfile,
+  message: string,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
+): Promise<BrainstormRecommendation[]> {
+  const prompts = await loadAgentPrompts();
+  const systemPrompt = prompts.brainstormBuilder;
+
+  const brandContext = `Brand: ${brand.brandName}
+Industry: ${brand.industry || 'Unknown'}
+Style: ${brand.style || 'Modern'}
+Target Audience: ${brand.targetAudience || 'General'}
+Selling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}
+Tone: ${brand.toneOfVoice || 'Professional'}
+Keywords: ${brand.keywords?.join(', ') || 'N/A'}
+Mood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}
+User Request: ${message}`;
+
+  if (opts?.traceId) {
+    logInteraction(opts.traceId, 'prompt_build', {
+      userId: opts.userId, ip: opts.ip, brandName: brand.brandName,
+      llmPrompt: `system: ${systemPrompt.slice(0,3000)}\nuser: ${brandContext.slice(0,3000)}`,
+    });
+  }
+
+  try {
+    const llmResponse = await callLLM(systemPrompt, brandContext, { ...opts, step: 'llm_call' });
+    const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const recommendations = JSON.parse(cleaned);
+    if (Array.isArray(recommendations) && recommendations.length > 0) {
+      return recommendations.slice(0, 6).map((r: any) => ({
+        audience: r.audience || 'General consumers',
+        scene: r.scene || 'Product showcase',
+        reason: r.reason || 'Matches brand style',
+        platform: r.platform || 'IG Feed',
+        ratio: r.ratio || '1:1',
+      }));
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback recommendations
+  return [
+    { audience: brand.targetAudience || '25-35岁消费者', scene: `产品主视觉场景，突出${brand.brandName}的核心卖点`, reason: '直接展示产品最能转化', platform: 'IG Feed', ratio: '1:1' },
+    { audience: '年轻潮流人群', scene: `生活方式场景，将${brand.brandName}融入日常使用情境`, reason: '场景化内容增加共鸣和分享欲', platform: 'TikTok', ratio: '9:16' },
+    { audience: '高端消费人群', scene: `品质感场景，简洁高级的视觉风格展示${brand.brandName}`, reason: '匹配高端人群审美偏好', platform: 'Facebook', ratio: '16:9' },
+    { audience: '品牌探索者', scene: `故事性场景，传递${brand.brandName}的品牌理念和价值观`, reason: '情感连接提升品牌忠诚度', platform: 'Pinterest', ratio: '2:3' },
+  ];
+}
+
+// ─── LLM Seasonal Scene Builder ──────────────────────────────────────────────
+
+async function buildSeasonalScenesWithLLM(
+  brand: BrandProfile,
+  seasonTheme: string,
+  message: string,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
+): Promise<Scene[]> {
+  const prompts = await loadAgentPrompts();
+  const systemPrompt = prompts.seasonalSceneBuilder;
+
+  const brandContext = `Brand: ${brand.brandName}
+Industry: ${brand.industry || 'Unknown'}
+Style: ${brand.style || 'Modern'}
+Target Audience: ${brand.targetAudience || 'General'}
+Selling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}
+Tone: ${brand.toneOfVoice || 'Professional'}
+Mood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}
+
+Seasonal/Holiday Theme: ${seasonTheme}
+User Request: ${message}`;
+
+  if (opts?.traceId) {
+    logInteraction(opts.traceId, 'prompt_build', {
+      userId: opts.userId, ip: opts.ip, brandName: brand.brandName,
+      llmPrompt: `system: ${systemPrompt.slice(0,3000)}\nuser: ${brandContext.slice(0,3000)}`,
+      platform: seasonTheme,
+    });
+  }
+
+  try {
+    const llmResponse = await callLLM(systemPrompt, brandContext, { ...opts, step: 'llm_call' });
+    const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const scenes = JSON.parse(cleaned);
+    if (Array.isArray(scenes) && scenes.length > 0) {
+      return scenes.slice(0, 6).map((s: any) => ({
+        label: s.label || `${seasonTheme} - ${brand.brandName}`,
+        desc: s.desc || `${brand.brandName} seasonal campaign for ${seasonTheme}`,
+        aspectRatio: s.aspectRatio || '1:1',
+        platform: s.platform || 'IG Feed',
+      }));
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback seasonal scenes
+  return [
+    { label: `IG Feed - ${seasonTheme}`, desc: `${brand.brandName} product showcase with ${seasonTheme} themed decorations and atmosphere, warm seasonal lighting, festive mood`, aspectRatio: '1:1', platform: 'IG Feed' },
+    { label: `Facebook - ${seasonTheme} Sale`, desc: `${brand.brandName} promotional creative for ${seasonTheme}, featuring seasonal color palette and celebratory elements, lifestyle setting`, aspectRatio: '16:9', platform: 'Facebook' },
+    { label: `IG Story - ${seasonTheme}`, desc: `Immersive ${seasonTheme} themed vertical creative for ${brand.brandName}, bold visual impact with seasonal props and ambiance`, aspectRatio: '9:16', platform: 'IG Story' },
   ];
 }
 
@@ -707,6 +890,192 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      // ── Brainstorm: creative suggestions ──
+      case 'brainstorm': {
+        const brand = currentBrand;
+        if (!brand?.brandName) {
+          response = {
+            reply: '我需要先了解你的品牌，才能给出有针对性的创意建议。告诉我你的**品牌网站**或**品牌名+核心卖点**？',
+            action: 'ask_clarify',
+            suggestions: ['我的网站是 xxx.com', '品牌叫XX，核心产品是XX'],
+          };
+          break;
+        }
+
+        const recommendations = await brainstormScenesWithLLM(brand, message, { ...logOpts, brandName: brand.brandName });
+
+        const recList = recommendations.map((r, i) =>
+          `${i + 1}. 🎯 **${r.audience}** → ${r.platform}（${r.ratio}）\n   场景：${r.scene}\n   理由：${r.reason}`
+        ).join('\n\n');
+
+        response = {
+          reply: `💡 根据 **${brand.brandName}** 的品牌基因，我为你推荐 ${recommendations.length} 个创意方向：\n\n${recList}\n\n选择你喜欢的方向，我马上生成素材！`,
+          action: 'brainstorm',
+          recommendations,
+          brandProfile: brand,
+          suggestions: ['选第1个方向生成', '选第2个方向生成', '全部生成', '换一批建议'],
+        };
+        break;
+      }
+
+      // ── Iterate: modification feedback on generated results ──
+      case 'iterate': {
+        const brand = currentBrand;
+        if (!brand?.brandName) {
+          response = {
+            reply: '我需要品牌信息才能根据你的反馈调整。请先告诉我品牌信息。',
+            action: 'ask_clarify',
+          };
+          break;
+        }
+
+        const feedback = intentResult.iterateFeedback || message;
+        const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
+
+        // Call LLM to rewrite the prompt based on feedback
+        const iterateSystemPrompt = `You are an advertising creative director. The user has seen generated ad creatives and wants modifications.
+
+Given the brand profile and user feedback, rewrite the scene descriptions incorporating the requested changes. Keep what works, change what the user asked for.
+
+Respond with JSON array (same format as scene descriptions):
+[
+  {
+    "label": "Short label",
+    "desc": "Updated detailed visual scene description in English (2-3 sentences), incorporating the user's feedback",
+    "aspectRatio": "One of: 1:1, 16:9, 9:16, 2:3, 3:2",
+    "platform": "Platform name"
+  }
+]
+
+Generate 1-3 scenes based on the feedback.`;
+
+        const brandContext = `Brand: ${brand.brandName}
+Style: ${brand.style || 'Modern'}
+Selling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}
+Mood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}
+
+User Feedback: ${feedback}`;
+
+        let scenes: Scene[];
+        try {
+          const llmResponse = await callLLM(iterateSystemPrompt, brandContext, { ...logOpts, step: 'llm_call' });
+          const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+          scenes = JSON.parse(cleaned);
+          if (!Array.isArray(scenes) || scenes.length === 0) throw new Error('empty');
+          scenes = scenes.slice(0, 3);
+        } catch {
+          // Fallback: use feedback directly as description
+          scenes = [{
+            label: 'Revised Scene',
+            desc: `${brand.brandName} product showcase. ${feedback}. Brand style: ${brand.style || 'modern and clean'}. Professional studio lighting.`,
+            aspectRatio: '1:1',
+            platform: 'IG Feed',
+          }];
+        }
+
+        // Summarize the feedback
+        const feedbackSummary = feedback.length > 80 ? feedback.slice(0, 80) + '...' : feedback;
+
+        const refImg = referenceImage || brand.logoUrl || undefined;
+        response = {
+          reply: `好的，根据你的反馈「${feedbackSummary}」调整后，重新生成 **${scenes.length} 张**素材：\n\n` +
+            scenes.map((s, i) => `${i + 1}. ${s.label}（${s.aspectRatio}）`).join('\n') +
+            `\n\n正在生成中，每张约30秒...`,
+          action: 'iterate',
+          generateParams: {
+            brandName: brand.brandName,
+            sellingPoint,
+            scenes,
+            referenceImage: refImg,
+            targetCountry: 'US',
+            mood: (brand as any).moodKeywords?.join(', ') || 'modern and clean',
+          },
+          brandProfile: brand,
+        };
+        break;
+      }
+
+      // ── Batch: multi-platform batch generation ──
+      case 'batch': {
+        const brand = currentBrand;
+        if (!brand?.brandName) {
+          response = {
+            reply: '我需要先了解你的品牌才能批量生成素材。告诉我你的**品牌网站**或**品牌名+核心卖点**？',
+            action: 'ask_clarify',
+            suggestions: ['我的网站是 xxx.com', '品牌叫XX，核心产品是XX'],
+          };
+          break;
+        }
+
+        // All 8 platform presets
+        const allPlatformScenes: Scene[] = [
+          { label: 'IG Feed', desc: `${brand.brandName} product hero shot, clean brand-appropriate background, professional studio lighting, modern composition`, aspectRatio: '1:1', platform: 'IG Feed' },
+          { label: 'IG Story', desc: `${brand.brandName} vertical immersive experience, bold visual impact, trendy aesthetic, full-screen product showcase`, aspectRatio: '9:16', platform: 'IG Story' },
+          { label: 'Facebook Ad', desc: `${brand.brandName} lifestyle product showcase, aspirational setting, natural lighting, scroll-stopping horizontal visual`, aspectRatio: '16:9', platform: 'Facebook' },
+          { label: 'TikTok', desc: `${brand.brandName} vertical creative with dynamic composition, youthful energy, trending visual style, attention-grabbing`, aspectRatio: '9:16', platform: 'TikTok' },
+          { label: 'Pinterest', desc: `${brand.brandName} editorial style product photography, aspirational lifestyle, elegant composition, pin-worthy aesthetic`, aspectRatio: '2:3', platform: 'Pinterest' },
+          { label: 'Google Ads', desc: `${brand.brandName} product focused ad with clear messaging space, clean layout, high-conversion visual design`, aspectRatio: '16:9', platform: 'Google Ads' },
+          { label: 'YouTube Thumbnail', desc: `${brand.brandName} bold product visual for video thumbnail, high contrast, readable at small sizes, eye-catching`, aspectRatio: '16:9', platform: 'YouTube' },
+          { label: '小红书', desc: `${brand.brandName} lifestyle product showcase, warm and authentic feel, relatable setting, social proof visual`, aspectRatio: '3:4', platform: '小红书' },
+        ];
+
+        const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
+        const refImg = referenceImage || brand.logoUrl || undefined;
+
+        response = {
+          reply: `好的！为 **${brand.brandName}** 全平台批量生成 **${allPlatformScenes.length} 张**素材：\n\n` +
+            allPlatformScenes.map((s, i) => `${i + 1}. ${s.label}（${s.aspectRatio}）`).join('\n') +
+            `\n\n正在批量生成中，请稍候...`,
+          action: 'generate',
+          generateParams: {
+            brandName: brand.brandName,
+            sellingPoint: intentResult.generateDetails?.desc || sellingPoint,
+            scenes: allPlatformScenes,
+            referenceImage: refImg,
+            targetCountry: 'US',
+            mood: (brand as any).moodKeywords?.join(', ') || 'modern and clean',
+          },
+          brandProfile: brand,
+        };
+        break;
+      }
+
+      // ── Seasonal: holiday/season themed generation ──
+      case 'seasonal': {
+        const brand = currentBrand;
+        const theme = intentResult.seasonTheme || 'Holiday';
+
+        if (!brand?.brandName) {
+          response = {
+            reply: `我需要先了解你的品牌，才能为你生成「${theme}」主题素材。告诉我你的**品牌网站**或**品牌名+核心卖点**？`,
+            action: 'ask_clarify',
+            suggestions: ['我的网站是 xxx.com', '品牌叫XX，核心产品是XX'],
+          };
+          break;
+        }
+
+        const scenes = await buildSeasonalScenesWithLLM(brand, theme, message, { ...logOpts, brandName: brand.brandName });
+        const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
+        const refImg = referenceImage || brand.logoUrl || undefined;
+
+        response = {
+          reply: `🎄 为 **${brand.brandName}** 的「**${theme}**」主题生成 **${scenes.length} 张**素材：\n\n` +
+            scenes.map((s, i) => `${i + 1}. ${s.label}（${s.aspectRatio}）`).join('\n') +
+            `\n\n正在生成中，每张约30秒...`,
+          action: 'generate',
+          generateParams: {
+            brandName: brand.brandName,
+            sellingPoint: intentResult.generateDetails?.desc || `${theme} campaign - ${sellingPoint}`,
+            scenes,
+            referenceImage: refImg,
+            targetCountry: 'US',
+            mood: 'festive, seasonal, on-brand',
+          },
+          brandProfile: brand,
+        };
+        break;
+      }
+
       case 'generate': {
         const brand = currentBrand;
 
@@ -773,7 +1142,15 @@ export async function POST(req: NextRequest) {
         }
 
         // Use LLM to build creative scenes
-        const scenes = await buildScenesWithLLM(message, brand, { ...logOpts, brandName: brand.brandName });
+        // Auto-detect seasonal keywords in the description → route to seasonal builder
+        const desc = intentResult.generateDetails?.desc || message;
+        const seasonKwMatch = desc.match(/(圣诞|双十一|双11|情人节|Christmas|Black Friday|黑五|618|新年|春节|中秋|万圣|复活节|母亲节|父亲节|holiday|Valentine|summer sale|back to school|spring collection|圣诞促销|节日促销)/i);
+        let scenes: Scene[];
+        if (seasonKwMatch) {
+          scenes = await buildSeasonalScenesWithLLM(brand, seasonKwMatch[1], message, { ...logOpts, brandName: brand.brandName });
+        } else {
+          scenes = await buildScenesWithLLM(message, brand, { ...logOpts, brandName: brand.brandName });
+        }
         const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
 
         // Determine reference image: prefer user-uploaded image, then brand logoUrl
