@@ -6,7 +6,7 @@ import {
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
   Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText,
-  Activity, MessageSquare
+  Activity, MessageSquare, Workflow, ClipboardList
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -46,6 +46,7 @@ const TABS = [
   { key: 'workflows', label: '工作流', icon: GitBranch },
   { key: 'health', label: '模型监测', icon: Activity },
   { key: 'feedbacks', label: '用户反馈', icon: MessageSquare },
+  { key: 'traces', label: '交互追踪', icon: ClipboardList },
   { key: 'settings', label: '配置', icon: Settings },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -141,6 +142,7 @@ export default function AdminPage() {
           {tab === 'workflows' && <WorkflowsTab />}
           {tab === 'health' && <ModelHealthTab />}
           {tab === 'feedbacks' && <FeedbacksTab />}
+          {tab === 'traces' && <TracesTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -1743,6 +1745,248 @@ function HealthHistory() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ─── TracesTab: 交互链路追踪 ──────────────────────────────────────────────
+
+function TracesTab() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filterTraceId, setFilterTraceId] = useState('');
+  const [filterStep, setFilterStep] = useState('');
+  const [expandedTrace, setExpandedTrace] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const limit = 50;
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filterTraceId) params.set('traceId', filterTraceId);
+      if (filterStep) params.set('step', filterStep);
+      const res = await fetch(`/api/admin/interactions?${params}`);
+      const data = await res.json();
+      setLogs(data.logs || []);
+      setTotal(data.total || 0);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [page, filterTraceId, filterStep]);
+
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // 按traceId分组
+  const traceGroups: Record<string, typeof logs> = {};
+  for (const log of logs) {
+    if (!traceGroups[log.traceId]) traceGroups[log.traceId] = [];
+    traceGroups[log.traceId].push(log);
+  }
+  const traceIds = Object.keys(traceGroups);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-zinc-100">交互链路追踪</h2>
+        <button onClick={fetchLogs} className="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1">
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 刷新
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2">
+        <input
+          value={filterTraceId}
+          onChange={e => { setFilterTraceId(e.target.value); setPage(1); }}
+          placeholder="搜索traceId..."
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-violet-500"
+        />
+        <select
+          value={filterStep}
+          onChange={e => { setFilterStep(e.target.value); setPage(1); }}
+          className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-200 outline-none focus:border-violet-500"
+        >
+          <option value="">全部步骤</option>
+          <option value="user_input">用户输入</option>
+          <option value="intent_analysis">意图分析</option>
+          <option value="prompt_build">Prompt构造</option>
+          <option value="llm_call">LLM调用</option>
+          <option value="image_request">图片请求</option>
+          <option value="image_response">图片响应</option>
+          <option value="error">错误</option>
+        </select>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+          <div className="text-xs text-zinc-500">总日志</div>
+          <div className="text-lg font-bold text-zinc-100">{total}</div>
+        </div>
+        <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+          <div className="text-xs text-zinc-500">独立会话</div>
+          <div className="text-lg font-bold text-zinc-100">{traceIds.length}</div>
+        </div>
+        <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+          <div className="text-xs text-zinc-500">有标记</div>
+          <div className="text-lg font-bold text-amber-400">{logs.filter((l: any) => l.reviewFlag).length}</div>
+        </div>
+        <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+          <div className="text-xs text-zinc-500">错误</div>
+          <div className="text-lg font-bold text-red-400">{logs.filter((l: any) => l.reviewFlag === 'error').length}</div>
+        </div>
+      </div>
+
+      {/* Trace Groups */}
+      {loading && <div className="text-center text-zinc-500 py-8">加载中...</div>}
+      {!loading && traceIds.length === 0 && (
+        <div className="text-center text-zinc-500 py-8">暂无交互日志</div>
+      )}
+      {traceIds.map(tid => {
+        const steps = traceGroups[tid];
+        const firstStep = steps[0];
+        const isExpanded = expandedTrace === tid;
+        const hasError = steps.some((s: any) => s.step === 'error' || s.reviewFlag === 'error');
+        const hasWarning = steps.some((s: any) => s.reviewFlag === 'warning');
+        const hasImage = steps.some((s: any) => s.imageUrl);
+        const imageCount = steps.filter((s: any) => s.step === 'image_response' && s.imageUrl).length;
+        const totalLatency = steps.reduce((acc: number, s: any) => acc + (s.imageLatencyMs || s.llmLatencyMs || 0), 0);
+
+        return (
+          <div key={tid} className={`rounded-xl border ${hasError ? 'border-red-800/50' : hasWarning ? 'border-amber-800/50' : 'border-zinc-800'} bg-zinc-900 overflow-hidden`}>
+            {/* Trace Header */}
+            <button
+              onClick={() => setExpandedTrace(isExpanded ? null : tid)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className={`text-xs px-2 py-0.5 rounded font-mono ${hasError ? 'bg-red-900/50 text-red-300' : hasWarning ? 'bg-amber-900/50 text-amber-300' : 'bg-zinc-800 text-zinc-400'}`}>
+                  {tid.slice(0, 8)}
+                </span>
+                <span className="text-xs text-zinc-400">{firstStep.source || 'unknown'}</span>
+                <span className="text-xs text-zinc-400">{firstStep.brandName || '—'}</span>
+                {hasImage && <span className="text-xs text-emerald-400">{imageCount}图</span>}
+                {totalLatency > 0 && <span className="text-xs text-zinc-500">{(totalLatency / 1000).toFixed(1)}s</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500">{steps.length}步</span>
+                <span className="text-xs text-zinc-600">{new Date(firstStep.createdAt).toLocaleString('zh-CN')}</span>
+                {isExpanded ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+              </div>
+            </button>
+
+            {/* Expanded Steps */}
+            {isExpanded && (
+              <div className="border-t border-zinc-800">
+                {steps
+                  .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                  .map((step: any, i: number) => (
+                    <div key={step.id} className={`px-4 py-3 border-b border-zinc-800/50 ${step.step === 'error' ? 'bg-red-950/20' : ''}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400 font-mono">{i + 1}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                          step.step === 'error' ? 'bg-red-900/50 text-red-300' :
+                          step.step === 'user_input' ? 'bg-blue-900/50 text-blue-300' :
+                          step.step === 'intent_analysis' ? 'bg-violet-900/50 text-violet-300' :
+                          step.step === 'prompt_build' ? 'bg-amber-900/50 text-amber-300' :
+                          step.step === 'llm_call' ? 'bg-cyan-900/50 text-cyan-300' :
+                          step.step === 'image_request' ? 'bg-orange-900/50 text-orange-300' :
+                          step.step === 'image_response' ? 'bg-emerald-900/50 text-emerald-300' :
+                          'bg-zinc-800 text-zinc-400'
+                        }`}>{step.step}</span>
+                        {step.step === 'llm_call' && step.llmLatencyMs && <span className="text-xs text-zinc-500">{step.llmLatencyMs}ms</span>}
+                        {step.step === 'image_response' && step.imageLatencyMs && <span className="text-xs text-zinc-500">{step.imageLatencyMs}ms</span>}
+                        {step.reviewFlag && <span className={`text-[10px] px-1.5 py-0.5 rounded ${step.reviewFlag === 'error' ? 'bg-red-900/50 text-red-300' : 'bg-amber-900/50 text-amber-300'}`}>⚠ {step.reviewFlag}</span>}
+                      </div>
+
+                      {/* Step content */}
+                      {step.userInput && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">用户输入</span>
+                          <p className="text-xs text-zinc-300 mt-0.5">{step.userInput}</p>
+                        </div>
+                      )}
+                      {step.userImageRef && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">参考图</span>
+                          {step.userImageRef.startsWith('data:') ? (
+                            <img src={step.userImageRef.slice(0, 100)} alt="" className="w-12 h-12 rounded object-cover mt-0.5" />
+                          ) : (
+                            <p className="text-xs text-zinc-400 mt-0.5 truncate">{step.userImageRef}</p>
+                          )}
+                        </div>
+                      )}
+                      {step.intent && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">意图</span>
+                          <p className="text-xs text-violet-300 mt-0.5 font-medium">{step.intent}</p>
+                          {step.intentDetail && <p className="text-xs text-zinc-500 mt-0.5">{step.intentDetail.slice(0, 200)}</p>}
+                        </div>
+                      )}
+                      {step.llmPrompt && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">Prompt</span>
+                          <pre className="text-xs text-amber-200/80 mt-0.5 bg-amber-950/20 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto">{step.llmPrompt.slice(0, 2000)}</pre>
+                        </div>
+                      )}
+                      {step.llmResponse && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">LLM响应</span>
+                          <pre className="text-xs text-cyan-200/80 mt-0.5 bg-cyan-950/20 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">{step.llmResponse.slice(0, 500)}</pre>
+                        </div>
+                      )}
+                      {step.llmModel && (
+                        <span className="ml-7 text-[10px] text-zinc-600">模型: {step.llmModel}</span>
+                      )}
+                      {step.imageModel && (
+                        <span className="ml-7 text-[10px] text-zinc-600 mr-3">图片模型: {step.imageModel}</span>
+                      )}
+                      {step.imageUrl && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">生成图片</span>
+                          <img src={step.imageUrl} alt="" className="w-16 h-16 rounded object-cover mt-0.5 border border-zinc-700" />
+                        </div>
+                      )}
+                      {step.imageError && (
+                        <div className="ml-7 mb-1">
+                          <span className="text-[10px] text-zinc-500">错误</span>
+                          <p className="text-xs text-red-300 mt-0.5">{step.imageError}</p>
+                        </div>
+                      )}
+                      {step.scene && (
+                        <span className="ml-7 text-[10px] text-zinc-500 mr-3">场景: {step.scene.slice(0, 50)}</span>
+                      )}
+                      {step.platform && (
+                        <span className="ml-7 text-[10px] text-zinc-500 mr-3">平台: {step.platform}</span>
+                      )}
+                      {step.ratio && (
+                        <span className="ml-7 text-[10px] text-zinc-500 mr-3">比例: {step.ratio}</span>
+                      )}
+                      {step.reviewNote && (
+                        <div className="ml-7 mt-2">
+                          <span className="text-[10px] text-amber-500">审查备注</span>
+                          <p className="text-xs text-amber-300 mt-0.5">{step.reviewNote}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30">上一页</button>
+          <span className="text-xs text-zinc-500">{page}/{totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30">下一页</button>
+        </div>
+      )}
     </div>
   );
 }

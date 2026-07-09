@@ -7,6 +7,62 @@ import { readAppConfig, DEFAULT_SCENES } from '@/lib/app-config';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
+// ── InteractionLog helper (fire-and-forget) ──────────────────────────────────
+type InteractionStep = 'user_input' | 'intent_analysis' | 'prompt_build' | 'llm_call'
+  | 'image_request' | 'image_response' | 'user_feedback' | 'error';
+
+interface InteractionData {
+  userId?: string | null;
+  ip?: string | null;
+  source?: string;
+  userInput?: string | null;
+  userImageRef?: string | null;
+  llmPrompt?: string | null;
+  llmResponse?: string | null;
+  llmModel?: string | null;
+  llmLatencyMs?: number | null;
+  imageModel?: string | null;
+  imageUrl?: string | null;
+  imageError?: string | null;
+  imageLatencyMs?: number | null;
+  brandName?: string | null;
+  platform?: string | null;
+  scene?: string | null;
+  ratio?: string | null;
+}
+
+function logInteraction(traceId: string, step: InteractionStep, data: InteractionData): void {
+  prisma.interactionLog.create({
+    data: {
+      traceId,
+      step,
+      userId: data.userId ?? null,
+      ip: data.ip ?? null,
+      source: data.source ?? 'get',
+      userInput: data.userInput?.slice(0, 2000) ?? null,
+      userImageRef: data.userImageRef?.slice(0, 500) ?? null,
+      llmPrompt: data.llmPrompt?.slice(0, 5000) ?? null,
+      llmResponse: data.llmResponse?.slice(0, 2000) ?? null,
+      llmModel: data.llmModel ?? null,
+      llmLatencyMs: data.llmLatencyMs ?? null,
+      imageModel: data.imageModel ?? null,
+      imageUrl: data.imageUrl?.slice(0, 1000) ?? null,
+      imageError: data.imageError?.slice(0, 1000) ?? null,
+      imageLatencyMs: data.imageLatencyMs ?? null,
+      brandName: data.brandName?.slice(0, 100) ?? null,
+      platform: data.platform?.slice(0, 100) ?? null,
+      scene: data.scene?.slice(0, 300) ?? null,
+      ratio: data.ratio ?? null,
+    },
+  }).catch(() => {});
+}
+
+function extractIp(req: NextRequest): string | null {
+  const raw = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+  return raw ? raw.replace(/\.\d+$/, '.0') : null;
+}
+
+
 // ── Rate Limiter (in-memory, per-user, sliding window) ──────────────────────
 const DEFAULT_WINDOW_MS = 60_000;
 const DEFAULT_MAX_PER_WINDOW = 3;
@@ -183,6 +239,11 @@ export async function POST(req: NextRequest) {
     campaignTheme, marketingGoal, mood, urgency, cta } = body;
 
   if (!brandName || !sellingPoint) return NextResponse.json({ error: '品牌名和卖点必填' }, { status: 400 });
+
+  // Trace ID for interaction logging
+  const traceId = body.traceId || crypto.randomUUID();
+  const sessionForLog = authResult; // reuse the auth call above
+  const logSource = body.source || 'get';
 
   // ── 读取用户记忆 ──────────────────────────────────────
   let userCtx = '';
@@ -390,9 +451,22 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
       }}).catch(() => {});
     } catch {}
 
-    return NextResponse.json({ error: `生成失败: ${result.err || 'unknown'}`, provider: providerUsed }, { status: 500 });
+    return NextResponse.json({ error: `生成失败: ${result.err || 'unknown'}`, provider: providerUsed, traceId }, { status: 500 });
   }
   console.log(`[ADFORGE] Done ${Date.now()-t0}ms via ${providerUsed}, ${result.buf.length}b`);
+
+  // ── LOG: image_response (成功) ──
+  logInteraction(traceId, 'image_response', {
+    userId: sessionForLog?.user?.id,
+    ip: extractIp(req),
+    source: logSource,
+    imageModel: providerUsed,
+    imageLatencyMs: Date.now() - t0,
+    brandName,
+    platform: forcePlatform || platformLabel(ratio, scene.platform),
+    scene: sceneDesc,
+    ratio,
+  });
 
   const safe = brandName.replace(/\s+/g, '-').toLowerCase().slice(0, 30);
   const filename = `assets/${safe}-scene${sceneIdx}-${Date.now()}.png`;
@@ -401,6 +475,16 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
     const blob = await put(filename, result.buf, { access: 'public', contentType: 'image/png' });
     persistentUrl = blob.url;
   } catch (e) {
+    // ── LOG: error (blob上传失败) ──
+    logInteraction(traceId, 'error', {
+      userId: sessionForLog?.user?.id,
+      ip: extractIp(req),
+      source: logSource,
+      imageError: `blob upload failed: ${String(e).slice(0, 500)}`,
+      imageModel: providerUsed,
+      imageLatencyMs: Date.now() - t0,
+      brandName,
+    });
     console.error('[ADFORGE] Blob:', e);
     return NextResponse.json({ error: '上传失败' }, { status: 500 });
   }

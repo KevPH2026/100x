@@ -5,6 +5,63 @@ import { readAppConfig } from '@/lib/app-config';
 
 export const maxDuration = 60;
 
+// ─── Interaction Log Helper ───────────────────────────────────────────────────
+
+/** Truncate IPv4 to /24 (or return original if not IPv4) */
+function truncIp(raw: string | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  const m = raw.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+  return m ? `${m[1]}.0` : raw;
+}
+
+/** Fire-and-forget write to InteractionLog – never blocks the main flow. */
+function logInteraction(
+  traceId: string,
+  step: string,
+  data: {
+    userId?: string | null;
+    ip?: string | null;
+    source?: string;
+    userInput?: string | null;
+    userImageRef?: string | null;
+    intent?: string | null;
+    intentDetail?: string | null;
+    llmPrompt?: string | null;
+    llmResponse?: string | null;
+    llmModel?: string | null;
+    llmLatencyMs?: number | null;
+    brandName?: string | null;
+    platform?: string | null;
+    scene?: string | null;
+    ratio?: string | null;
+    errorMessage?: string | null;
+  },
+) {
+  prisma.interactionLog
+    .create({
+      data: {
+        traceId,
+        step,
+        userId: data.userId ?? undefined,
+        ip: truncIp(data.ip) ?? undefined,
+        source: data.source ?? 'agent',
+        userInput: data.userInput?.slice(0, 5000) ?? undefined,
+        userImageRef: data.userImageRef ?? undefined,
+        intent: data.intent ?? undefined,
+        intentDetail: data.intentDetail?.slice(0, 2000) ?? undefined,
+        llmPrompt: data.llmPrompt?.slice(0, 5000) ?? undefined,
+        llmResponse: data.llmResponse?.slice(0, 2000) ?? undefined,
+        llmModel: data.llmModel ?? undefined,
+        llmLatencyMs: data.llmLatencyMs ?? undefined,
+        brandName: data.brandName ?? undefined,
+        platform: data.platform ?? undefined,
+        scene: data.scene ?? undefined,
+        ratio: data.ratio ?? undefined,
+      },
+    })
+    .catch(() => {});
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BrandProfile {
@@ -42,7 +99,17 @@ interface AgentResponse {
 
 const MINIMAX_KEY = process.env.MINIMAX_API_KEY || '';
 
-async function callLLM(systemPrompt: string, userMessage: string): Promise<string> {
+async function callLLM(
+  systemPrompt: string,
+  userMessage: string,
+  opts?: {
+    traceId?: string;
+    step?: string;
+    userId?: string | null;
+    ip?: string | null;
+    brandName?: string | null;
+  },
+): Promise<string> {
   // Load runtime config from DB
   const config = await readAppConfig();
   const rt = config.agentRuntime;
@@ -78,6 +145,15 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
       name: model, ok: false, latencyMs,
       detail: `API ${res.status}: ${err.slice(0, 150)}`, type: 'LLM',
     }}).catch(() => {});
+    // Interaction log for error
+    if (opts?.traceId) {
+      logInteraction(opts.traceId, 'error', {
+        userId: opts.userId, ip: opts.ip, brandName: opts.brandName,
+        llmPrompt: `system: ${systemPrompt.slice(0,3000)}\nuser: ${userMessage.slice(0,3000)}`,
+        llmModel: model, llmLatencyMs: latencyMs,
+        errorMessage: `LLM API ${res.status}: ${err.slice(0, 500)}`,
+      });
+    }
     throw new Error(`LLM API ${res.status}: ${err.slice(0, 200)}`);
   }
 
@@ -88,6 +164,14 @@ async function callLLM(systemPrompt: string, userMessage: string): Promise<strin
     name: model, ok: true, latencyMs,
     detail: content.slice(0, 150), type: 'LLM',
   }}).catch(() => {});
+  // Interaction log for LLM call
+  if (opts?.traceId) {
+    logInteraction(opts.traceId, opts.step || 'llm_call', {
+      userId: opts.userId, ip: opts.ip, brandName: opts.brandName,
+      llmPrompt: `system: ${systemPrompt.slice(0,3000)}\nuser: ${userMessage.slice(0,3000)}`,
+      llmResponse: content, llmModel: model, llmLatencyMs: latencyMs,
+    });
+  }
   return content;
 }
 
@@ -253,7 +337,10 @@ async function scrapeWebsite(url: string): Promise<{ title: string; description:
 
 // ─── LLM Brand Analysis ──────────────────────────────────────────────────────
 
-async function analyzeBrandWithLLM(url: string): Promise<BrandProfile> {
+async function analyzeBrandWithLLM(
+  url: string,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
+): Promise<BrandProfile> {
   const scraped = await scrapeWebsite(url);
 
   const hostname = new URL(url.startsWith('http') ? url : 'https://' + url).hostname.replace(/^www\./, '');
@@ -284,7 +371,7 @@ Meta Keywords: ${scraped.keywords}
 Page Content:
 ${scraped.body.slice(0, 3000)}`;
 
-  const llmResponse = await callLLM(systemPrompt, userMessage);
+  const llmResponse = await callLLM(systemPrompt, userMessage, { ...opts, step: 'llm_call' });
 
   try {
     // Clean response - remove markdown code blocks if present
@@ -318,7 +405,11 @@ ${scraped.body.slice(0, 3000)}`;
 
 // ─── LLM Intent Detection ────────────────────────────────────────────────────
 
-async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<{
+async function detectIntentWithLLM(
+  message: string,
+  hasBrand: boolean,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
+): Promise<{
   intent: 'analyze_url' | 'generate' | 'confirm' | 'edit' | 'greet' | 'clarify' | 'chat' | 'brand_info';
   extractedUrl?: string;
   generateDetails?: { count?: number; platforms?: string[]; desc?: string };
@@ -347,7 +438,7 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
   const systemPrompt = prompts.intentDetection + `\n\n- Has brand profile already: ${hasBrand}\n- If user mentions a brand name + product/service info, use "brand_info" intent.\n- If user provides a URL but ALSO gives detailed generation instructions (scene/style/composition/mood), use "generate" intent and extract the generation details from the message.`;
 
   try {
-    const llmResponse = await callLLM(systemPrompt, message);
+    const llmResponse = await callLLM(systemPrompt, message, { ...opts, step: 'llm_call' });
     const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleaned);
     // If LLM detected generate but message also has URL, attach it
@@ -390,6 +481,7 @@ async function detectIntentWithLLM(message: string, hasBrand: boolean): Promise<
 async function buildScenesWithLLM(
   message: string,
   brand: BrandProfile,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
 ): Promise<{ label: string; desc: string; aspectRatio: string; platform: string }[]> {
   const prompts = await loadAgentPrompts();
   const systemPrompt = prompts.sceneBuilder;
@@ -397,8 +489,16 @@ async function buildScenesWithLLM(
   const brandContext = `Brand: ${brand.brandName}\nIndustry: ${brand.industry || 'Unknown'}\nStyle: ${brand.style || 'Modern'}
 Target Audience: ${brand.targetAudience || 'General'}\nSelling Points: ${brand.sellingPoints?.join(', ') || 'N/A'}\nTone: ${brand.toneOfVoice || 'Professional'}\nMood Keywords: ${(brand as any).moodKeywords?.join(', ') || 'modern, clean'}\nUser Request: ${message}`;
 
+  // Log prompt_build step
+  if (opts?.traceId) {
+    logInteraction(opts.traceId, 'prompt_build', {
+      userId: opts.userId, ip: opts.ip, brandName: brand.brandName,
+      llmPrompt: `system: ${systemPrompt.slice(0,3000)}\nuser: ${brandContext.slice(0,3000)}`,
+    });
+  }
+
   try {
-    const llmResponse = await callLLM(systemPrompt, brandContext);
+    const llmResponse = await callLLM(systemPrompt, brandContext, { ...opts, step: 'llm_call' });
     const cleaned = llmResponse.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     const scenes = JSON.parse(cleaned);
     if (Array.isArray(scenes) && scenes.length > 0) return scenes.slice(0, 6);
@@ -443,16 +543,24 @@ Target Audience: ${brand.targetAudience || 'General'}\nSelling Points: ${brand.s
 
 // ─── LLM Chat Response ───────────────────────────────────────────────────────
 
-async function generateChatResponse(message: string, brand: BrandProfile | null): Promise<string> {
+async function generateChatResponse(
+  message: string,
+  brand: BrandProfile | null,
+  opts?: { traceId?: string; userId?: string | null; ip?: string | null; brandName?: string | null },
+): Promise<string> {
   const prompts = await loadAgentPrompts();
   const systemPrompt = prompts.chatResponse + `\n\nCurrent brand profile: ${brand ? JSON.stringify(brand) : 'None'}`;
 
-  return callLLM(systemPrompt, message);
+  return callLLM(systemPrompt, message, { ...opts, step: 'llm_call' });
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const traceId = crypto.randomUUID();
+  let userId: string | undefined;
+  let clientIp: string | undefined;
+
   try {
     const { message, brandProfile: clientBrand, conversationState, referenceImage } = await req.json();
 
@@ -461,7 +569,18 @@ export async function POST(req: NextRequest) {
     }
 
     const session = await auth();
-    const userId = session?.user?.id;
+    userId = session?.user?.id;
+    clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || undefined;
+
+    const logOpts = { traceId, userId, ip: clientIp };
+
+    // ── Log: user_input ──
+    logInteraction(traceId, 'user_input', {
+      ...logOpts,
+      source: 'agent',
+      userInput: message,
+      userImageRef: referenceImage?.slice(0, 200) || undefined,
+    });
 
     // Load existing brand if logged in
     let existingBrand: BrandProfile | null = null;
@@ -478,7 +597,21 @@ export async function POST(req: NextRequest) {
     }
 
     const currentBrand = clientBrand || existingBrand;
-    const intentResult = await detectIntentWithLLM(message, !!currentBrand?.brandName);
+    const intentResult = await detectIntentWithLLM(message, !!currentBrand?.brandName, { ...logOpts, brandName: currentBrand?.brandName });
+
+    // ── Log: intent_analysis ──
+    logInteraction(traceId, 'intent_analysis', {
+      ...logOpts,
+      intent: intentResult.intent,
+      intentDetail: JSON.stringify({
+        generateDetails: intentResult.generateDetails,
+        editFields: intentResult.editFields,
+        brandInfo: intentResult.brandInfo,
+        extractedUrl: intentResult.extractedUrl,
+      }).slice(0, 2000),
+      brandName: currentBrand?.brandName,
+    });
+
     let response: AgentResponse;
 
     switch (intentResult.intent) {
@@ -504,7 +637,7 @@ export async function POST(req: NextRequest) {
       case 'analyze_url': {
         const url = intentResult.extractedUrl || extractUrl(message)!;
         try {
-          const profile = await analyzeBrandWithLLM(url);
+          const profile = await analyzeBrandWithLLM(url, logOpts);
 
           const replyParts = [
             `🔍 分析完成！**${profile.brandName}** 品牌档案：`,
@@ -531,6 +664,10 @@ export async function POST(req: NextRequest) {
             suggestions: ['确认，开始生成素材', '目标人群需要改一下', '补充：我们的核心卖点是...'],
           };
         } catch (e: any) {
+          logInteraction(traceId, 'error', {
+            ...logOpts, brandName: currentBrand?.brandName,
+            errorMessage: `analyze_url failed for ${url}: ${e.message?.slice(0, 500)}`,
+          });
           response = {
             reply: `⚠️ 无法访问 ${url}（${e.message}）\n\n你可以直接告诉我品牌名和卖点，我手动帮你建档案。`,
             action: 'ask_clarify',
@@ -608,7 +745,7 @@ export async function POST(req: NextRequest) {
               }).catch(() => {});
             }
             // Build scenes directly from user's detailed description
-            const scenes = await buildScenesWithLLM(message, brandProfile);
+            const scenes = await buildScenesWithLLM(message, brandProfile, { ...logOpts, brandName: brandProfile.brandName });
             const sp = brandProfile.sellingPoints?.[0] || brandProfile.description?.slice(0, 60) || brandProfile.brandName;
             response = {
               reply: `好的！根据你的描述，我为 **${brandProfile.brandName}** 生成 **${scenes.length} 张**素材：\n\n` +
@@ -636,7 +773,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Use LLM to build creative scenes
-        const scenes = await buildScenesWithLLM(message, brand);
+        const scenes = await buildScenesWithLLM(message, brand, { ...logOpts, brandName: brand.brandName });
         const sellingPoint = brand.sellingPoints?.[0] || brand.description?.slice(0, 60) || brand.brandName;
 
         // Determine reference image: prefer user-uploaded image, then brand logoUrl
@@ -721,7 +858,7 @@ export async function POST(req: NextRequest) {
 
       default: {
         // 'chat' or 'clarify' — use LLM for natural conversation
-        const chatReply = await generateChatResponse(message, currentBrand);
+        const chatReply = await generateChatResponse(message, currentBrand, { ...logOpts, brandName: currentBrand?.brandName });
         response = {
           reply: chatReply,
           action: currentBrand?.brandName ? 'ask_clarify' : 'ask_clarify',
@@ -733,9 +870,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(response);
+    return NextResponse.json({ ...response, traceId });
   } catch (e: any) {
     console.error('[AGENT]', e);
-    return NextResponse.json({ reply: '抱歉，出了点问题。请再试一次。', action: 'ask_clarify' });
+    // ── Log: error ──
+    logInteraction(traceId, 'error', {
+      userId, ip: clientIp,
+      errorMessage: e.message?.slice(0, 2000) || String(e).slice(0, 2000),
+    });
+    return NextResponse.json({ reply: '抱歉，出了点问题。请再试一次。', action: 'ask_clarify', traceId });
   }
 }
