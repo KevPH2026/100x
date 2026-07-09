@@ -187,3 +187,66 @@ model Feedback {
   @@index([createdAt])
   @@map("feedbacks")
 }
+
+// ── 全量交互日志（细粒度链路追踪） ────────────────────────────────────────
+model InteractionLog {
+  id        String   @id @default(cuid())
+  traceId   String   // 一次完整生成流程的唯一标识，用于串联所有步骤
+  userId    String?  // 注册用户ID，未登录为null
+  ip        String?  // 未登录用户IP（截断/24）
+  
+  step      String   // 步骤类型:
+                     //   user_input        — 用户原始输入（文字/图片）
+                     //   intent_analysis   — LLM意图分析结果
+                     //   prompt_build      — 构造的图片生成prompt（完整文本）
+                     //   llm_call         — LLM调用（请求/响应摘要）
+                     //   image_request     — 发给图片模型的请求参数
+                     //   image_response    — 图片模型返回（URL/错误）
+                     //   user_feedback     — 用户对结果的操作（下载/重试/放弃）
+                     //   error             — 任何步骤出错
+  
+  source    String   // 来源页面: chat / get / agent
+  
+  // 用户侧数据
+  userInput       String?  // 用户输入的文字内容
+  userImageRef    String?  // 用户上传的参考图URL（blob或base64前50字符）
+  
+  // LLM侧数据
+  intent          String?  // 检测到的意图: greet/analyze_url/generate/edit/etc
+  intentDetail    String?  // 意图分析详情（JSON或文本）
+  llmPrompt       String?  // 实际发给LLM的完整prompt
+  llmResponse     String?  // LLM返回的原始内容（截断到2000字符）
+  llmModel        String?  // 使用的LLM模型名
+  llmLatencyMs    Int?     // LLM响应耗时
+  
+  // 图片生成侧数据
+  imageModel      String?  // 使用的图片模型名（如nova-image-pro）
+  imageUrl        String?  // 生成的图片URL
+  imageError      String?  // 图片生成错误信息
+  imageLatencyMs  Int?     // 图片生成耗时
+  
+  // 业务数据
+  brandName       String?  // 品牌名
+  platform        String?  // 目标平台
+  scene           String?  // 场景描述
+  ratio           String?  // 图片比例
+  
+  // 反馈数据
+  feedbackAction  String?  // 用户操作: download / retry / skip / complain
+  feedbackText    String?  // 用户反馈的文字
+  
+  // 自审查标记
+  reviewFlag      String?  // 自审查标记: null / warning / error
+  reviewNote      String?  // 自审查备注（问题描述）
+  reviewedAt      DateTime? // 自审查时间
+
+  createdAt DateTime @default(now())
+
+  @@index([traceId])
+  @@index([userId])
+  @@index([step])
+  @@index([source])
+  @@index([reviewFlag])
+  @@index([createdAt])
+  @@map("interaction_logs")
+}
