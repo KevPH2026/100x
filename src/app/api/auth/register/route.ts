@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { readAppConfig } from '@/lib/app-config';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '密码至少6位' }, { status: 400 });
   }
 
+  // 读取全局默认权益配置
+  const appConfig = await readAppConfig();
+  const defaultQuota = appConfig.quotas?.registered?.defaultQuota ?? 10;
+  const defaultValidDays = appConfig.quotas?.registered?.defaultValidDays ?? 0;
+
   // 检查邮箱
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -27,7 +33,7 @@ export async function POST(req: NextRequest) {
   const hashed = await bcrypt.hash(password, 12);
 
   // 如果有邀请码，验证并获取配额+有效期
-  let quota = 10; // 默认免费配额
+  let quota = defaultQuota;
   let expiresAt: Date | null = null;
   let inviteCodeId: string | undefined;
 
@@ -41,11 +47,14 @@ export async function POST(req: NextRequest) {
     if (code.currentUses >= code.maxUses) {
       return NextResponse.json({ error: '邀请码已用完' }, { status: 400 });
     }
-    quota = code.quota || 100;
+    quota = code.quota || defaultQuota;
     if (code.validDays && code.validDays > 0) {
       expiresAt = new Date(Date.now() + code.validDays * 86400000);
     }
     inviteCodeId = code.id;
+  } else if (defaultValidDays > 0) {
+    // 无邀请码但全局配置了默认有效期
+    expiresAt = new Date(Date.now() + defaultValidDays * 86400000);
   }
 
   const user = await prisma.$transaction(async (tx) => {

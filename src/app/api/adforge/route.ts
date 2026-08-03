@@ -225,6 +225,27 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } }
       );
     }
+  } else {
+    // Guest quota check
+    const gq = config.quotas?.guest;
+    if (gq) {
+      if (gq.enabled === false) {
+        return NextResponse.json({ error: '游客生成已关闭，请注册后使用', needLogin: true }, { status: 403 });
+      }
+      if (gq.totalLimit && gq.totalLimit > 0) {
+        const guestTotal = await prisma.guestLog.count({ where: { success: true } });
+        if (guestTotal >= gq.totalLimit) {
+          return NextResponse.json({ error: '游客生成总量已达上限，请注册后使用', needLogin: true }, { status: 403 });
+        }
+      }
+      if (gq.dailyLimit && gq.dailyLimit > 0) {
+        const todayStart = new Date(new Date().toISOString().slice(0, 10));
+        const guestToday = await prisma.guestLog.count({ where: { success: true, createdAt: { gte: todayStart } } });
+        if (guestToday >= gq.dailyLimit) {
+          return NextResponse.json({ error: `今日游客生成已达上限（${gq.dailyLimit}次），请明天再试或注册后使用`, needLogin: true }, { status: 429 });
+        }
+      }
+    }
   }
 
   const trKey = (ax as any).tokenrouterKey || ENV_TR_KEY;
