@@ -345,6 +345,10 @@ function UsersTab() {
   const [expandLoading, setExpandLoading] = useState(false);
   const [extendingId, setExtendingId] = useState<string | null>(null);
   const [extendDays, setExtendDays] = useState('30');
+  // Extra detail state
+  const [userGenerations, setUserGenerations] = useState<any[]>([]);
+  const [userTemplates, setUserTemplates] = useState<any[]>([]);
+  const [userExtraLoading, setUserExtraLoading] = useState(false);
   const limit = 20;
 
   const load = useCallback(async () => {
@@ -381,21 +385,31 @@ function UsersTab() {
     if (expandedId === userId) {
       setExpandedId(null);
       setExpandedDetail(null);
+      setUserGenerations([]);
+      setUserTemplates([]);
       return;
     }
     setExpandedId(userId);
     setExpandLoading(true);
+    setUserExtraLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/detail`).then(r => r.json());
+      const [detailRes, genRes, tmplRes] = await Promise.all([
+        fetch(`/api/admin/users/${userId}/detail`).then(r => r.json()),
+        fetch(`/api/admin/generations?userId=${userId}&limit=10`).then(r => r.json()).catch(() => ({ logs: [] })),
+        fetch(`/api/admin/prompt-templates?userId=${userId}`).then(r => r.json()).catch(() => ({ templates: [] })),
+      ]);
       setExpandedDetail({
-        brands: res.brands ?? [],
-        memories: res.memories ?? [],
-        recentAssets: res.recentAssets ?? [],
-        quota: res.quota ?? { total: 0, used: 0, remaining: 0, usageRate: 0 },
-        stats: res.stats ?? { totalAssets: 0, totalBrands: 0, totalMemories: 0 },
+        brands: detailRes.brands ?? [],
+        memories: detailRes.memories ?? [],
+        recentAssets: detailRes.recentAssets ?? [],
+        quota: detailRes.quota ?? { total: 0, used: 0, remaining: 0, usageRate: 0 },
+        stats: detailRes.stats ?? { totalAssets: 0, totalBrands: 0, totalMemories: 0 },
       });
+      setUserGenerations(genRes.logs || []);
+      setUserTemplates(tmplRes.templates || []);
     } catch { setExpandedDetail(null); }
     setExpandLoading(false);
+    setUserExtraLoading(false);
   };
 
   const extendUser = async (id: string) => {
@@ -435,6 +449,9 @@ function UsersTab() {
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/50 hover:bg-zinc-900/50">
                   <button onClick={() => toggleExpand(u.id)} className="text-zinc-500 hover:text-white shrink-0">
                     {expandedId === u.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  <button onClick={() => toggleExpand(u.id)} className="text-zinc-500 hover:text-violet-400 shrink-0" title="查看详情">
+                    <Eye className="w-4 h-4" />
                   </button>
                   <div className="flex-1 min-w-0 grid grid-cols-7 gap-2 items-center">
                     <div className="col-span-2 min-w-0">
@@ -522,7 +539,7 @@ function UsersTab() {
 
                 {/* Expanded detail */}
                 {expandedId === u.id && (
-                  <div className="bg-zinc-900/50 border-b border-zinc-800/50 px-6 py-4">
+                  <div className="bg-zinc-900/50 border-b border-zinc-800/50 px-6 py-4 max-h-[600px] overflow-y-auto">
                     {/* Registration info (always shown) */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 pb-4 border-b border-zinc-800/50">
                       <div>
@@ -605,6 +622,76 @@ function UsersTab() {
                               ))}
                             </div>
                           </div>
+                        )}
+
+                        {/* Generation history */}
+                        {!userExtraLoading && userGenerations.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">最近生成记录</p>
+                            <div className="space-y-1">
+                              {userGenerations.slice(0, 10).map((g: any) => (
+                                <div key={g.id} className="flex items-center gap-3 px-3 py-2 bg-zinc-800/30 rounded-lg">
+                                  <div className="w-8 h-8 rounded bg-zinc-800 overflow-hidden shrink-0">
+                                    {g.imageUrl ? (
+                                      <img src={g.imageUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <ImageIcon className="w-3 h-3 text-zinc-600" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-white font-medium truncate">{g.brandName || '—'}</span>
+                                      <span className="text-[10px] text-zinc-500">{g.sceneLabel || ''}</span>
+                                      {g.success ? (
+                                        <Check className="w-3 h-3 text-emerald-500" />
+                                      ) : (
+                                        <X className="w-3 h-3 text-red-500" />
+                                      )}
+                                    </div>
+                                    <p className="text-[9px] text-zinc-600">
+                                      {g.platform || ''}{g.platform && g.aspectRatio ? ' · ' : ''}{g.aspectRatio || ''}
+                                      {g.latencyMs ? ` · ${g.latencyMs < 1000 ? `${g.latencyMs}ms` : `${(g.latencyMs/1000).toFixed(1)}s`}` : ''}
+                                    </p>
+                                  </div>
+                                  <span className="text-[9px] text-zinc-600 shrink-0">
+                                    {new Date(g.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Prompt templates */}
+                        {!userExtraLoading && userTemplates.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">自定义Prompt模板 ({userTemplates.length})</p>
+                            <div className="space-y-1">
+                              {userTemplates.map((t: any) => (
+                                <div key={t.id} className="flex items-center gap-2 px-3 py-2 bg-zinc-800/30 rounded-lg">
+                                  <Save className="w-3 h-3 text-violet-400 shrink-0" />
+                                  <span className={`text-xs ${t.isActive ? 'text-white' : 'text-zinc-500 line-through'} font-medium truncate flex-1`}>
+                                    {t.label || '未命名'}
+                                  </span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${t.scope === 'user_brand' ? 'bg-violet-900/50 text-violet-400' : t.scope === 'user' ? 'bg-blue-900/50 text-blue-400' : 'bg-emerald-900/50 text-emerald-400'}`}>
+                                    {t.scope}
+                                  </span>
+                                  {t.brandName && (
+                                    <span className="text-[10px] text-zinc-500 bg-zinc-700/50 px-1.5 py-0.5 rounded">{t.brandName}</span>
+                                  )}
+                                  <span className="text-[9px] text-zinc-600 shrink-0">
+                                    {new Date(t.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!userExtraLoading && userGenerations.length === 0 && userTemplates.length === 0 && (
+                          <p className="text-xs text-zinc-600">无生成记录和自定义模板</p>
                         )}
                       </div>
                     ) : <p className="text-xs text-zinc-500">加载失败</p>}
@@ -728,6 +815,113 @@ function GenerationsTab() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const limit = 20;
 
+  // Prompt template state
+  const [savePanelId, setSavePanelId] = useState<string | null>(null);
+  const [tmplLabel, setTmplLabel] = useState('');
+  const [tmplScope, setTmplScope] = useState<'user_brand' | 'user' | 'brand'>('user_brand');
+  const [tmplSaving, setTmplSaving] = useState(false);
+  const [existingTemplates, setExistingTemplates] = useState<Record<string, any[]>>({});
+  const [tmplLoading, setTmplLoading] = useState(false);
+  const [editTmplId, setEditTmplId] = useState<string | null>(null);
+  const [editTmplPrompt, setEditTmplPrompt] = useState('');
+  const [editTmplLabel, setEditTmplLabel] = useState('');
+  const [editTmplSaving, setEditTmplSaving] = useState(false);
+
+  // Fetch existing templates when expanding a log
+  useEffect(() => {
+    if (!expandedId) return;
+    const log = logs.find(l => l.id === expandedId);
+    if (!log) return;
+    const key = `${log.userId || 'guest'}_${log.brandName || ''}`;
+    if (existingTemplates[key]) return; // already loaded
+    setTmplLoading(true);
+    const params = new URLSearchParams();
+    if (log.userId) params.set('userId', log.userId);
+    if (log.brandName) params.set('brandName', log.brandName);
+    fetch(`/api/admin/prompt-templates?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        setExistingTemplates(prev => ({ ...prev, [key]: data.templates || [] }));
+      })
+      .catch(() => {})
+      .finally(() => setTmplLoading(false));
+  }, [expandedId]);
+
+  const saveAsTemplate = async (log: any) => {
+    if (!log.prompt || !tmplLabel.trim()) return;
+    setTmplSaving(true);
+    try {
+      await fetch('/api/admin/prompt-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: log.userId || undefined,
+          brandName: log.brandName || undefined,
+          scope: tmplScope,
+          label: tmplLabel.trim(),
+          prompt: log.prompt,
+        }),
+      });
+      // Refresh templates
+      const key = `${log.userId || 'guest'}_${log.brandName || ''}`;
+      const params = new URLSearchParams();
+      if (log.userId) params.set('userId', log.userId);
+      if (log.brandName) params.set('brandName', log.brandName);
+      const data = await fetch(`/api/admin/prompt-templates?${params}`).then(r => r.json());
+      setExistingTemplates(prev => ({ ...prev, [key]: data.templates || [] }));
+      setSavePanelId(null);
+      setTmplLabel('');
+      setTmplScope('user_brand');
+    } catch {}
+    setTmplSaving(false);
+  };
+
+  const disableTemplate = async (tmplId: string) => {
+    await fetch(`/api/admin/prompt-templates/${tmplId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: false }),
+    });
+    // Refresh for the currently expanded log
+    if (expandedId) {
+      const log = logs.find(l => l.id === expandedId);
+      if (log) {
+        const key = `${log.userId || 'guest'}_${log.brandName || ''}`;
+        const params = new URLSearchParams();
+        if (log.userId) params.set('userId', log.userId);
+        if (log.brandName) params.set('brandName', log.brandName);
+        const data = await fetch(`/api/admin/prompt-templates?${params}`).then(r => r.json());
+        setExistingTemplates(prev => ({ ...prev, [key]: data.templates || [] }));
+      }
+    }
+  };
+
+  const saveEditTemplate = async (tmplId: string) => {
+    if (!editTmplPrompt.trim()) return;
+    setEditTmplSaving(true);
+    try {
+      await fetch(`/api/admin/prompt-templates/${tmplId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editTmplPrompt, label: editTmplLabel.trim() || undefined }),
+      });
+      // Refresh
+      if (expandedId) {
+        const log = logs.find(l => l.id === expandedId);
+        if (log) {
+          const key = `${log.userId || 'guest'}_${log.brandName || ''}`;
+          const params = new URLSearchParams();
+          if (log.userId) params.set('userId', log.userId);
+          if (log.brandName) params.set('brandName', log.brandName);
+          const data = await fetch(`/api/admin/prompt-templates?${params}`).then(r => r.json());
+          setExistingTemplates(prev => ({ ...prev, [key]: data.templates || [] }));
+        }
+      }
+      setEditTmplId(null);
+    } catch {}
+    setEditTmplSaving(false);
+  };
+
   useEffect(() => { fetchLogs(); }, [page, filterBrand]);
 
   async function fetchLogs() {
@@ -802,6 +996,113 @@ function GenerationsTab() {
                     <div>
                       <div className="text-xs text-zinc-500 mb-1">Prompt</div>
                       <div className="text-xs text-zinc-300 bg-zinc-900 rounded p-2 whitespace-pre-wrap max-h-40 overflow-y-auto">{log.prompt}</div>
+                      {/* Save as template button */}
+                      {log.userId && (
+                        <div className="mt-2">
+                          {savePanelId === log.id ? (
+                            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Save className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                                <span className="text-xs text-white font-medium">保存为Prompt模板</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-[10px] text-zinc-500 shrink-0">标签:</label>
+                                <input
+                                  type="text" value={tmplLabel} onChange={e => setTmplLabel(e.target.value)}
+                                  placeholder="如: 优化版-v2"
+                                  className="flex-1 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-white outline-none focus:border-violet-500"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-[10px] text-zinc-500 shrink-0">作用范围:</label>
+                                <div className="flex gap-1.5">
+                                  {(['user_brand', 'user', 'brand'] as const).map(s => (
+                                    <button key={s} onClick={() => setTmplScope(s)}
+                                      className={`text-[10px] px-2 py-0.5 rounded border transition ${tmplScope === s ? 'bg-violet-600 border-violet-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}>
+                                      {s === 'user_brand' ? '用户+品牌' : s === 'user' ? '仅用户' : '仅品牌'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 justify-end">
+                                <button onClick={() => { setSavePanelId(null); setTmplLabel(''); setTmplScope('user_brand'); }}
+                                  className="text-[10px] text-zinc-500 hover:text-zinc-300">取消</button>
+                                <button onClick={() => saveAsTemplate(log)} disabled={tmplSaving || !tmplLabel.trim()}
+                                  className="text-[10px] px-3 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded transition flex items-center gap-1">
+                                  <Save className="w-3 h-3" />{tmplSaving ? '保存中...' : '确认保存'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setSavePanelId(log.id); setTmplLabel(''); setTmplScope('user_brand'); }}
+                              className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition">
+                              <Save className="w-3 h-3" />保存为模板
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Existing templates warning */}
+                      {tmplLoading && <div className="mt-2 text-[10px] text-zinc-500">加载模板中...</div>}
+                      {!tmplLoading && (() => {
+                        const key = `${log.userId || 'guest'}_${log.brandName || ''}`;
+                        const tmpls = existingTemplates[key]?.filter((t: any) => t.isActive) || [];
+                        if (tmpls.length === 0) return null;
+                        return (
+                          <div className="mt-2 space-y-1.5">
+                            {tmpls.map((t: any) => (
+                              <div key={t.id} className="flex items-center gap-2 px-3 py-2 bg-amber-900/20 border border-amber-800/40 rounded-lg">
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                <span className="text-[10px] text-amber-300 flex-1">
+                                  当前有自定义模板: <span className="text-white font-medium">{t.label || '未命名'}</span>
+                                  <span className="text-amber-500/60 ml-1">({t.scope})</span>
+                                </span>
+                                <button onClick={() => {
+                                  setEditTmplId(t.id);
+                                  setEditTmplPrompt(t.prompt);
+                                  setEditTmplLabel(t.label || '');
+                                }}
+                                  className="text-[10px] text-amber-400 hover:text-amber-300 transition">查看/编辑</button>
+                                <button onClick={() => disableTemplate(t.id)}
+                                  className="text-[10px] text-red-400 hover:text-red-300 transition">停用</button>
+                              </div>
+                            ))}
+                            {/* Edit panel */}
+                            {editTmplId && (() => {
+                              const editingTmpl = tmpls.find((t: any) => t.id === editTmplId);
+                              if (!editingTmpl) return null;
+                              return (
+                                <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-white font-medium">编辑模板</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-[10px] text-zinc-500 shrink-0">标签:</label>
+                                    <input type="text" value={editTmplLabel} onChange={e => setEditTmplLabel(e.target.value)}
+                                      placeholder="模板标签"
+                                      className="flex-1 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-white outline-none focus:border-violet-500" />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-zinc-500">Prompt:</label>
+                                    <textarea value={editTmplPrompt} onChange={e => setEditTmplPrompt(e.target.value)}
+                                      rows={4}
+                                      className="w-full mt-1 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-300 outline-none focus:border-violet-500 whitespace-pre-wrap" />
+                                  </div>
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <button onClick={() => setEditTmplId(null)}
+                                      className="text-[10px] text-zinc-500 hover:text-zinc-300">取消</button>
+                                    <button onClick={() => saveEditTemplate(editTmplId)} disabled={editTmplSaving}
+                                      className="text-[10px] px-3 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded transition flex items-center gap-1">
+                                      <Save className="w-3 h-3" />{editTmplSaving ? '保存中...' : '保存修改'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   {log.sceneDesc && (

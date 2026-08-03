@@ -269,3 +269,22 @@ model PageView {
   @@index([createdAt])
   @@map("page_views")
 }
+
+// ─── 用户/品牌级Prompt模板 ─────────────────────────────────
+// Admin可以针对特定用户或品牌优化prompt，后续生成自动使用优化后的版本
+model PromptTemplate {
+  id        String   @id @default(cuid())
+  userId    String?  // 如果是用户级模板（null=品牌级）
+  brandName String?  // 如果是品牌级模板
+  scope     String   // "user" | "brand" | "user_brand"
+  label     String?  // Admin备注（如"优化版-v2"）
+  prompt    String   // 优化后的prompt模板（支持{{vars}}变量替换）
+  isActive  Boolean  @default(true) // 是否启用
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([brandName])
+  @@index([scope])
+  @@map("prompt_templates")
+}
