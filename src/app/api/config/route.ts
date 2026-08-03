@@ -141,6 +141,7 @@ export async function PUT(req: NextRequest) {
         moods: Array.isArray(body.adforge100x_moods) ? body.adforge100x_moods : (existing.adforge100x?.moods || []),
         urgencies: Array.isArray(body.adforge100x_urgencies) ? body.adforge100x_urgencies : (existing.adforge100x?.urgencies || []),
       },
+      quotas: body.quotas || existing.quotas || undefined,
       updatedAt: new Date().toISOString(),
       updatedBy: "admin",
     };

@@ -109,6 +109,25 @@ export type AppConfig = {
     /** 默认生成场景数 */
     defaultSceneCount?: number;
   };
+  /** 权益配置 */
+  quotas?: {
+    /** 游客权益 */
+    guest?: {
+      /** 是否允许游客生成 */
+      enabled?: boolean;
+      /** 每日生成上限（0=不限） */
+      dailyLimit?: number;
+      /** 总生成上限（0=不限） */
+      totalLimit?: number;
+    };
+    /** 注册用户默认权益（注册时自动赋予） */
+    registered?: {
+      /** 默认额度 */
+      defaultQuota?: number;
+      /** 默认有效天数（0=永久） */
+      defaultValidDays?: number;
+    };
+  };
   updatedAt?: string;
   updatedBy?: string;
 };

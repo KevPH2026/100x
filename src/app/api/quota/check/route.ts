@@ -52,6 +52,7 @@ export async function GET() {
     quotaTotal: user.quotaTotal,
     quotaUsed: user.quotaUsed,
     quotaRemaining,
+    expiresAt: user.expiresAt?.toISOString() || null,
     guest: false,
   });
 }

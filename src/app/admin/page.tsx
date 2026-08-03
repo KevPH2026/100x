@@ -1719,6 +1719,10 @@ function AnalyticsTab() {
 function SettingsTab() {
   const [config, setConfig] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   useEffect(() => {
     fetch('/api/config').then(r => r.json()).then(d => { setConfig(d); setLoading(false); }).catch(() => setLoading(false));
@@ -1727,10 +1731,158 @@ function SettingsTab() {
   if (loading) return <Loading />;
 
   const c = (config as Record<string, Record<string, unknown>>)?.adforge100x || {};
+  const quotas = (config as any)?.quotas || {};
+  const guest = quotas.guest || {};
+  const registered = quotas.registered || {};
+
+  const saveQuotas = async (newQuotas: Record<string, any>) => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quotas: newQuotas }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setConfig(updated);
+        showToast('权益配置已保存');
+      } else {
+        const d = await res.json();
+        showToast(d.error || '保存失败');
+      }
+    } catch { showToast('保存失败'); }
+    setSaving(false);
+  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-white">系统配置</h2>
+
+      {/* ── 权益配置 ── */}
+      <div className="space-y-4 max-w-2xl">
+        <h3 className="text-sm font-semibold text-zinc-300">权益配置</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 游客权益 */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-zinc-400">👤 游客权益</h4>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full ${guest.enabled !== false ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'}`}>
+                {guest.enabled !== false ? '已开启' : '已关闭'}
+              </span>
+            </div>
+
+            {/* 开关 */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={guest.enabled !== false}
+                onChange={e => saveQuotas({
+                  ...quotas,
+                  guest: { ...guest, enabled: e.target.checked },
+                  registered,
+                })}
+                className="w-4 h-4 rounded bg-zinc-700 border-zinc-600 text-violet-500 focus:ring-violet-500"
+              />
+              <span className="text-xs text-zinc-300">允许游客生成</span>
+            </label>
+
+            {/* 每日上限 */}
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">每日生成上限（0=不限，全站共享）</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={guest.dailyLimit ?? 0}
+                  onChange={e => saveQuotas({
+                    ...quotas,
+                    guest: { ...guest, dailyLimit: Number(e.target.value) || 0 },
+                    registered,
+                  })}
+                  min={0}
+                  className="w-24 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none focus:border-violet-500"
+                />
+                <span className="text-[10px] text-zinc-600">次/天</span>
+              </div>
+            </div>
+
+            {/* 总量上限 */}
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">总生成上限（0=不限，全站共享）</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={guest.totalLimit ?? 0}
+                  onChange={e => saveQuotas({
+                    ...quotas,
+                    guest: { ...guest, totalLimit: Number(e.target.value) || 0 },
+                    registered,
+                  })}
+                  min={0}
+                  className="w-24 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none focus:border-violet-500"
+                />
+                <span className="text-[10px] text-zinc-600">次</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 注册用户默认权益 */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-zinc-400">🔐 注册用户默认权益</h4>
+              <span className="text-[10px] text-zinc-600">注册时自动赋予</span>
+            </div>
+
+            {/* 默认额度 */}
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">默认生成额度</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={registered.defaultQuota ?? 10}
+                  onChange={e => saveQuotas({
+                    ...quotas,
+                    guest,
+                    registered: { ...registered, defaultQuota: Number(e.target.value) || 10 },
+                  })}
+                  min={1}
+                  className="w-24 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none focus:border-violet-500"
+                />
+                <span className="text-[10px] text-zinc-600">张</span>
+              </div>
+            </div>
+
+            {/* 默认有效期 */}
+            <div>
+              <label className="text-[10px] text-zinc-500 mb-1 block">默认有效天数（0=永久）</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={registered.defaultValidDays ?? 0}
+                  onChange={e => saveQuotas({
+                    ...quotas,
+                    guest,
+                    registered: { ...registered, defaultValidDays: Number(e.target.value) || 0 },
+                  })}
+                  min={0}
+                  className="w-24 px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none focus:border-violet-500"
+                />
+                <span className="text-[10px] text-zinc-600">天</span>
+              </div>
+            </div>
+
+            {/* 说明 */}
+            <div className="pt-2 border-t border-zinc-800">
+              <p className="text-[10px] text-zinc-600">有邀请码注册时，邀请码配置会覆盖默认值</p>
+            </div>
+          </div>
+        </div>
+
+        {toast && <div className="text-sm text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" />{toast}</div>}
+      </div>
+
+      {/* ── API配置（只读） ── */}
       <p className="text-xs text-zinc-500">API Key等敏感配置。运行时参数（模型/温度/限流）请到「工作流」Tab调整。</p>
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 max-w-2xl">
         <div>
