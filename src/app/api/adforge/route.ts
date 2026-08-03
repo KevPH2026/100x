@@ -266,6 +266,25 @@ export async function POST(req: NextRequest) {
   const sessionForLog = authResult; // reuse the auth call above
   const logSource = body.source || 'get';
 
+  // ── 预查自定义prompt模板（循环外查一次，减少DB查询）──
+  let customPromptTemplate: any = null;
+  try {
+    customPromptTemplate = await prisma.promptTemplate.findFirst({
+      where: {
+        isActive: true,
+        OR: [
+          { scope: 'user', userId: authResult?.user?.id || null },
+          { scope: 'brand', brandName },
+          { scope: 'user_brand', userId: authResult?.user?.id || null, brandName },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (customPromptTemplate) {
+      console.log(`[ADFORGE] Custom template found: ${customPromptTemplate.id} (${customPromptTemplate.scope})`);
+    }
+  } catch (e) { /* ignore */ }
+
   // ── 读取用户记忆 ──────────────────────────────────────
   let userCtx = '';
   try {
@@ -387,6 +406,12 @@ ${_urgency}
 ${_cta}
 ${userCtx}
 ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference, pixel by pixel? If not, START OVER.' : `Aspect ratio: ${ratio}. Product must be the hero, well-composed, ready for social media.`}`;
+  }
+
+  // ── Apply custom prompt template (if found) ──
+  if (customPromptTemplate) {
+    const customVars: Record<string, string> = { sceneDesc, mood: _mood, targetCountry: _country, brandName, sellingPoint, ratio, campaignTheme: _campaign, marketingGoal: _goal, urgency: _urgency, cta: _cta };
+    prompt = customPromptTemplate.prompt.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => customVars[key] ?? '');
   }
 
   console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider=${imageProvider}`);
