@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
 
   const hashed = await bcrypt.hash(password, 12);
 
-  // 如果有邀请码，验证并获取配额
+  // 如果有邀请码，验证并获取配额+有效期
   let quota = 10; // 默认免费配额
+  let expiresAt: Date | null = null;
   let inviteCodeId: string | undefined;
 
   if (inviteCode?.trim()) {
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '邀请码已用完' }, { status: 400 });
     }
     quota = code.quota || 100;
+    if (code.validDays && code.validDays > 0) {
+      expiresAt = new Date(Date.now() + code.validDays * 86400000);
+    }
     inviteCodeId = code.id;
   }
 
@@ -54,6 +58,7 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         quotaTotal: quota,
         quotaUsed: 0,
+        expiresAt,
         ...(inviteCodeId ? { inviteCode: { connect: { id: inviteCodeId } } } : {}),
       },
     });

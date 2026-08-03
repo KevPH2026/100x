@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
           id: true,
           code: true,
           quota: true,
+          validDays: true,
           maxUses: true,
           currentUses: true,
           note: true,
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest) {
       id: inv.id,
       code: inv.code,
       quota: inv.quota,
+      validDays: inv.validDays,
       maxUses: inv.maxUses,
       currentUses: inv.currentUses,
       note: inv.note,
@@ -90,11 +92,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const count = Math.min(100, Math.max(1, Number(body.count) || 1));
     const quota = Number(body.quota) || 100;
+    const validDays = body.validDays ? Number(body.validDays) : null;
     const maxUses = Number(body.maxUses) || 50;
     const notePrefix = body.notePrefix || '';
 
     const codes: string[] = [];
-    const data: { code: string; quota: number; maxUses: number; currentUses: number; note: string | null }[] = [];
+    const data: { code: string; quota: number; validDays: number | null; maxUses: number; currentUses: number; note: string | null }[] = [];
 
     for (let i = 0; i < count; i++) {
       let code = generateCode();
@@ -107,6 +110,7 @@ export async function POST(req: NextRequest) {
       data.push({
         code,
         quota,
+        validDays,
         maxUses,
         currentUses: 0,
         note: notePrefix ? `${notePrefix}-${i + 1}` : null,

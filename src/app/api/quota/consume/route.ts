@@ -26,11 +26,19 @@ export async function POST(req: NextRequest) {
   // 先查当前配额，防止超用
   const current = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { quotaTotal: true, quotaUsed: true },
+    select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
   });
 
   if (!current) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  // Check expiry
+  if (current.expiresAt && current.expiresAt < new Date()) {
+    return NextResponse.json(
+      { error: 'Account expired', expired: true, expiresAt: current.expiresAt.toISOString() },
+      { status: 403 }
+    );
   }
 
   const remaining = Math.max(0, current.quotaTotal - current.quotaUsed);

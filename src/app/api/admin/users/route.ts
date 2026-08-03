@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
           quotaTotal: true,
           quotaUsed: true,
           disabled: true,
+          expiresAt: true,
           createdAt: true,
           _count: { select: { assets: true } },
         },

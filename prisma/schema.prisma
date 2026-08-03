@@ -16,6 +16,7 @@ model User {
   inviteCodeId String?  @unique
   quotaTotal   Int      @default(10) // 免费用户默认10张
   quotaUsed    Int      @default(0) // 已用张数
+  expiresAt    DateTime? // 账号到期时间（null=永不过期）
   disabled     Boolean  @default(false)
   resetToken   String?  // 密码重置token
   resetExpAt   DateTime? // 重置token过期时间
@@ -34,6 +35,7 @@ model InviteCode {
   id          String   @id @default(cuid())
   code        String   @unique
   quota       Int      @default(100) // 每个用户可生成张数
+  validDays   Int?     // 注册后可用天数（null=永久，与quota叠加）
   maxUses     Int      @default(50) // 最大使用次数（多少个用户可用）
   currentUses Int      @default(0) // 已使用次数
   note        String? // Admin 备注
@@ -249,4 +251,21 @@ model InteractionLog {
   @@index([reviewFlag])
   @@index([createdAt])
   @@map("interaction_logs")
+}
+
+// ─── 页面访问统计 ──────────────────────────────────────────────────────
+model PageView {
+  id        String   @id @default(cuid())
+  page      String   // /landing, /chat, /get, /dashboard, /login, etc.
+  referrer  String?  // 来源页面
+  ip        String?  // IP（截断 /24）
+  userAgent String?  // 浏览器UA
+  userId    String?  // 注册用户（null=游客）
+  country   String?  // 国家（从Vercel头解析）
+  createdAt DateTime @default(now())
+
+  @@index([page])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("page_views")
 }
