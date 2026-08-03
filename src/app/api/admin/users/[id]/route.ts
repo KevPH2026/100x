@@ -19,11 +19,23 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { quotaTotal, disabled } = body;
+    const { quotaTotal, disabled, expiresAt, extendDays } = body;
 
     const data: Record<string, unknown> = {};
     if (quotaTotal !== undefined) data.quotaTotal = Number(quotaTotal);
     if (disabled !== undefined) data.disabled = Boolean(disabled);
+
+    // Set explicit expiry date (ISO string or null to clear)
+    if (expiresAt !== undefined) {
+      data.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    }
+
+    // Extend from now (e.g. { extendDays: 30 } adds 30 days to current expiry or now)
+    if (extendDays !== undefined && Number(extendDays) > 0) {
+      const current = await prisma.user.findUnique({ where: { id }, select: { expiresAt: true } });
+      const base = current?.expiresAt && current.expiresAt > new Date() ? current.expiresAt : new Date();
+      data.expiresAt = new Date(base.getTime() + Number(extendDays) * 86400000);
+    }
 
     // Only update if there's something to update
     if (Object.keys(data).length === 0) {
@@ -39,6 +51,7 @@ export async function PATCH(
         name: true,
         quotaTotal: true,
         quotaUsed: true,
+        expiresAt: true,
         createdAt: true,
       },
     });

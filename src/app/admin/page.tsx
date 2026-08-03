@@ -6,7 +6,8 @@ import {
   Search, Copy, Trash2, Plus, ChevronLeft, ChevronRight,
   Lock, Check, X, AlertCircle, RefreshCw, Eye, GitBranch,
   Save, RotateCcw, ChevronDown, ChevronUp, Ghost, FileText,
-  Activity, MessageSquare, Workflow, ClipboardList
+  Activity, MessageSquare, Workflow, ClipboardList,
+  Calendar, Clock, TrendingUp,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ interface AdminUser {
   company: string | null; phone: string | null;
   quotaTotal: number; quotaUsed: number; disabled: boolean;
   createdAt: string; _count: { assets: number };
+  expiresAt: string | null;
 }
 
 interface AdminAsset {
@@ -33,6 +35,7 @@ interface InviteRow {
   id: string; code: string; quota: number; note: string | null;
   usedAt: string | null; createdAt: string;
   usedBy: { email: string } | null;
+  validDays: number | null;
 }
 
 // ─── Main ───────────────────────────────────────────────────────
@@ -47,6 +50,7 @@ const TABS = [
   { key: 'health', label: '模型监测', icon: Activity },
   { key: 'feedbacks', label: '用户反馈', icon: MessageSquare },
   { key: 'traces', label: '交互追踪', icon: ClipboardList },
+  { key: 'analytics', label: '访问统计', icon: TrendingUp },
   { key: 'settings', label: '配置', icon: Settings },
 ] as const;
 type TabKey = typeof TABS[number]['key'];
@@ -143,6 +147,7 @@ export default function AdminPage() {
           {tab === 'health' && <ModelHealthTab />}
           {tab === 'feedbacks' && <FeedbacksTab />}
           {tab === 'traces' && <TracesTab />}
+          {tab === 'analytics' && <AnalyticsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -338,6 +343,8 @@ function UsersTab() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedDetail, setExpandedDetail] = useState<UserDetail | null>(null);
   const [expandLoading, setExpandLoading] = useState(false);
+  const [extendingId, setExtendingId] = useState<string | null>(null);
+  const [extendDays, setExtendDays] = useState('30');
   const limit = 20;
 
   const load = useCallback(async () => {
@@ -391,6 +398,18 @@ function UsersTab() {
     setExpandLoading(false);
   };
 
+  const extendUser = async (id: string) => {
+    const days = parseInt(extendDays);
+    if (isNaN(days) || days <= 0) return;
+    await fetch(`/api/admin/users/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ extendDays: days }),
+    });
+    setExtendingId(null);
+    setExtendDays('30');
+    load();
+  };
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -417,7 +436,7 @@ function UsersTab() {
                   <button onClick={() => toggleExpand(u.id)} className="text-zinc-500 hover:text-white shrink-0">
                     {expandedId === u.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
-                  <div className="flex-1 min-w-0 grid grid-cols-6 gap-2 items-center">
+                  <div className="flex-1 min-w-0 grid grid-cols-7 gap-2 items-center">
                     <div className="col-span-2 min-w-0">
                       <p className="text-sm text-white truncate">{u.email}</p>
                       <p className="text-[10px] text-zinc-500 truncate">{u.name || '—'}</p>
@@ -436,6 +455,18 @@ function UsersTab() {
                       <span className="text-[10px] text-zinc-600 ml-1">({u.quotaTotal > 0 ? Math.round(u.quotaUsed / u.quotaTotal * 100) : 0}%)</span>
                     </div>
                     <p className="text-xs text-zinc-400 text-right">{u._count.assets}</p>
+                    <div className="text-right">
+                      {u.expiresAt ? (() => {
+                        const exp = new Date(u.expiresAt);
+                        const now = new Date();
+                        const diffMs = exp.getTime() - now.getTime();
+                        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+                        const fmt = `${String(exp.getMonth() + 1).padStart(2, '0')}-${String(exp.getDate()).padStart(2, '0')} ${String(exp.getHours()).padStart(2, '0')}:${String(exp.getMinutes()).padStart(2, '0')}`;
+                        if (diffMs < 0) return <span className="text-[10px] text-red-400">已过期 <span className="text-zinc-600">{fmt}</span></span>;
+                        if (diffDays <= 7) return <span className="text-[10px] text-yellow-400">即将过期 <span className="text-zinc-600">{fmt}</span></span>;
+                        return <span className="text-[10px] text-zinc-400">{fmt}</span>;
+                      })() : <span className="text-[10px] text-zinc-600">永久</span>}
+                    </div>
                     <div className="flex items-center justify-end gap-2">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${u.disabled ? 'bg-red-900/50 text-red-400' : 'bg-emerald-900/50 text-emerald-400'}`}>
                         {u.disabled ? '禁用' : '正常'}
@@ -449,6 +480,10 @@ function UsersTab() {
                         <button onClick={() => { setEditingId(u.id); setEditQuota(String(u.quotaTotal)); }}
                           className="text-[10px] text-violet-400 hover:text-violet-300">调配额</button>
                       )}
+                      <button onClick={() => { setExtendingId(extendingId === u.id ? null : u.id); setExtendDays('30'); }}
+                        className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-0.5">
+                        <Clock className="w-3 h-3" />续期
+                      </button>
                       <button onClick={() => toggleDisabled(u)}
                         className={`text-[10px] ${u.disabled ? 'text-emerald-400' : 'text-red-400'} hover:opacity-80`}>
                         {u.disabled ? '启用' : '禁用'}
@@ -456,6 +491,34 @@ function UsersTab() {
                     </div>
                   </div>
                 </div>
+
+                {/* Extend inline */}
+                {extendingId === u.id && (
+                  <div className="bg-zinc-900/50 border-b border-zinc-800/50 px-6 py-3 flex items-center gap-3">
+                    <Clock className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                    <span className="text-xs text-zinc-400">续期天数:</span>
+                    <div className="flex gap-1.5">
+                      {[7, 30, 90, 365].map(d => (
+                        <button key={d} onClick={() => setExtendDays(String(d))}
+                          className={`text-[10px] px-2 py-1 rounded border transition ${extendDays === String(d) ? 'bg-violet-600 border-violet-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'}`}>
+                          {d}天
+                        </button>
+                      ))}
+                      <input type="number" placeholder="自定义"
+                        value={[7, 30, 90, 365].includes(Number(extendDays)) ? '' : extendDays}
+                        onChange={e => { if (e.target.value) setExtendDays(e.target.value); }}
+                        className="w-16 px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-[10px] text-white outline-none focus:border-violet-500" />
+                    </div>
+                    <button onClick={() => extendUser(u.id)}
+                      className="text-[10px] px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded transition ml-auto">
+                      确认续期
+                    </button>
+                    <button onClick={() => setExtendingId(null)}
+                      className="text-[10px] text-zinc-500 hover:text-zinc-300">
+                      取消
+                    </button>
+                  </div>
+                )}
 
                 {/* Expanded detail */}
                 {expandedId === u.id && (
@@ -1048,6 +1111,7 @@ function InvitesTab() {
   const [genCount, setGenCount] = useState(5);
   const [genQuota, setGenQuota] = useState(50);
   const [genNote, setGenNote] = useState('');
+  const [genValidDays, setGenValidDays] = useState('');
   const [generating, setGenerating] = useState(false);
   const [toast, setToast] = useState('');
   const limit = 20;
@@ -1067,9 +1131,12 @@ function InvitesTab() {
 
   const generate = async () => {
     setGenerating(true);
+    const body: Record<string, unknown> = { count: genCount, quota: genQuota, notePrefix: genNote };
+    const vd = parseInt(genValidDays);
+    if (!isNaN(vd) && vd > 0) body.validDays = vd;
     const res = await fetch('/api/admin/invites', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ count: genCount, quota: genQuota, notePrefix: genNote }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     setGenerating(false);
@@ -1117,6 +1184,11 @@ function InvitesTab() {
             <input value={genNote} onChange={e => setGenNote(e.target.value)}
               className="block w-40 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none" />
           </div>
+          <div>
+            <label className="text-xs text-zinc-500">有效天数</label>
+            <input type="number" value={genValidDays} onChange={e => setGenValidDays(e.target.value)} placeholder="留空=永久"
+              className="block w-24 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm outline-none placeholder:text-zinc-600" />
+          </div>
           <button onClick={generate} disabled={generating}
             className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm rounded-lg transition flex items-center gap-2">
             {generating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
@@ -1137,6 +1209,7 @@ function InvitesTab() {
                 <th className="text-left py-3 font-medium">邀请码</th>
                 <th className="text-right py-3 font-medium">配额</th>
                 <th className="text-left py-3 font-medium">备注</th>
+                <th className="text-right py-3 font-medium">有效期</th>
                 <th className="text-left py-3 font-medium">状态</th>
                 <th className="text-left py-3 font-medium">使用者</th>
                 <th className="text-right py-3 font-medium">操作</th>
@@ -1148,6 +1221,7 @@ function InvitesTab() {
                   <td className="py-3 text-white font-mono text-xs">{inv.code}</td>
                   <td className="py-3 text-right text-zinc-400">{inv.quota}</td>
                   <td className="py-3 text-zinc-400">{inv.note || '—'}</td>
+                  <td className="py-3 text-right text-zinc-400 text-xs">{inv.validDays ? `${inv.validDays}天` : '永久'}</td>
                   <td className="py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${inv.usedAt ? 'bg-zinc-800 text-zinc-400' : 'bg-emerald-900/50 text-emerald-400'}`}>
                       {inv.usedAt ? '已用' : '未用'}
@@ -1482,6 +1556,161 @@ function FeedbacksTab() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── AnalyticsTab: 访问统计 ──────────────────────────────────────────
+function AnalyticsTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/analytics').then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <Loading />;
+  if (!data) return <p className="text-sm text-zinc-500">加载失败</p>;
+
+  const summaryCards = [
+    { label: '今日PV', value: data.todayPV, sub: `UV ${data.todayUV}`, gradient: 'from-blue-600 to-cyan-700', change: data.pvGrowth },
+    { label: '总PV', value: data.totalPV, sub: `UV ${data.totalUV}`, gradient: 'from-violet-600 to-purple-700', change: data.weekOverWeek },
+    { label: '跳出率', value: `${data.bounceRate}%`, sub: `注册 ${data.regPV} / 游客 ${data.guestPV}`, gradient: 'from-amber-500 to-orange-600' },
+    { label: '本周vs上周', value: `${data.weekOverWeek > 0 ? '+' : ''}${data.weekOverWeek}%`, sub: '周环比', gradient: data.weekOverWeek >= 0 ? 'from-emerald-600 to-teal-700' : 'from-red-500 to-rose-600' },
+  ];
+
+  const totalDevice = (data.devices || []).reduce((s: number, d: any) => s + d.count, 0) || 1;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">访问统计</h2>
+        <span className="text-[10px] text-zinc-500">{new Date().toLocaleTimeString('zh-CN')} 更新</span>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryCards.map(c => (
+          <div key={c.label} className={`bg-gradient-to-br ${c.gradient} rounded-2xl p-5 text-white shadow-lg`}>
+            <p className="text-xs text-white/70 mb-1">{c.label}</p>
+            <p className="text-3xl font-bold">{c.value}</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-[11px] text-white/60">{c.sub}</p>
+              {c.change !== undefined && c.change !== 0 && (
+                <span className={`text-[10px] ${c.change >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                  {c.change >= 0 ? '↑' : '↓'}{Math.abs(c.change)}%
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* PV/UV Trend 30d */}
+        <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-4">近30天 PV / UV 趋势</h3>
+          <div className="flex items-end gap-[3px] h-32">
+            {(data.dailyPV || []).map((d: any, i: number) => {
+              const uv = data.dailyUV?.[i];
+              const max = Math.max(...(data.dailyPV || []).map((x: any) => x.count || 0), 1);
+              const h = Math.max(2, ((d.count || 0) / max) * 100);
+              return (
+                <div key={d.date} className="flex-1 flex flex-col items-center gap-0.5 group relative">
+                  <div className="w-full flex flex-col items-center gap-[1px]">
+                    <div className="w-full bg-violet-500/60 rounded-t-sm" style={{ height: `${h}%` }} />
+                    {uv && <div className="w-[60%] bg-cyan-400/70 rounded-t-sm" style={{ height: `${Math.max(2, ((uv.count || 0) / max) * 100)}%` }} />}
+                  </div>
+                  <span className="text-[8px] text-zinc-600">{d.date?.slice(5, 10)}</span>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-1 hidden group-hover:block bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-[10px] text-zinc-300 whitespace-nowrap z-10">
+                    PV: {d.count} {uv ? `UV: ${uv.count}` : ''}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-[10px] text-zinc-500">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-500/60" />PV</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400/70" />UV</span>
+          </div>
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-4">
+          {/* Device breakdown */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+            <h3 className="text-xs font-semibold text-zinc-400 mb-3">设备分布</h3>
+            <div className="space-y-2">
+              {(data.devices || []).map((d: any) => {
+                const pct = Math.round((d.count / totalDevice) * 100);
+                const colors: Record<string, string> = { desktop: 'bg-blue-500', mobile: 'bg-violet-500', tablet: 'bg-amber-500' };
+                const labels: Record<string, string> = { desktop: '桌面端', mobile: '移动端', tablet: '平板' };
+                return (
+                  <div key={d.device}>
+                    <div className="flex justify-between text-[10px] mb-0.5">
+                      <span className="text-zinc-400">{labels[d.device] || d.device}</span>
+                      <span className="text-zinc-500">{d.count} ({pct}%)</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-zinc-800">
+                      <div className={`h-full rounded-full ${colors[d.device] || 'bg-zinc-500'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Page distribution */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+            <h3 className="text-xs font-semibold text-zinc-400 mb-3">页面分布（7天）</h3>
+            <div className="space-y-1.5">
+              {(data.pageDist || []).slice(0, 6).map((p: any) => (
+                <div key={p.page} className="flex items-center justify-between text-[11px]">
+                  <span className="text-zinc-400 font-mono">{p.page}</span>
+                  <span className="text-zinc-500">{p.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Country */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-3">地区分布（30天）</h3>
+          {(data.countryDist || []).length === 0 ? <p className="text-xs text-zinc-600">暂无数据</p> : (
+            <div className="space-y-2">
+              {data.countryDist.slice(0, 8).map((c: any) => (
+                <div key={c.country} className="flex items-center justify-between text-[11px]">
+                  <span className="text-zinc-400">{c.country}</span>
+                  <span className="text-zinc-500">{c.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Top referrers */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <h3 className="text-xs font-semibold text-zinc-400 mb-3">来源TOP 10（7天）</h3>
+          {(data.topReferrers || []).length === 0 ? <p className="text-xs text-zinc-600">暂无数据</p> : (
+            <div className="space-y-1.5">
+              {data.topReferrers.map((r: any, i: number) => (
+                <div key={r.referrer} className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-zinc-600 shrink-0">{i + 1}</span>
+                    <span className="text-zinc-400 truncate">{r.referrer}</span>
+                  </div>
+                  <span className="text-zinc-500 shrink-0 ml-2">{r.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

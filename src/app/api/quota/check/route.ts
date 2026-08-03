@@ -23,11 +23,25 @@ export async function GET() {
     select: {
       quotaTotal: true,
       quotaUsed: true,
+      expiresAt: true,
     },
   });
 
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  // Check expiry
+  if (user.expiresAt && user.expiresAt < new Date()) {
+    return NextResponse.json({
+      canGenerate: false,
+      quotaTotal: user.quotaTotal,
+      quotaUsed: user.quotaUsed,
+      quotaRemaining: 0,
+      expired: true,
+      expiresAt: user.expiresAt.toISOString(),
+      guest: false,
+    });
   }
 
   const quotaRemaining = Math.max(0, user.quotaTotal - user.quotaUsed);
