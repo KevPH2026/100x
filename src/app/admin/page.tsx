@@ -1739,7 +1739,7 @@ function SettingsTab() {
     setSaving(true);
     try {
       const res = await fetch('/api/config', {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quotas: newQuotas }),
       });

@@ -60,6 +60,8 @@ export async function GET() {
       moods: config.adforge100x?.moods && config.adforge100x.moods.length > 0 ? config.adforge100x.moods : DEFAULT_MOODS,
       urgencies: config.adforge100x?.urgencies && config.adforge100x.urgencies.length > 0 ? config.adforge100x.urgencies : DEFAULT_URGENCIES,
     },
+    agentRuntime: config.agentRuntime || undefined,
+    quotas: config.quotas || undefined,
     updatedAt: config.updatedAt,
   });
 }
@@ -68,7 +70,10 @@ function verifyAdmin(req: NextRequest) {
   const auth = req.headers.get("authorization");
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
   if (!ADMIN_PASSWORD) return false;
-  return auth === `Bearer ${ADMIN_PASSWORD}`;
+  // Support both Bearer token and cookie-based admin auth
+  if (auth === `Bearer ${ADMIN_PASSWORD}`) return true;
+  const cookie = req.cookies.get("admin_token")?.value;
+  return cookie === ADMIN_PASSWORD;
 }
 
 export async function PUT(req: NextRequest) {
