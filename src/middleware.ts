@@ -45,6 +45,7 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/dashboard') ||
       url.pathname.startsWith('/chat') ||
       url.pathname.startsWith('/get') ||
+      url.pathname.startsWith('/pricing') ||
       url.pathname.startsWith('/_next') ||
       url.pathname.startsWith('/demo/') ||
       url.pathname.startsWith('/design-') ||

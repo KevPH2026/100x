@@ -9,6 +9,7 @@ import {
   Brain, Wand2, Lightbulb, ArrowRight, Eye, Trash2,
   Palette, Settings, BarChart3, Heart, PenLine, Plus, Store
 } from 'lucide-react';
+import SubscriptionBanner from '@/components/SubscriptionBanner';
 
 // ─── 类型 ────────────────────────────────────────────────────
 interface Asset {
@@ -257,6 +258,8 @@ export default function DashboardPage() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <SubscriptionBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
           <div className="flex items-center gap-4 flex-1">

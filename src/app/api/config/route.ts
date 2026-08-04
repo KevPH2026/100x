@@ -62,6 +62,7 @@ export async function GET() {
     },
     agentRuntime: config.agentRuntime || undefined,
     quotas: config.quotas || undefined,
+    pricing: config.pricing || undefined,
     updatedAt: config.updatedAt,
   });
 }
@@ -147,6 +148,7 @@ export async function PUT(req: NextRequest) {
         urgencies: Array.isArray(body.adforge100x_urgencies) ? body.adforge100x_urgencies : (existing.adforge100x?.urgencies || []),
       },
       quotas: body.quotas || existing.quotas || undefined,
+      pricing: body.pricing || existing.pricing || undefined,
       updatedAt: new Date().toISOString(),
       updatedBy: "admin",
     };

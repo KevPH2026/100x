@@ -128,6 +128,17 @@ export type AppConfig = {
       defaultValidDays?: number;
     };
   };
+  /** LemonSqueezy 支付配置 */
+  pricing?: {
+    /** Pro月付 Variant ID */
+    proMonthlyVariantId?: number;
+    /** Pro年付 Variant ID */
+    proYearlyVariantId?: number;
+    /** Pro月付价格（展示用） */
+    proMonthlyPrice?: string;
+    /** Pro年付价格（展示用） */
+    proYearlyPrice?: string;
+  };
   updatedAt?: string;
   updatedBy?: string;
 };
