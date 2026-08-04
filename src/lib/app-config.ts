@@ -164,6 +164,8 @@ export async function writeAppConfig(data: AppConfig): Promise<void> {
     update: { value: data as any },
     create: { key: CONFIG_KEY, value: data as any },
   });
+  _cache = data; // 立即刷新缓存
+  _cacheTs = Date.now();
 }
 
 /** 默认 prompt 模板（产品保真版 + 营销活动驱动） */
