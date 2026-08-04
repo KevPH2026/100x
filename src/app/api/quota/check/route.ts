@@ -10,7 +10,7 @@ export async function GET() {
 
   // Guest
   if (!session?.user?.id) {
-    return NextResponse.json({ canGenerate: true, quotaTotal: null, quotaUsed: null, quotaRemaining: null, guest: true, tier: 'free' });
+    return NextResponse.json({ canGenerate: true, quotaTotal: 10, quotaUsed: 0, quotaRemaining: 10, guest: true, tier: 'free' });
   }
 
   // Check active subscription
