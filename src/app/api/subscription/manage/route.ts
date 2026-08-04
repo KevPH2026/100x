@@ -31,7 +31,26 @@ export async function POST(req: NextRequest) {
   }
 
   if (!LS_API_KEY) {
-    return NextResponse.json({ error: 'LemonSqueezy未配置' }, { status: 500 });
+    // Mock mode: 直接更新本地DB
+    const statusMap: Record<string, string> = { cancel: 'cancelled', pause: 'paused', resume: 'active' };
+    const newStatus = statusMap[action] || 'active';
+    await prisma.subscription.update({
+      where: { id: sub.id },
+      data: {
+        status: newStatus,
+        endsAt: action === 'cancel' ? new Date(Date.now() + 30 * 86400000) : undefined,
+      },
+    });
+
+    // If cancelled, revert quota to free tier
+    if (action === 'cancel') {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { quotaTotal: 10 },
+      });
+    }
+
+    return NextResponse.json({ ok: true, status: newStatus, mock: true });
   }
 
   try {
