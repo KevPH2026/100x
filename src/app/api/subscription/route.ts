@@ -4,13 +4,14 @@ import { prisma } from '@/lib/prisma';
 
 const LS_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
 const LS_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID || '';
+const MOCK_MODE = !LS_API_KEY || !LS_STORE_ID; // 没有真实凭证时自动Mock
 
 // Pricing plans — prices will be set in LemonSqueezy dashboard
 // These are just for display; actual checkout is handled by LemonSqueezy
 const PLANS: Record<string, { variantId: number; label: string }> = {};
 
-// POST /api/subscription/checkout
-// Creates a LemonSqueezy checkout URL
+// POST /api/subscription
+// Creates a LemonSqueezy checkout URL (or Mock if no credentials)
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -32,7 +33,45 @@ export async function POST(req: NextRequest) {
     }, { status: 409 });
   }
 
-  // Get variant IDs from AppConfig
+  // ── Mock Mode: 直接激活订阅 ──
+  if (MOCK_MODE) {
+    console.log(`[SUBSCRIPTION] MOCK checkout: userId=${session.user.id} plan=${plan} tier=${tier}`);
+
+    const TIER_QUOTAS: Record<string, number> = { free: 10, pro: 500, team: 2000 };
+    const quota = TIER_QUOTAS[tier] || 500;
+
+    // Create subscription record
+    const sub = await prisma.subscription.create({
+      data: {
+        userId: session.user.id,
+        lsSubscriptionId: `mock_${Date.now()}`,
+        lsProductId: plan === 'yearly' ? 2 : 1,
+        status: 'active',
+        tier,
+        plan,
+        renewsAt: plan === 'yearly'
+          ? new Date(Date.now() + 365 * 86400000)
+          : new Date(Date.now() + 30 * 86400000),
+      },
+    });
+
+    // Upgrade user quota
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { quotaTotal: quota, expiresAt: null },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      mock: true,
+      message: 'Mock订阅已激活（LemonSqueezy未配置）',
+      url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://100x.pics'}/dashboard?sub=success`,
+      subscription: sub,
+    });
+  }
+
+  // ── Real LemonSqueezy Checkout ──
+
   const config = await (await import('@/lib/app-config')).readAppConfig();
   const pricing = (config as any).pricing || {};
   const variantId = tier === 'pro'
