@@ -2183,6 +2183,27 @@ function SettingsTab() {
         {toast && <div className="text-sm text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" />{toast}</div>}
       </div>
 
+      {/* ── 支付配置 (LemonSqueezy) ── */}
+      <p className="text-xs text-zinc-500 mt-6">LemonSqueezy 支付配置。配置后用户可在 /pricing 页面订阅。</p>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 max-w-2xl">
+        <div>
+          <label className="text-xs text-zinc-500 mb-1 block">LemonSqueezy API Key</label>
+          <p className={`text-sm font-mono ${process.env.NEXT_PUBLIC_NODE_ENV === 'production' ? 'text-zinc-500' : !!process.env.LEMONSQUEEZY_API_KEY ? 'text-emerald-400' : 'text-red-400'}`}>{!!process.env.LEMONSQUEEZY_API_KEY ? '✓ 已配置' : '✗ 未配置'}</p>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-500 mb-1 block">Store ID</label>
+          <p className={`text-sm font-mono ${!!process.env.LEMONSQUEEZY_STORE_ID ? 'text-emerald-400' : 'text-red-400'}`}>{!!process.env.LEMONSQUEEZY_STORE_ID ? '✓ 已配置' : '✗ 未配置'}</p>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-500 mb-1 block">Webhook Secret</label>
+          <p className={`text-sm font-mono ${!!process.env.LEMONSQUEEZY_WEBHOOK_SECRET ? 'text-emerald-400' : 'text-red-400'}`}>{!!process.env.LEMONSQUEEZY_WEBHOOK_SECRET ? '✓ 已配置' : '✗ 未配置'}</p>
+        </div>
+        <div className="pt-2 border-t border-zinc-800">
+          <p className="text-[10px] text-zinc-600">通过 .env.local 设置 LEMONSQUEEZY_API_KEY / LEMONSQUEEZY_STORE_ID / LEMONSQUEEZY_WEBHOOK_SECRET</p>
+          <p className="text-[10px] text-zinc-600">Webhook端点: POST /api/webhooks/lemonsqueezy</p>
+        </div>
+      </div>
+
       {/* ── API配置（只读） ── */}
       <p className="text-xs text-zinc-500">API Key等敏感配置。运行时参数（模型/温度/限流）请到「工作流」Tab调整。</p>
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 max-w-2xl">
