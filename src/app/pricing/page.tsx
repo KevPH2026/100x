@@ -169,6 +169,9 @@ export default function PricingPage() {
 
       const data = await res.json();
       if (data.url) {
+        if (data.mock) {
+          showToast('🎉 Mock订阅已激活！跳转到Dashboard...');
+        }
         window.location.href = data.url;
       } else {
         showToast('即将上线，敬请期待');
