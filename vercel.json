@@ -5,6 +5,12 @@
     },
     "src/app/api/meme/route.ts": {
       "maxDuration": 120
+    },
+    "src/app/api/adforge/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/agent/route.ts": {
+      "maxDuration": 120
     }
   }
 }
