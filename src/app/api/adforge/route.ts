@@ -420,35 +420,18 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   let result: { buf: Buffer | null; err?: string } = { buf: null, err: 'no provider' };
   let providerUsed = '';
 
-  // Provider selection based on config: novart | tokenrouter | auto (novart优先)
-  const useNovartFirst = imageProvider === 'novart' || imageProvider === 'auto';
-  const useTRFirst = imageProvider === 'tokenrouter';
-
-  if (useNovartFirst && novartKey) {
+  // Provider: Novart only (TokenRouter已停用)
+  if (novartKey) {
     const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
     result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
     providerUsed = `novart-${novartModel}`;
     if (!result.buf) console.error('[NV fail]', result.err);
+  } else {
+    console.error('[adforge] No Novart API key configured');
   }
-  if (!result.buf && useTRFirst && trKey) {
-    const size = TR_SIZE_MAP[ratio] || '1024x1024';
-    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage, trModel, imageTimeoutMs);
-    providerUsed = `tr-${trModel}`;
-    if (!result.buf) console.error('[TR fail]', result.err);
-  }
-  // Fallback: if primary failed, try the other
-  if (!result.buf && useNovartFirst && trKey) {
-    const size = TR_SIZE_MAP[ratio] || '1024x1024';
-    result = await genTokenRouter(trKey, trBase, prompt, size, referenceImage, trModel, imageTimeoutMs);
-    providerUsed = `tr-${trModel}-fallback`;
-    if (!result.buf) console.error('[TR fallback fail]', result.err);
-  }
-  if (!result.buf && useTRFirst && novartKey) {
-    const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
-    result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
-    providerUsed = `novart-${novartModel}-fallback`;
-    if (!result.buf) console.error('[NV fallback fail]', result.err);
-  }
+
+  // TokenRouter disabled (欠费)
+  // if (!result.buf && trKey) { ... }
 
   if (!result.buf) {
     // 记录失败（GenerationLog + GuestLog）
