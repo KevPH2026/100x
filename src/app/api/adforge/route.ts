@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
   const imageProvider = rt?.imageProvider || 'auto'; // auto = novart优先
   const novartModel = rt?.novartImageModel || 'nova-image-pro';
   const trModel = rt?.tokenrouterImageModel || 'openai/gpt-5.4-image-2';
-  const imageTimeoutMs = rt?.imageTimeoutMs || 50000;
+  const imageTimeoutMs = Math.max(rt?.imageTimeoutMs || 0, 120000); // 最少120s（Novart生成较慢）
 
   // Rate limit check
   const authResult = await auth();
