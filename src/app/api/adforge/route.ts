@@ -203,6 +203,44 @@ async function genNovartVertex(
   } catch (e: any) { return { buf: null, err: `nv exc ${e?.message}` }; }
 }
 
+/** Novart /v1/images/generations (宽松审核端点，vertex被拒后的fallback) */
+async function genNovartImages(
+  apiKey: string, baseUrl: string, prompt: string, ratio: string, refDataUrl: string | undefined,
+  modelName: string = 'nova-image-2', timeoutMs: number = 50000,
+): Promise<{ buf: Buffer | null; err?: string }> {
+  const base = baseUrl.replace(/\/$/, '').trim();
+  try {
+    // 参考图：dataUrl → 纯base64（此端点要求裸base64，不能带data:前缀）
+    let refB64: string | undefined;
+    if (refDataUrl?.startsWith('data:')) {
+      refB64 = refDataUrl.slice(refDataUrl.indexOf(',') + 1);
+    } else if (refDataUrl?.startsWith('http')) {
+      const dl = await fetch(refDataUrl, { signal: AbortSignal.timeout(8000) });
+      if (dl.ok) refB64 = Buffer.from(await dl.arrayBuffer()).toString('base64');
+    }
+    const body: Record<string, unknown> = {
+      model: modelName,
+      prompt,
+      aspect_ratio: ratio,
+      response_format: 'url',
+      ...(refB64 ? { reference_images: [refB64] } : {}),
+    };
+    const r = await fetch(`${base}/v1/images/generations`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!r.ok) return { buf: null, err: `nvi ${r.status}` };
+    const data = await r.json();
+    const item = data?.data?.[0];
+    const url = item?.signed_download_url || item?.url;
+    if (!url) return { buf: null, err: 'nvi no url' };
+    const dl = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!dl.ok) return { buf: null, err: `nvi dl ${dl.status}` };
+    return { buf: Buffer.from(await dl.arrayBuffer()) };
+  } catch (e: any) { return { buf: null, err: `nvi exc ${e?.message}` }; }
+}
+
 export async function POST(req: NextRequest) {
   const config = await readAppConfig();
   const rt = config.agentRuntime;
@@ -446,7 +484,21 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
     const nvRatio = NOVART_RATIO_MAP[ratio] || '1:1';
     result = await genNovartVertex(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
     providerUsed = `novart-${novartModel}`;
-    if (!result.buf) console.error('[NV fail]', result.err);
+    if (!result.buf) {
+      console.error('[NV fail]', result.err);
+      // ── 审核拒绝/上游5xx → 降级 /v1/images/generations（审核策略不同）──
+      const retriable = /nv (5\d\d|403)/.test(result.err || '');
+      if (retriable) {
+        console.log('[NV] vertex failed, falling back to /v1/images/generations...');
+        const fb = await genNovartImages(novartKey, novartBase, prompt, nvRatio, referenceImage, novartModel, imageTimeoutMs);
+        if (fb.buf) {
+          result = fb;
+          providerUsed = `novart-${novartModel}-imgfallback`;
+        } else {
+          console.error('[NV imgfallback fail]', fb.err);
+        }
+      }
+    }
   } else {
     console.error('[adforge] No Novart API key configured');
   }
