@@ -150,6 +150,7 @@ export async function PUT(req: NextRequest) {
       quotas: body.quotas || existing.quotas || undefined,
       pricing: body.pricing || existing.pricing || undefined,
       agentRuntime: body.agentRuntime ? { ...existing.agentRuntime, ...body.agentRuntime } : existing.agentRuntime || undefined,
+      agentPrompts: body.agentPrompts ? { ...existing.agentPrompts, ...body.agentPrompts } : existing.agentPrompts || undefined,
       updatedAt: new Date().toISOString(),
       updatedBy: "admin",
     };
