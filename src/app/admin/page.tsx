@@ -62,6 +62,13 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState<TabKey>('dashboard');
 
+  // 用户详情 → 交互链路 跳转
+  useEffect(() => {
+    const handler = () => setTab('traces');
+    window.addEventListener('traces_filter_user', handler);
+    return () => window.removeEventListener('traces_filter_user', handler);
+  }, []);
+
   // auth
   useEffect(() => {
     const c = document.cookie.split('; ').find(r => r.startsWith('admin_token='));
@@ -667,7 +674,19 @@ function UsersTab() {
                         {/* Prompt templates */}
                         {!userExtraLoading && userTemplates.length > 0 && (
                           <div className="space-y-1.5">
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">自定义Prompt模板 ({userTemplates.length})</p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">自定义Prompt模板 ({userTemplates.length})</p>
+                              <button
+                                onClick={() => {
+                                  localStorage.setItem('traces_filter_userId', expandedId);
+                                  const evt = new CustomEvent('traces_filter_user');
+                                  window.dispatchEvent(evt);
+                                }}
+                                className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1"
+                              >
+                                <ClipboardList className="w-3 h-3" /> 查看交互链路
+                              </button>
+                            </div>
                             <div className="space-y-1">
                               {userTemplates.map((t: any) => (
                                 <div key={t.id} className="flex items-center gap-2 px-3 py-2 bg-zinc-800/30 rounded-lg">
@@ -2460,6 +2479,7 @@ function TracesTab() {
   const [page, setPage] = useState(1);
   const [filterTraceId, setFilterTraceId] = useState('');
   const [filterStep, setFilterStep] = useState('');
+  const [filterUserId, setFilterUserId] = useState('');
   const [expandedTrace, setExpandedTrace] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const limit = 50;
@@ -2470,15 +2490,26 @@ function TracesTab() {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (filterTraceId) params.set('traceId', filterTraceId);
       if (filterStep) params.set('step', filterStep);
+      if (filterUserId) params.set('userId', filterUserId);
       const res = await fetch(`/api/admin/interactions?${params}`);
       const data = await res.json();
       setLogs(data.logs || []);
       setTotal(data.total || 0);
     } catch { /* ignore */ }
     setLoading(false);
-  }, [page, filterTraceId, filterStep]);
+  }, [page, filterTraceId, filterStep, filterUserId]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // 接收用户详情页跳转带来的userId筛选
+  useEffect(() => {
+    const stored = localStorage.getItem('traces_filter_userId');
+    if (stored) {
+      localStorage.removeItem('traces_filter_userId');
+      setFilterUserId(stored);
+      setPage(1);
+    }
+  }, []);
 
   // 按traceId分组
   const traceGroups: Record<string, typeof logs> = {};
@@ -2506,6 +2537,12 @@ function TracesTab() {
           onChange={e => { setFilterTraceId(e.target.value); setPage(1); }}
           placeholder="搜索traceId..."
           className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-violet-500"
+        />
+        <input
+          value={filterUserId}
+          onChange={e => { setFilterUserId(e.target.value); setPage(1); }}
+          placeholder="userId筛选..."
+          className="w-44 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-violet-500 font-mono"
         />
         <select
           value={filterStep}
@@ -2570,6 +2607,7 @@ function TracesTab() {
                   {tid.slice(0, 8)}
                 </span>
                 <span className="text-xs text-zinc-400">{firstStep.source || 'unknown'}</span>
+                {firstStep.userId && <span className="text-[10px] text-zinc-600 font-mono">u:{firstStep.userId.slice(-6)}</span>}
                 <span className="text-xs text-zinc-400">{firstStep.brandName || '—'}</span>
                 {hasImage && <span className="text-xs text-emerald-400">{imageCount}图</span>}
                 {totalLatency > 0 && <span className="text-xs text-zinc-500">{(totalLatency / 1000).toFixed(1)}s</span>}
@@ -2635,7 +2673,32 @@ function TracesTab() {
                       )}
                       {step.llmPrompt && (
                         <div className="ml-7 mb-1">
-                          <span className="text-[10px] text-zinc-500">Prompt</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-zinc-500">Prompt</span>
+                            {step.step === 'prompt_build' && (
+                              <button
+                                onClick={async () => {
+                                  const label = window.prompt('模板备注（如：蕾丝品类保真v2）');
+                                  if (!label?.trim()) return;
+                                  await fetch('/api/admin/prompt-templates', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      userId: step.userId || undefined,
+                                      brandName: step.brandName || undefined,
+                                      scope: step.userId && step.brandName ? 'user_brand' : step.userId ? 'user' : 'brand',
+                                      label: label.trim(),
+                                      prompt: step.llmPrompt,
+                                    }),
+                                  });
+                                  alert('已保存，该用户下次生成自动应用');
+                                }}
+                                className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1"
+                              >
+                                <Save className="w-3 h-3" /> 存为该用户模板
+                              </button>
+                            )}
+                          </div>
                           <pre className="text-xs text-amber-200/80 mt-0.5 bg-amber-950/20 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto">{step.llmPrompt.slice(0, 2000)}</pre>
                         </div>
                       )}
