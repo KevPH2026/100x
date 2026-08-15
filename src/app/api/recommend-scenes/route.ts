@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
 
 Rules:
 - Scenes must be SPECIFIC to the product (a smart ring → hand close-up / nightclub / sleep / gym; a coffee maker → kitchen counter / morning / cozy cafe; headphones → commute / gym / desk; skincare → bathroom / vanity / outdoor).
+- WEARABLE products (underwear, lingerie, swimwear, apparel, shoes, jewelry, watches, glasses, hats): the product must be shown WORN ON A HUMAN MODEL, not laid flat or floating. At least 4 of 8 scenes must feature a model wearing the product (mix close-up and full-body).
+- For lingerie/underwear/swimwear: tasteful, non-explicit, brand-safe poses in commercial stock-photo style, compliant with Meta/TikTok ad policies. Examples: model wearing the underwear in a bright bedroom getting-ready scene, tastefully framed; athletic underwear on a fit model, gym-mirror selfie style.
+- Non-wearable products: show the product in its real use context with hands/people interacting where natural.
 - Mix scene types: 2 lifestyle-in-use, 2 hero/studio, 2 contextual environment, 2 platform-native (TikTok-style, Pinterest-style).
 - Cover diverse aspect ratios across the 8 scenes: 1:1, 9:16, 16:9, 2:3, 3:2.
 - Match scene to platform (Story/TikTok = 9:16, Feed/RedBook = 1:1, Banner/YouTube = 16:9, Pinterest = 2:3).

@@ -421,6 +421,20 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
     prompt = customPromptTemplate.prompt.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => customVars[key] ?? '');
   }
 
+  // ── LOG: prompt_build（记录最终生图prompt+模板来源，可追溯）──
+  logInteraction(traceId, 'prompt_build', {
+    userId: sessionForLog?.user?.id,
+    ip: extractIp(req),
+    source: logSource,
+    llmPrompt: prompt,
+    llmModel: customPromptTemplate ? `custom:${customPromptTemplate.scope}:${customPromptTemplate.id.slice(-6)}` : (template ? 'config:agentPrompts' : 'builtin:fallback'),
+    brandName,
+    platform: forcePlatform || platformLabel(ratio, scene.platform),
+    scene: sceneDesc,
+    ratio,
+    userImageRef: refPersistedUrl || undefined,
+  });
+
   console.log(`[ADFORGE] scene=${sceneIdx} ratio=${ratio} provider=${imageProvider}`);
   const t0 = Date.now();
 
