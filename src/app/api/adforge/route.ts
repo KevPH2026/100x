@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { put } from '@vercel/blob';
+import { persistRefImage } from '@/lib/ref-image';
 import { readAppConfig, DEFAULT_SCENES } from '@/lib/app-config';
 
 export const maxDuration = 60;
@@ -331,6 +332,12 @@ export async function POST(req: NextRequest) {
   const hasRef = !!referenceImage;
   const isReEdit = !!body.isReEdit;
 
+  // ── 参考图持久化：dataUrl → Blob URL（追溯用，失败不阻塞）──
+  let refPersistedUrl: string | null = null;
+  if (hasRef) {
+    refPersistedUrl = await persistRefImage(referenceImage, brandName);
+  }
+
   // ── Read prompt template from config (admin-controllable) ──
   const ap = config.agentPrompts || {};
   const templateKey = hasRef ? 'imageGenWithRef' : 'imageGenNoRef';
@@ -455,7 +462,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
         success: false,
         error: result.err?.slice(0, 200) || 'unknown',
         latencyMs,
-        workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel } : undefined,
+        workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel, refImageUrl: refPersistedUrl || undefined } : undefined,
       }}).catch(() => {});
       if (!userId) {
         await prisma.guestLog.create({ data: {
@@ -495,6 +502,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
     platform: forcePlatform || platformLabel(ratio, scene.platform),
     scene: sceneDesc,
     ratio,
+    userImageRef: refPersistedUrl || undefined,
   });
 
   const safe = brandName.replace(/\s+/g, '-').toLowerCase().slice(0, 30);
@@ -579,7 +587,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
       imageUrl: persistentUrl,
       success: true,
       latencyMs: Date.now() - t0,
-      workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel, imageTimeoutMs: rt.imageTimeoutMs } : undefined,
+      workflow: rt ? { llmModel: rt.llmModel, imageProvider: rt.imageProvider, novartImageModel: rt.novartImageModel, imageTimeoutMs: rt.imageTimeoutMs, refImageUrl: refPersistedUrl || undefined } : undefined,
     }}).catch(() => {});
   } catch {}
 

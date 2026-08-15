@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { readAppConfig } from '@/lib/app-config';
+import { persistRefImage } from '@/lib/ref-image';
 
 export const maxDuration = 60;
 
@@ -758,11 +759,13 @@ export async function POST(req: NextRequest) {
     const logOpts = { traceId, userId, ip: clientIp };
 
     // ── Log: user_input ──
+    // 参考图持久化：dataUrl → Blob URL（追溯用，失败不阻塞）
+    const refPersistedUrl = await persistRefImage(referenceImage, 'agent');
     logInteraction(traceId, 'user_input', {
       ...logOpts,
       source: 'agent',
       userInput: message,
-      userImageRef: referenceImage?.slice(0, 200) || undefined,
+      userImageRef: refPersistedUrl || undefined,
     });
 
     // Load existing brand if logged in

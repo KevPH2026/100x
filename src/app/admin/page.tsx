@@ -2617,6 +2617,10 @@ function TracesTab() {
                           <span className="text-[10px] text-zinc-500">参考图</span>
                           {step.userImageRef.startsWith('data:') ? (
                             <img src={step.userImageRef.slice(0, 100)} alt="" className="w-12 h-12 rounded object-cover mt-0.5" />
+                          ) : /^https?:\/\//.test(step.userImageRef) ? (
+                            <a href={step.userImageRef} target="_blank" rel="noreferrer">
+                              <img src={step.userImageRef} alt="参考图" className="w-16 h-16 rounded object-cover mt-0.5 border border-zinc-700 hover:border-violet-500 transition-colors" />
+                            </a>
                           ) : (
                             <p className="text-xs text-zinc-400 mt-0.5 truncate">{step.userImageRef}</p>
                           )}
