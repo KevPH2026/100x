@@ -365,9 +365,14 @@ export async function POST(req: NextRequest) {
   if (sceneIdx < 0 || sceneIdx >= scenes.length && !customSceneDesc) return NextResponse.json({ error: '无效场景索引' }, { status: 400 });
   const scene = scenes[Math.min(sceneIdx, scenes.length - 1)] || { aspectRatio: '1:1', desc: customSceneDesc || 'product shot', label: 'Custom' };
   const ratio = forceRatio || scene.aspectRatio || '1:1';
-  const sceneDesc = customSceneDesc?.trim() || scene.desc;
-
   const hasRef = !!referenceImage;
+  // 模特上身：注入真人模特场景（可穿戴品类，合规姿势）
+  const MODEL_SCENE = 'a poised elegant human model actually WEARING the exact product from the reference image, natural relaxed confident pose, tasteful and non-explicit, compliant with Meta/TikTok advertising policies, realistic fabric drape and fit on the body';
+  const useModelWorn = !!body.useModel && hasRef;
+  const sceneDesc = useModelWorn
+    ? `${MODEL_SCENE}${customSceneDesc?.trim() ? `, ${customSceneDesc.trim()}` : ''}`
+    : (customSceneDesc?.trim() || scene.desc);
+
   const isReEdit = !!body.isReEdit;
 
   // ── 参考图持久化：dataUrl → Blob URL（追溯用，失败不阻塞）──

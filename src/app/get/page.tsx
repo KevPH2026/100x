@@ -150,6 +150,7 @@ export default function GeneratePage() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [selectedScenes, setSelectedScenes] = useState<number[]>([0]);
   const [customScene, setCustomScene] = useState(''); // 用户自定义场景描述
+  const [useModel, setUseModel] = useState(false); // 模特上身（可穿戴品类）
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['IG Feed', 'IG Story', 'FB', 'TikTok', 'TikTok Video', 'Pinterest', 'Google', 'YouTube']);
 
   // 抠图（浏览器端 @imgly/background-removal）
@@ -464,6 +465,7 @@ export default function GeneratePage() {
               styleContext,
               sceneIndex: task.sceneIdx,
               customSceneDesc: customScene.trim() || undefined,
+              useModel: useModel || undefined,
               platformOverride: task.platformKey,
               campaignTheme: campaignTheme.trim(),
               marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
@@ -1146,6 +1148,37 @@ export default function GeneratePage() {
                   );
                 })}
               </div>
+
+              {/* 模特上身开关（有参考图时显示） */}
+              {referenceImage && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseModel(v => !v)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all w-full text-left"
+                    style={{
+                      background: useModel ? 'rgba(139,92,246,0.12)' : 'rgba(255,255,255,0.03)',
+                      border: useModel ? '1px solid rgba(139,92,246,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <span
+                      className="w-9 h-5 rounded-full relative transition-all shrink-0"
+                      style={{ background: useModel ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.12)' }}
+                    >
+                      <span
+                        className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                        style={{ left: useModel ? '18px' : '2px' }}
+                      />
+                    </span>
+                    <span>
+                      <span className="font-medium block" style={{ color: useModel ? 'rgba(196,181,253,0.95)' : 'rgba(250,250,250,0.6)' }}>
+                        模特上身
+                      </span>
+                      <span className="text-[10px] text-white/35 block">服装/内衣/配饰类展示真人上身效果（合规姿势）</span>
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* 自定义场景描述 */}
               <div className="mt-3">
