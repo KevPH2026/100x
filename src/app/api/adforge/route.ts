@@ -203,6 +203,41 @@ async function genNovartVertex(
   } catch (e: any) { return { buf: null, err: `nv exc ${e?.message}` }; }
 }
 
+/** 参考图事实提取：MiniMax视觉模型 → 颜色/品类/logo文字，注入prompt锚定（防止颜色/字母漂移） */
+async function extractRefFacts(
+  refDataUrl: string,
+): Promise<{ facts: string; brandText: string } | null> {
+  const key = process.env.MINIMAX_API_KEY || '';
+  if (!key) return null;
+  try {
+    const b64 = refDataUrl.startsWith('data:')
+      ? refDataUrl.slice(refDataUrl.indexOf(',') + 1)
+      : Buffer.from(await (await fetch(refDataUrl, { signal: AbortSignal.timeout(8000) })).arrayBuffer()).toString('base64');
+    const res = await fetch('https://api.minimax.chat/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'MiniMax-Text-01',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Describe the PRODUCT in this image for image-generation anchoring. Reply in EXACTLY this format, nothing else:\nCOLOR: <main colors, e.g. "bright red">\nTYPE: <product type, e.g. "lace lingerie set">\nTEXT: <exact text/lettering visible on the product, letter-by-letter, or "none">\nDETAILS: <key visual details, max 15 words>' },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
+          ],
+        }],
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text: string = data?.choices?.[0]?.message?.content || '';
+    const textMatch = text.match(/TEXT:\s*(.+)/i);
+    const facts = text.replace(/\n+/g, ' ').trim().slice(0, 400);
+    if (!facts) return null;
+    return { facts, brandText: (textMatch?.[1] || '').trim().slice(0, 40) };
+  } catch { return null; }
+}
+
 /** Novart /v1/images/generations (宽松审核端点，vertex被拒后的fallback) */
 async function genNovartImages(
   apiKey: string, baseUrl: string, prompt: string, ratio: string, refDataUrl: string | undefined,
@@ -465,9 +500,27 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   }
 
   // ── 品牌字母显式注入（扩散模型需显式字母串才能可靠保留logo文字）──
-  const brandText = (body.brandText as string | undefined)?.trim().slice(0, 40);
-  if (brandText && hasRef) {
-    prompt += `\nBRAND LETTERING LOCK: the product shows the exact text "${brandText}". Render these exact characters letter-by-letter, same spelling, same font style and metallic/color finish as the reference. Never translate, paraphrase or omit.`;
+  const userBrandText = (body.brandText as string | undefined)?.trim().slice(0, 40);
+  // 参考图事实自动提取（颜色/品类/字母——扩散模型需要显式锚定词防漂移；失败不阻塞）
+  let refFacts = '';
+  let autoBrandText = '';
+  if (hasRef) {
+    const t0f = Date.now();
+    const extracted = await extractRefFacts(referenceImage!).catch(() => null);
+    if (extracted) {
+      refFacts = extracted.facts;
+      autoBrandText = extracted.brandText;
+      console.log(`[ADFORGE] refFacts extracted in ${Date.now() - t0f}ms: ${refFacts.slice(0, 120)}`);
+    } else {
+      console.log(`[ADFORGE] refFacts extraction failed in ${Date.now() - t0f}ms (skipping, non-blocking)`);
+    }
+  }
+  if (refFacts) {
+    prompt += `\nREFERENCE PRODUCT FACTS (anchor these exactly): ${refFacts}`;
+  }
+  const brandTextFinal = userBrandText || (autoBrandText && autoBrandText.toLowerCase() !== 'none' ? autoBrandText : '');
+  if (brandTextFinal && hasRef) {
+    prompt += `\nBRAND LETTERING LOCK: the product shows the exact text "${brandTextFinal}". Render these exact characters letter-by-letter, same spelling, same font style and metallic/color finish as the reference. Never translate, paraphrase or omit.`;
   }
 
   // ── LOG: prompt_build（记录最终生图prompt+模板来源，可追溯）──
