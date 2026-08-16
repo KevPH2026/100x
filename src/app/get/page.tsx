@@ -151,6 +151,7 @@ export default function GeneratePage() {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([0]);
   const [customScene, setCustomScene] = useState(''); // 用户自定义场景描述
   const [useModel, setUseModel] = useState(false); // 模特上身（可穿戴品类）
+  const [brandText, setBrandText] = useState(''); // 产品上的品牌字母/文字（logo保真）
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['IG Feed', 'IG Story', 'FB', 'TikTok', 'TikTok Video', 'Pinterest', 'Google', 'YouTube']);
 
   // 抠图（浏览器端 @imgly/background-removal）
@@ -466,6 +467,7 @@ export default function GeneratePage() {
               sceneIndex: task.sceneIdx,
               customSceneDesc: customScene.trim() || undefined,
               useModel: useModel || undefined,
+              brandText: brandText.trim() || undefined,
               platformOverride: task.platformKey,
               campaignTheme: campaignTheme.trim(),
               marketingGoal: goalObj?.desc || goalObj?.label || marketingGoal,
@@ -1177,6 +1179,23 @@ export default function GeneratePage() {
                       <span className="text-[10px] text-white/35 block">服装/内衣/配饰类展示真人上身效果（合规姿势）</span>
                     </span>
                   </button>
+                </div>
+              )}
+
+              {/* 品牌字母输入（有参考图时显示） */}
+              {referenceImage && (
+                <div className="mt-2">
+                  <label className="block text-[11px] font-medium text-white/40 mb-1.5">
+                    产品上的品牌字母/文字（选填，逐字保留不变形）
+                  </label>
+                  <input
+                    value={brandText}
+                    onChange={e => setBrandText(e.target.value)}
+                    placeholder="例如：SUA PUTA、NIKE、LOVE YOU"
+                    maxLength={40}
+                    className="w-full px-3 py-2 rounded-xl text-xs text-white placeholder:text-white/20 outline-none transition-all"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  />
                 </div>
               )}
 
