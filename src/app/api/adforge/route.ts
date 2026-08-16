@@ -464,6 +464,12 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
     prompt = customPromptTemplate.prompt.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => customVars[key] ?? '');
   }
 
+  // ── 品牌字母显式注入（扩散模型需显式字母串才能可靠保留logo文字）──
+  const brandText = (body.brandText as string | undefined)?.trim().slice(0, 40);
+  if (brandText && hasRef) {
+    prompt += `\nBRAND LETTERING LOCK: the product shows the exact text "${brandText}". Render these exact characters letter-by-letter, same spelling, same font style and metallic/color finish as the reference. Never translate, paraphrase or omit.`;
+  }
+
   // ── LOG: prompt_build（记录最终生图prompt+模板来源，可追溯）──
   logInteraction(traceId, 'prompt_build', {
     userId: sessionForLog?.user?.id,
