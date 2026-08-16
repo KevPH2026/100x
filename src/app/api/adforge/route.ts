@@ -221,7 +221,7 @@ async function extractRefFacts(
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: 'Describe the PRODUCT in this image for image-generation anchoring. Reply in EXACTLY this format, nothing else:\nCOLOR: <main colors, e.g. "bright red">\nTYPE: <product type, e.g. "lace lingerie set">\nTEXT: <exact text/lettering visible on the product, letter-by-letter, or "none">\nDETAILS: <key visual details, max 15 words>' },
+            { type: 'text', text: 'Describe the PRODUCT in this image for image-generation anchoring. Reply in EXACTLY this format, nothing else:\nCOLOR: <main colors, e.g. "bright red">\nTYPE: <product type, e.g. "lace lingerie set">\nTEXT: <exact text/lettering visible on the product, letter-by-letter, or "none">\nTEXT_MATERIAL: <lettering technique & finish — one of: metallic 3D raised letters with strong specular reflections / flat gold foil print / embroidery stitching / screen print / debossed leather / woven label / none — plus color>\nDETAILS: <key visual details, max 15 words>' },
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
           ],
         }],
@@ -520,7 +520,7 @@ ${hasRef ? 'FINAL CHECK: Is the product in my output IDENTICAL to the reference,
   }
   const brandTextFinal = userBrandText || (autoBrandText && autoBrandText.toLowerCase() !== 'none' ? autoBrandText : '');
   if (brandTextFinal && hasRef) {
-    prompt += `\nBRAND LETTERING LOCK: the product shows the exact text "${brandTextFinal}". Render these exact characters letter-by-letter, same spelling, same font style and metallic/color finish as the reference. Never translate, paraphrase or omit.`;
+    prompt += `\nBRAND LETTERING LOCK: the product shows the exact text "${brandTextFinal}". Render these exact characters letter-by-letter, same spelling, same position. Reproduce the lettering MATERIAL and FINISH exactly as in the reference (e.g. metallic 3D raised letters must stay 3D with strong specular highlights and sharp edges; flat foil stays flat; embroidery keeps stitch texture). Never translate, paraphrase, blur or flatten.`;
   }
 
   // ── LOG: prompt_build（记录最终生图prompt+模板来源，可追溯）──
