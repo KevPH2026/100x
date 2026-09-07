@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+
+function verifyAdmin(req: NextRequest): boolean {
+  if (!ADMIN_PASSWORD) return false;
+  const token = req.cookies.get('admin_token')?.value;
+  return token === ADMIN_PASSWORD;
+}
+
 // POST: 自审查 — 分析最近的交互日志，自动标记问题
 // 审查规则:
 // 1. image_response + imageError: 图片生成失败
@@ -13,6 +21,9 @@ import { prisma } from '@/lib/prisma';
 // 8. intent_analysis → clarify/clarify 但用户没有后续操作: 用户困惑
 
 export async function POST(req: NextRequest) {
+  if (!verifyAdmin(req)) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  }
   const body = await req.json().catch(() => ({}));
   const hoursAgo = body.hoursAgo || 24; // 默认审查最近24小时
   const dryRun = body.dryRun !== false; // 默认dry run，只返回分析结果不标记

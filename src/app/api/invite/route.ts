@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { adminPassword, quota = 100, maxUses = 50, note = '', count = 1 } = body;
 
-  if (adminPassword !== ADMIN_PASSWORD) {
+  if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: '无权限' }, { status: 401 });
   }
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const adminPassword = searchParams.get('adminPassword');
 
-  if (adminPassword !== ADMIN_PASSWORD) {
+  if (!ADMIN_PASSWORD || adminPassword !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: '无权限' }, { status: 401 });
   }
 
